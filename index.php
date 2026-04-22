@@ -1,4 +1,7 @@
-<?php require_once 'config.php'; ?>
+<?php 
+require_once 'config.php'; 
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,22 +13,41 @@
 </head>
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar">
         <div class="nav-logo">Bookingjaunt</div>
         <div class="nav-links">
-            <a href="#" class="nav-item"><i class="fas fa-bed"></i> Stays</a>
+            <a href="index.php" class="nav-item"><i class="fas fa-bed"></i> Stays</a>
             <a href="#" class="nav-item"><i class="fas fa-plane"></i> Flights</a>
             <a href="#" class="nav-item"><i class="fas fa-car"></i> Car rentals</a>
             <a href="#" class="nav-item"><i class="fas fa-camera"></i> Attractions</a>
             <a href="#" class="nav-item"><i class="fas fa-taxi"></i> Airport taxis</a>
         </div>
         <div class="nav-auth">
-            <button class="nav-item btn-outline" style="background:transparent; border:none;"><i class="fas fa-moon"></i></button>
             <button class="nav-item btn-outline" style="background:transparent; border:none;">USD</button>
             <button class="nav-item btn-outline" style="background:transparent; border:none;"><img src="https://flagcdn.com/w20/us.png" width="20" alt="US"></button>
-            <a href="register.php" class="btn btn-light">Register</a>
-            <a href="login.php" class="btn btn-light">Sign in</a>
+            
+            <?php if (isset($_SESSION['user_id'])): ?>
+                <!-- List Your Property Button -->
+                <a href="list_your_property.php" class="btn-property-yellow">
+                    <i class="fas fa-plus-circle"></i> List your property
+                </a>
+                
+                <!-- User Profile Section -->
+                <div class="user-nav-section">
+                    <div class="user-pill">
+                        <div class="user-avatar">
+                            <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
+                        </div>
+                        <span class="user-name"><?= htmlspecialchars($_SESSION['user_name']) ?></span>
+                    </div>
+                    <a href="logout.php" class="logout-icon" title="Sign out">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+<?php else: ?>
+                <a href="register.php" class="btn btn-light">Register</a>
+                <a href="register.php" class="btn btn-light">Sign in</a>
+            <?php endif; ?>
         </div>
     </nav>
 
