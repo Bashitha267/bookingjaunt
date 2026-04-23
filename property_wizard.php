@@ -74,10 +74,10 @@ $type = $_GET['type'] ?? 'hotel';
 
     <!-- Stepper Container (Sticky) -->
     <div class="sticky top-[58px] z-40 bg-[#f8fafc]/90 backdrop-blur-md border-b py-6 mb-12">
-        <div class="max-w-7xl mx-auto px-6">
+        <div class="max-w-[1600px] mx-auto px-6">
             <div class="flex justify-between relative">
                 <?php 
-                $steps = ["Type", "Info", "Staff", "Amenities", "Rooms", "Rules", "Photos", "Finish"];
+                $steps = ["Type", "Info", "Staff", "Amenities", "Rooms", "Payments", "Photos", "Rules", "Finish"];
                 foreach($steps as $i => $name): 
                     $num = $i + 1;
                 ?>
@@ -92,8 +92,8 @@ $type = $_GET['type'] ?? 'hotel';
     </div>
 
         <!-- Wizard Form -->
-        <main class="max-w-7xl mx-auto pb-24 px-6">
-            <form id="property-form" class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-10 border border-blue-50">
+        <main class="w-full max-w-[1600px] mx-auto pb-24 px-4 sm:px-8">
+            <form id="property-form" class="w-full bg-white rounded-[3rem] shadow-2xl shadow-blue-900/10 p-8 md:p-20 border border-blue-50">
                 
                 <!-- Step 1: Business Type -->
                 <div class="wizard-step active" data-step="1">
@@ -186,7 +186,7 @@ $type = $_GET['type'] ?? 'hotel';
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Mobile Telephone Number</label>
-                                    <input type="text" name="mobile_telephone" placeholder="+94 ..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <input type="text" name="mobile_telephone" required placeholder="+94 ..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
                                 </div>
                             </div>
 
@@ -196,20 +196,63 @@ $type = $_GET['type'] ?? 'hotel';
                                     <input type="text" name="city" required placeholder="City Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">District</label>
-                                    <input type="text" name="district" required placeholder="District Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Main Town</label>
+                                    <input type="text" name="closest_main_town" required placeholder="e.g. Negombo" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Province</label>
-                                    <input type="text" name="province" required placeholder="Province Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">District</label>
+                                    <select name="district" required class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                        <option value="">Select District</option>
+                                        <option value="Ampara">Ampara</option>
+                                        <option value="Anuradhapura">Anuradhapura</option>
+                                        <option value="Badulla">Badulla</option>
+                                        <option value="Batticaloa">Batticaloa</option>
+                                        <option value="Colombo">Colombo</option>
+                                        <option value="Galle">Galle</option>
+                                        <option value="Gampaha">Gampaha</option>
+                                        <option value="Hambantota">Hambantota</option>
+                                        <option value="Jaffna">Jaffna</option>
+                                        <option value="Kalutara">Kalutara</option>
+                                        <option value="Kandy">Kandy</option>
+                                        <option value="Kegalle">Kegalle</option>
+                                        <option value="Kilinochchi">Kilinochchi</option>
+                                        <option value="Kurunegala">Kurunegala</option>
+                                        <option value="Mannar">Mannar</option>
+                                        <option value="Matale">Matale</option>
+                                        <option value="Matara">Matara</option>
+                                        <option value="Moneragala">Moneragala</option>
+                                        <option value="Mullaitivu">Mullaitivu</option>
+                                        <option value="Nuwara Eliya">Nuwara Eliya</option>
+                                        <option value="Polonnaruwa">Polonnaruwa</option>
+                                        <option value="Puttalam">Puttalam</option>
+                                        <option value="Ratnapura">Ratnapura</option>
+                                        <option value="Trincomalee">Trincomalee</option>
+                                        <option value="Vavuniya">Vavuniya</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Province</label>
+                                    <select name="province" required class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                        <option value="">Select Province</option>
+                                        <option value="Western">Western</option>
+                                        <option value="Central">Central</option>
+                                        <option value="Southern">Southern</option>
+                                        <option value="North Western">North Western</option>
+                                        <option value="Sabaragamuwa">Sabaragamuwa</option>
+                                        <option value="North Central">North Central</option>
+                                        <option value="Uva">Uva</option>
+                                        <option value="Eastern">Eastern</option>
+                                        <option value="Northern">Northern</option>
+                                    </select>
+                                </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Country</label>
                                     <input type="text" name="country" required value="Sri Lanka" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
                                 </div>
+                            </div>
                                 <div class="md:col-span-2">
                                     <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Google Map Location (Optional)</label>
                                     <div class="relative">
@@ -220,9 +263,9 @@ $type = $_GET['type'] ?? 'hotel';
                             </div>
                         </div>
 
-                        <!-- Logistics & Surroundings -->
-                        <div class="space-y-4">
-                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Surroundings & Logistics <span class="text-xs font-normal text-gray-400 ml-2">(Optional)</span></h3>
+                        <!-- Logistics, Surroundings & Media -->
+                        <div class="space-y-6">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Logistics & Media</h3>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -246,73 +289,42 @@ $type = $_GET['type'] ?? 'hotel';
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Property Logo <span class="text-xs font-normal text-gray-400 ml-1">(Optional)</span></label>
+                            <!-- Logo & Cover Row -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                                <div class="md:col-span-1">
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Property Logo <span class="text-[10px] font-normal text-gray-400">(Optional)</span></label>
                                     <div class="upload-container relative group" id="logo-upload">
                                         <input type="file" accept="image/*" class="hidden file-input" data-type="logo">
                                         <input type="hidden" name="logo_image">
                                         <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
-                                            <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-2"></i>
-                                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Upload Logo</span>
+                                            <i class="fas fa-cloud-upload-alt text-gray-400 text-xl mb-1"></i>
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase">Logo</span>
                                         </div>
                                         <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
                                             <img src="" class="max-w-full max-h-full rounded-lg object-contain">
-                                            <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all remove-image">
-                                                <i class="fas fa-times text-xs"></i>
+                                            <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-image">
+                                                <i class="fas fa-times text-[10px]"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Cover Image <span class="text-xs font-normal text-gray-400 ml-1">(Optional)</span></label>
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Cover Image <span class="text-[10px] font-normal text-gray-400">(Optional)</span></label>
                                     <div class="upload-container relative group" id="cover-upload">
                                         <input type="file" accept="image/*" class="hidden file-input" data-type="cover">
                                         <input type="hidden" name="cover_image">
                                         <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
-                                            <i class="fas fa-image text-gray-400 text-2xl mb-2"></i>
-                                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Upload Cover</span>
+                                            <i class="fas fa-image text-gray-400 text-2xl mb-1"></i>
+                                            <span class="text-[10px] font-bold text-gray-400 uppercase">Upload Property Cover Photo</span>
                                         </div>
-                                        <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
-                                            <img src="" class="max-w-full max-h-full rounded-lg object-cover w-full h-full">
-                                            <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all remove-image">
+                                        <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-1">
+                                            <img src="" class="max-w-full max-h-full rounded-xl object-cover w-full h-full">
+                                            <button type="button" class="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-image">
                                                 <i class="fas fa-times text-xs"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Logistics & Surroundings -->
-                        <div class="space-y-4">
-                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Surroundings & Logistics <span class="text-xs font-normal text-gray-400 ml-2">(Optional)</span></h3>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Police Station</label>
-                                    <input type="text" name="closest_police_station" placeholder="Name of station" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Hospital</label>
-                                    <input type="text" name="closest_hospital" placeholder="Name of hospital" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Airport Distance (KM)</label>
-                                    <input type="text" name="airport_distance" placeholder="Distance to Katunayake (CMB)" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Postal Code</label>
-                                    <input type="text" name="postal_code" placeholder="e.g. 11500" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Main Town</label>
-                                <input type="text" name="closest_main_town" placeholder="Name of the nearest town" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
                             </div>
                         </div>
                     </div>
@@ -357,15 +369,15 @@ $type = $_GET['type'] ?? 'hotel';
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Manager Name</label>
-                                        <input type="text" name="manager_name" placeholder="Full Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none transition-all">
+                                        <input type="text" name="manager_name" required placeholder="Full Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Contact Number</label>
-                                        <input type="text" name="manager_phone" placeholder="Phone Number" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none transition-all">
+                                        <input type="text" name="manager_phone" required placeholder="Phone Number" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">NIC Number</label>
-                                        <input type="text" name="manager_nic" placeholder="National ID" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none transition-all">
+                                        <input type="text" name="manager_nic" required placeholder="National ID" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                                     </div>
                                 </div>
                             </div>
@@ -513,76 +525,361 @@ $type = $_GET['type'] ?? 'hotel';
                     </button>
                 </div>
 
-                <!-- Step 6: Policies & Rules -->
+                <!-- Step 6: Payment Options -->
                 <div class="wizard-step" data-step="6">
                     <div class="mb-8">
                         <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 06</span>
+                        <h2 class="text-2xl font-bold text-gray-900">Payment & Payouts</h2>
+                        <p class="text-sm text-gray-500 mt-1">Provide your bank details to receive payments for bookings.</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Bank Name</label>
+                                <input type="text" name="bank_name" placeholder="e.g. Bank of Ceylon" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                            <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Branch Name</label>
+                                <input type="text" name="bank_branch" placeholder="e.g. Colombo Fort" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Bank Account Holder Name</label>
+                            <input type="text" name="bank_account_name" required placeholder="Name as it appears on bank passbook" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+
+                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Account Number</label>
+                            <input type="text" name="bank_account_number" required placeholder="Enter your full account number" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+
+                        <div class="bg-blue-50/50 p-8 rounded-3xl border border-blue-100 mt-8">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-12 h-12 bg-blue-100 text-[#006ce4] rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-percentage text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900">Commission Agreement</h3>
+                                    <p class="text-xs text-gray-500">Standard payout percentage for Bookingjaunt partners.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <label class="block text-[10px] font-bold text-blue-600 mb-2 uppercase tracking-widest">Payout Percentage (%)</label>
+                                <div class="flex items-center gap-6">
+                                    <input type="range" name="commission_rate" min="50" max="100" value="80" class="flex-1 h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-[#006ce4]" id="commission-slider">
+                                    <div class="w-20 py-2 bg-white border-2 border-blue-200 rounded-xl text-center">
+                                        <span id="commission-val" class="font-bold text-[#006ce4]">80</span><span class="text-[10px] font-bold text-blue-300 ml-0.5">%</span>
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-gray-400 italic mt-2">* This percentage represents the amount you receive from each booking.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 7: Property Photos & Videos -->
+                <div class="wizard-step" data-step="7">
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 07</span>
+                        <h2 class="text-2xl font-bold text-gray-900">Property Media</h2>
+                        <p class="text-sm text-gray-500 mt-1">Upload up to 5 photos and 2 videos of your property.</p>
+                    </div>
+
+                    <!-- Photo Upload Grid -->
+                    <div class="mb-10">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Photos (Max 5)</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-6" id="photo-grid">
+                            <?php for($i=0; $i<5; $i++): ?>
+                                <div class="relative aspect-video group">
+                                    <input type="file" accept="image/*" class="hidden property-photo-input" data-index="<?= $i ?>">
+                                    <input type="hidden" name="property_photos[]" class="property-photo-path">
+                                    <div class="w-full h-full border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50/50 hover:border-[#006ce4] hover:bg-blue-50/30 transition-all cursor-pointer property-photo-trigger">
+                                        <i class="fas fa-camera text-gray-300 text-2xl mb-2"></i>
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase">Add Photo</span>
+                                    </div>
+                                    <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center overflow-hidden">
+                                        <img src="" class="w-full h-full object-cover">
+                                        <button type="button" class="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-property-media hover:bg-red-600 transition-all">
+                                            <i class="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+
+                    <!-- Video Upload Grid -->
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Videos (Max 2)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="video-grid">
+                            <?php for($i=0; $i<2; $i++): ?>
+                                <div class="relative h-64 group">
+                                    <input type="file" accept="video/*" class="hidden property-video-input" data-index="<?= $i ?>">
+                                    <input type="hidden" name="property_videos[]" class="property-video-path">
+                                    <div class="w-full h-full border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50/50 hover:border-[#006ce4] hover:bg-blue-50/30 transition-all cursor-pointer property-video-trigger">
+                                        <i class="fas fa-video text-gray-300 text-4xl mb-3"></i>
+                                        <span class="text-xs font-bold text-gray-400 uppercase">Add Video Preview</span>
+                                    </div>
+                                    <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex flex-col items-center justify-center p-8">
+                                        <i class="fas fa-file-video text-6xl text-blue-500 mb-4"></i>
+                                        <span class="text-sm font-bold text-gray-600 video-filename">video.mp4</span>
+                                        <button type="button" class="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-property-media hover:bg-red-600 transition-all">
+                                            <i class="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 8: Policies & Rules -->
+                <div class="wizard-step" data-step="8">
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 08</span>
                         <h2 class="text-2xl font-bold text-gray-900">Policies & Rules</h2>
                         <p class="text-sm text-gray-500 mt-1">Set the guidelines for guests staying at your property.</p>
                     </div>
 
-                    <div class="space-y-8">
+                    <div class="space-y-10">
+                        <!-- Timing -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="bg-gray-50/50 p-6 rounded-2xl border">
-                                <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Check-in Time</label>
+                                <label class="block text-[10px] font-bold text-gray-400 mb-3 uppercase tracking-widest">Check-in Time</label>
                                 <div class="relative">
-                                    <input type="time" name="check_in_time" value="14:00" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                    <i class="fas fa-clock absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="time" name="check_in_time" value="14:00" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                    <i class="fas fa-clock absolute right-5 top-1/2 -translate-y-1/2 text-[#006ce4]"></i>
                                 </div>
                             </div>
                             <div class="bg-gray-50/50 p-6 rounded-2xl border">
-                                <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Check-out Time</label>
+                                <label class="block text-[10px] font-bold text-gray-400 mb-3 uppercase tracking-widest">Check-out Time</label>
                                 <div class="relative">
-                                    <input type="time" name="check_out_time" value="12:00" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                    <i class="fas fa-clock absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="time" name="check_out_time" value="12:00" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                    <i class="fas fa-clock absolute right-5 top-1/2 -translate-y-1/2 text-[#006ce4]"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
-                            <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Cancellation Policy</label>
-                            <textarea name="cancellation_policy" rows="3" placeholder="e.g. Free cancellation up to 24 hours before check-in. Non-refundable after that." class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+                        <!-- Cancellation Policy Section -->
+                        <div class="group/cancel relative bg-white p-8 rounded-[2.5rem] border-2 border-gray-100 transition-all has-[:checked]:bg-green-600 has-[:checked]:border-green-600 has-[:checked]:text-white shadow-xl shadow-gray-200/50 has-[:checked]:shadow-green-900/20">
+                            <div class="flex flex-col md:flex-row items-center gap-6 mb-8">
+                                <div class="w-16 h-16 bg-green-50 text-green-600 group-has-[:checked]/cancel:bg-white/20 group-has-[:checked]/cancel:text-white rounded-2xl flex items-center justify-center shrink-0 transition-all">
+                                    <i class="fas fa-undo-alt text-2xl"></i>
+                                </div>
+                                <div class="flex-1 text-center md:text-left">
+                                    <h3 class="text-xl font-bold group-has-[:checked]/cancel:text-white">Cancellation Flexibility</h3>
+                                    <p class="text-sm text-gray-500 group-has-[:checked]/cancel:text-green-100 transition-all">Highlighting flexibility increases your bookings by up to 25%.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="free_cancellation" value="1" class="sr-only peer">
+                                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-white/30"></div>
+                                    <span class="ml-3 text-sm font-bold group-has-[:checked]/cancel:text-white uppercase tracking-widest transition-all">Enable Free Cancellation</span>
+                                </label>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 group-has-[:checked]/cancel:text-white/70 mb-2 uppercase tracking-widest transition-all">Free Cancellation Deadline</label>
+                                    <select name="cancellation_time" class="w-full px-5 py-3 rounded-xl border bg-white text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                        <option value="24">24 Hours before arrival</option>
+                                        <option value="48">48 Hours before arrival</option>
+                                        <option value="72">72 Hours before arrival</option>
+                                        <option value="168">7 Days before arrival</option>
+                                        <option value="0">Non-refundable</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 group-has-[:checked]/cancel:text-white/70 mb-2 uppercase tracking-widest transition-all">Policy Details (Optional)</label>
+                                    <input type="text" name="cancellation_details" placeholder="e.g. Full refund if cancelled early" class="w-full px-5 py-3 rounded-xl border bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
-                            <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Property Rules</label>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <label class="flex items-center gap-3 p-3 bg-white rounded-xl border cursor-pointer hover:bg-gray-100 transition-all">
-                                    <input type="checkbox" name="smoking_allowed" class="w-4 h-4 text-[#006ce4] border-gray-300 rounded">
-                                    <span class="text-xs font-bold text-gray-600">Smoking Allowed</span>
-                                </label>
-                                <label class="flex items-center gap-3 p-3 bg-white rounded-xl border cursor-pointer hover:bg-gray-100 transition-all">
-                                    <input type="checkbox" name="pets_allowed" class="w-4 h-4 text-[#006ce4] border-gray-300 rounded">
-                                    <span class="text-xs font-bold text-gray-600">Pets Allowed</span>
-                                </label>
-                                <label class="flex items-center gap-3 p-3 bg-white rounded-xl border cursor-pointer hover:bg-gray-100 transition-all">
-                                    <input type="checkbox" name="events_allowed" class="w-4 h-4 text-[#006ce4] border-gray-300 rounded">
-                                    <span class="text-xs font-bold text-gray-600">Events Allowed</span>
-                                </label>
+                        <!-- Predefined Rules -->
+                        <div>
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Property Restrictions</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                <?php 
+                                $commonRules = [
+                                    ['name' => 'No Alcohol', 'id' => 'no_alcohol', 'icon' => 'fa-wine-glass-slash'],
+                                    ['name' => 'No Smoking', 'id' => 'no_smoking', 'icon' => 'fa-smoking-ban'],
+                                    ['name' => 'No Parties', 'id' => 'no_parties', 'icon' => 'fa-glass-cheers'],
+                                    ['name' => 'No Pets', 'id' => 'no_pets', 'icon' => 'fa-paw'],
+                                    ['name' => 'Quiet Hours', 'id' => 'quiet_hours', 'icon' => 'fa-volume-mute'],
+                                    ['name' => 'No Outside Food', 'id' => 'no_outside_food', 'icon' => 'fa-hamburger'],
+                                ];
+                                foreach($commonRules as $rule): ?>
+                                    <label class="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-gray-100 bg-white cursor-pointer hover:border-[#006ce4] transition-all group has-[:checked]:bg-[#006ce4] has-[:checked]:border-[#006ce4] has-[:checked]:text-white">
+                                        <input type="checkbox" name="rules[<?= $rule['id'] ?>]" value="1" class="hidden">
+                                        <i class="fas <?= $rule['icon'] ?> text-gray-300 group-hover:text-[#006ce4] group-has-[:checked]:text-white mb-3 text-xl"></i>
+                                        <span class="text-[9px] font-bold text-gray-500 group-has-[:checked]:text-white uppercase tracking-tighter text-center leading-tight"><?= $rule['name'] ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <!-- Custom Rules Builder -->
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Additional Rules</h3>
+                                <button type="button" id="add-custom-rule" class="text-[#006ce4] font-bold text-[10px] uppercase tracking-widest hover:underline">+ Add Custom Rule</button>
+                            </div>
+                            <div id="custom-rules-container" class="space-y-3">
+                                <!-- Dynamic rows here -->
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Step 7: Property Photos -->
-                <div class="wizard-step" data-step="7">
-                    <div class="mb-10 text-center py-20">
-                        <i class="fas fa-images text-6xl text-blue-200 mb-6"></i>
-                        <h2 class="text-3xl font-extrabold text-gray-900">Property Photos</h2>
-                        <p class="text-gray-500 mt-4">Add beautiful high-quality photos to attract more travelers.</p>
-                    </div>
-                </div>
-
-                <!-- Step 8: Final Review -->
-                <div class="wizard-step" data-step="8">
+                <!-- Step 9: Final Review -->
+                <div class="wizard-step" data-step="9">
                     <div class="mb-10 text-center">
-                        <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
-                            <i class="fas fa-check text-4xl"></i>
-                        </div>
-                        <h2 class="text-3xl font-extrabold text-gray-900">Ready to go live!</h2>
-                        <p class="text-gray-500 mt-4 max-w-md mx-auto">Please review your information. Once submitted, our team will verify your property within 24 hours.</p>
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 09</span>
+                        <h2 class="text-3xl font-extrabold text-gray-900">Your Property Preview</h2>
+                        <p class="text-gray-500 mt-2">This is how your property will appear to guests on Bookingjaunt.</p>
                     </div>
-                    <button type="submit" class="w-full bg-[#10b981] text-white py-5 rounded-[2rem] font-bold text-xl shadow-xl shadow-green-900/10 hover:bg-[#059669] transition-all transform hover:-translate-y-1">Submit Property for Review</button>
+
+                    <div class="max-w-4xl mx-auto bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow mb-12 flex flex-col md:flex-row min-h-[240px]">
+                        <!-- Image Section -->
+                        <div class="w-full md:w-80 relative overflow-hidden group">
+                            <img id="preview-cover" src="assets/hero_bg.png" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                            <div id="preview-promoted-badge" class="hidden absolute top-4 left-4 flex gap-2">
+                                <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg">Promoted</span>
+                            </div>
+                            <button type="button" onclick="currentStep=2;updateDisplay()" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-sm">
+                                <i class="fas fa-camera mr-2"></i> Change Cover Image
+                            </button>
+                        </div>
+
+                        <!-- Content Section -->
+                        <div class="flex-1 p-5 flex flex-col">
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="flex-1">
+                                    <h3 id="preview-name" class="text-[20px] font-bold text-[#006ce4] leading-tight hover:underline cursor-pointer">Property Name</h3>
+                                    <div class="flex items-center gap-1 text-[#febb02] mt-1 text-xs" id="preview-stars">
+                                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-xs text-[#006ce4]">
+                                        <span id="preview-location" class="underline decoration-dotted font-medium">Location</span>
+                                        <span id="preview-map-bullet" class="text-gray-300 hidden">•</span>
+                                        <a href="#" id="preview-map-link" target="_blank" class="font-medium hover:text-[#003580] hidden">Show on map</a>
+                                        <span id="preview-town-bullet" class="text-gray-300 hidden">•</span>
+                                        <span id="preview-town" class="text-gray-600 hidden"></span>
+                                    </div>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <div class="flex items-center justify-end gap-2 mb-0.5">
+                                        <div class="text-right">
+                                            <div class="text-[14px] font-bold text-[#1a1a1a] leading-none">New</div>
+                                            <div class="text-[11px] text-gray-500 mt-1">First review pending</div>
+                                        </div>
+                                        <div class="bg-[#003580] text-white w-8 h-8 rounded-tr-lg rounded-bl-lg rounded-tl-sm rounded-br-sm flex items-center justify-center font-bold text-[15px]">
+                                            -
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 flex-1">
+                                <div id="preview-cancellation" class="hidden">
+                                    <span class="bg-[#e6f4e7] text-[#008009] text-[11px] font-bold px-2 py-0.5 rounded">Free cancellation</span>
+                                </div>
+                                <div class="mt-3">
+                                    <h4 id="preview-room-type" class="text-[13px] font-bold text-gray-900">Standard Room</h4>
+                                    <p id="preview-room-desc" class="text-[12px] text-gray-600 mt-0.5">Contact property for more info</p>
+                                </div>
+                                <div class="mt-2 flex items-center gap-1.5 text-[#008009] font-bold text-[12px]">
+                                    <i class="fas fa-check"></i>
+                                    <span>No prepayment needed – pay at the property</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex flex-col items-end">
+                                <div class="text-[12px] text-gray-500">Starting from</div>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-[22px] font-bold text-[#1a1a1a]" id="preview-price">LKR 0</span>
+                                </div>
+                                <div class="text-[11px] text-gray-500">+ taxes and charges</div>
+                                <button type="button" class="mt-3 bg-[#006ce4] text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-[#0056b3] transition-all">
+                                    See availability
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boost Your Property Section -->
+                    <div class="bg-gradient-to-br from-[#003580] to-[#006ce4] p-10 rounded-[3rem] text-white mb-12 shadow-2xl">
+                        <div class="flex flex-col md:flex-row items-center gap-8 mb-10">
+                            <div class="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md">
+                                <i class="fas fa-rocket text-3xl text-yellow-400 animate-pulse"></i>
+                            </div>
+                            <div class="flex-1 text-center md:text-left">
+                                <h3 class="text-2xl font-bold mb-2">Boost Your Property Visibility</h3>
+                                <p class="text-blue-100 text-sm opacity-80">Get up to 10x more bookings by appearing at the top of search results with the "Promoted" badge.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <label class="group relative bg-white/10 hover:bg-white/20 p-6 rounded-3xl border border-white/20 cursor-pointer transition-all has-[:checked]:bg-white has-[:checked]:border-white">
+                                <input type="radio" name="boost_plan" value="standard" class="hidden boost-radio">
+                                <div class="text-xs font-bold text-blue-200 group-has-[:checked]:text-[#006ce4] uppercase tracking-widest mb-2">Standard Boost</div>
+                                <div class="text-2xl font-bold mb-4 group-has-[:checked]:text-gray-900">7 Days</div>
+                                <div class="text-xl font-bold group-has-[:checked]:text-[#006ce4]">LKR 2,500</div>
+                                <ul class="mt-4 space-y-2 opacity-60 group-has-[:checked]:opacity-100 group-has-[:checked]:text-gray-600">
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> Promoted Badge</li>
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> Top 10 Results</li>
+                                </ul>
+                            </label>
+
+                            <label class="group relative bg-white/10 hover:bg-white/20 p-6 rounded-3xl border border-white/20 cursor-pointer transition-all has-[:checked]:bg-white has-[:checked]:border-white scale-105 shadow-2xl">
+                                <input type="radio" name="boost_plan" value="premium" class="hidden boost-radio">
+                                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-[#003580] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">Most Popular</div>
+                                <div class="text-xs font-bold text-blue-200 group-has-[:checked]:text-[#006ce4] uppercase tracking-widest mb-2">Premium Boost</div>
+                                <div class="text-2xl font-bold mb-4 group-has-[:checked]:text-gray-900">14 Days</div>
+                                <div class="text-xl font-bold group-has-[:checked]:text-[#006ce4]">LKR 4,500</div>
+                                <ul class="mt-4 space-y-2 opacity-60 group-has-[:checked]:opacity-100 group-has-[:checked]:text-gray-600">
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> Promoted Badge</li>
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> Top 5 Results</li>
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> Email Marketing</li>
+                                </ul>
+                            </label>
+
+                            <label class="group relative bg-white/10 hover:bg-white/20 p-6 rounded-3xl border border-white/20 cursor-pointer transition-all has-[:checked]:bg-white has-[:checked]:border-white">
+                                <input type="radio" name="boost_plan" value="gold" class="hidden boost-radio">
+                                <div class="text-xs font-bold text-blue-200 group-has-[:checked]:text-[#006ce4] uppercase tracking-widest mb-2">Ultimate Boost</div>
+                                <div class="text-2xl font-bold mb-4 group-has-[:checked]:text-gray-900">30 Days</div>
+                                <div class="text-xl font-bold group-has-[:checked]:text-[#006ce4]">LKR 8,500</div>
+                                <ul class="mt-4 space-y-2 opacity-60 group-has-[:checked]:opacity-100 group-has-[:checked]:text-gray-600">
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> Promoted Badge</li>
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> #1 Search Position</li>
+                                    <li class="text-[10px]"><i class="fas fa-check mr-1 text-green-400"></i> Social Media Feature</li>
+                                </ul>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50/50 p-8 rounded-3xl border border-blue-100 mb-12">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-bullhorn text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Property Appetites</h3>
+                                <p class="text-xs text-gray-500">These will be featured as quick highlights in your search listing.</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="appetite-container">
+                            <!-- Popular amenities chosen in Step 4 will show here -->
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-4">
+                        <button type="submit" class="w-full bg-[#10b981] text-white py-5 rounded-[2rem] font-bold text-xl shadow-xl shadow-green-900/10 hover:bg-[#059669] transition-all transform hover:-translate-y-1">Finish & Submit for Review</button>
+                        <p class="text-[10px] text-center text-gray-400 uppercase tracking-widest font-bold">By clicking finish, you agree to our terms of service and commission agreement.</p>
+                    </div>
                 </div>
 
                 <!-- Footer Navigation -->
@@ -600,7 +897,7 @@ $type = $_GET['type'] ?? 'hotel';
 
     <script>
         let currentStep = 1;
-        const totalSteps = 8;
+        const totalSteps = 9;
 
         function updateDisplay() {
             // Update Wizard Steps
@@ -628,26 +925,460 @@ $type = $_GET['type'] ?? 'hotel';
             localStorage.setItem('property_wizard_step', currentStep);
         }
 
+        function updatePreview() {
+            const data = JSON.parse(localStorage.getItem('property_wizard_data') || '{}');
+            
+            // Name & Location
+            document.getElementById('preview-name').innerText = data.property_name || 'Your Property Name';
+            const city = data.city || '';
+            const district = data.district || '';
+            document.getElementById('preview-location').innerText = `${city}${city && district ? ', ' : ''}${district}` || 'Location';
+            
+            // Proximity & Town
+            const townEl = document.getElementById('preview-town');
+            const townBullet = document.getElementById('preview-town-bullet');
+            if (data.closest_main_town) {
+                townEl.innerText = data.closest_main_town;
+                townEl.classList.remove('hidden');
+                townBullet.classList.remove('hidden');
+            } else {
+                townEl.classList.add('hidden');
+                townBullet.classList.add('hidden');
+            }
+            
+            // Map Link
+            const mapLink = document.getElementById('preview-map-link');
+            const mapBullet = document.getElementById('preview-map-bullet');
+            if (data.google_map_location) {
+                mapLink.href = data.google_map_location;
+                mapLink.classList.remove('hidden');
+                mapBullet.classList.remove('hidden');
+            } else {
+                mapLink.classList.add('hidden');
+                mapBullet.classList.add('hidden');
+            }
+
+            // Cover Image
+            const coverImg = document.getElementById('preview-cover');
+            if (data.cover_image) {
+                coverImg.src = data.cover_image;
+            } else {
+                coverImg.src = 'assets/hero_bg.png'; // Fallback
+            }
+
+            // Cancellation
+            const cancelBadge = document.getElementById('preview-cancellation');
+            if (data.free_cancellation === '1') {
+                cancelBadge.classList.remove('hidden');
+            } else {
+                cancelBadge.classList.add('hidden');
+            }
+
+            // Promoted Badge
+            const boostRadios = document.querySelectorAll('.boost-radio');
+            boostRadios.forEach(radio => {
+                radio.onchange = () => {
+                    if (radio.checked) promotedBadge.classList.remove('hidden');
+                    saveFormData();
+                };
+            });
+            // Initial check
+            const checkedBoost = document.querySelector('.boost-radio:checked');
+            if (checkedBoost) promotedBadge.classList.remove('hidden');
+            else promotedBadge.classList.add('hidden');
+
+            // Prices
+            let lowestUSD = Infinity;
+            let lowestLKR = Infinity;
+            let firstRoomName = 'Standard Room';
+            let firstRoomDesc = 'Contact property for more info';
+
+            // Extract rooms from data
+            const rooms = {};
+            Object.keys(data).forEach(key => {
+                if (key.startsWith('rooms[')) {
+                    const match = key.match(/rooms\[(\d+)\]\[(\w+)\]/);
+                    if (match) {
+                        const idx = match[1];
+                        const field = match[2];
+                        if (!rooms[idx]) rooms[idx] = {};
+                        rooms[idx][field] = data[key];
+                    }
+                }
+            });
+
+            const indices = Object.keys(rooms).sort((a,b) => a-b);
+            if (indices.length > 0) {
+                const firstRoom = rooms[indices[0]];
+                firstRoomName = firstRoom.name || 'Standard Room';
+                firstRoomDesc = `${firstRoom.adults || 2} Adults, ${firstRoom.children || 0} Children`;
+                indices.forEach(idx => {
+                    const lkr = parseFloat(rooms[idx].price_lkr);
+                    const usd = parseFloat(rooms[idx].price_usd);
+                    if (lkr && lkr < lowestLKR) lowestLKR = lkr;
+                    if (usd && usd < lowestUSD) lowestUSD = usd;
+                });
+            }
+
+            document.getElementById('preview-room-type').innerText = firstRoomName;
+            document.getElementById('preview-room-desc').innerText = firstRoomDesc;
+            
+            const priceEl = document.getElementById('preview-price');
+            if (lowestLKR !== Infinity) {
+                priceEl.innerText = `LKR ${lowestLKR.toLocaleString()}`;
+            } else if (lowestUSD !== Infinity) {
+                priceEl.innerText = `USD ${lowestUSD.toLocaleString()}`;
+            } else {
+                priceEl.innerText = 'Contact for Price';
+            }
+
+            // Appetites (Popular Amenities)
+            const appetiteContainer = document.getElementById('appetite-container');
+            appetiteContainer.innerHTML = '';
+            const popularAmenities = document.querySelectorAll('input[name="popular_amenities[]"]:checked');
+            popularAmenities.forEach((amenity, i) => {
+                if (i < 4) { // Show up to 4
+                    const name = amenity.parentElement.querySelector('span').innerText;
+                    const icon = amenity.parentElement.querySelector('i').className;
+                    appetiteContainer.innerHTML += `
+                        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-blue-100">
+                            <i class="${icon} text-blue-500 text-sm"></i>
+                            <span class="text-[10px] font-bold text-gray-700 uppercase tracking-tight">${name}</span>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function saveFormData() {
+            const form = document.getElementById('property-form');
+            const formData = new FormData(form);
+            const data = {};
+            
+            formData.forEach((value, key) => {
+                if (key.endsWith('[]')) {
+                    if (!data[key]) data[key] = [];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            // Handle checkbox states explicitly
+            form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                if (cb.name) {
+                    data[cb.name] = cb.checked ? '1' : '0';
+                }
+            });
+
+            localStorage.setItem('property_wizard_data', JSON.stringify(data));
+        }
+
         function changeStep(delta) {
+            if (delta > 0) {
+                const currentStepEl = document.querySelector(`.wizard-step[data-step="${currentStep}"]`);
+                if (currentStepEl) {
+                    const inputs = currentStepEl.querySelectorAll('input[required], select[required], textarea[required]');
+                    let isValid = true;
+                    inputs.forEach(input => {
+                        if (input.style.display !== 'none' && input.offsetParent !== null) { // Only validate visible
+                            if (!input.value.trim()) {
+                                isValid = false;
+                                input.classList.add('border-red-500', 'bg-red-50');
+                            } else {
+                                input.classList.remove('border-red-500', 'bg-red-50');
+                            }
+                        }
+                    });
+                    if (!isValid) {
+                        const firstError = currentStepEl.querySelector('.border-red-500');
+                        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                }
+            }
+
             if (currentStep + delta > 0 && currentStep + delta <= totalSteps) {
                 currentStep += delta;
+                if (currentStep === 9) updatePreview();
                 updateDisplay();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
-        // Persistence Logic
-        function saveFormData() {
-            const formData = new FormData(document.getElementById('property-form'));
-            const data = {};
-            formData.forEach((value, key) => { data[key] = value; });
-            localStorage.setItem('property_wizard_data', JSON.stringify(data));
+        // Room Inventory Logic
+        const roomContainer = document.getElementById('room-inventory-container');
+        const addRoomBtn = document.getElementById('add-room-btn');
+        let roomIndex = 0;
+
+        function addRoomCard(data = {}) {
+            const index = roomIndex++;
+            const isHall = data.is_hall == 1;
+            const propertyType = document.querySelector('input[name="business_type"]:checked')?.value || 'hotel';
+            
+            // Labels based on property type
+            let typeLabel = "Room";
+            let namePlaceholder = "e.g. Deluxe Double Room";
+            if (propertyType === 'reception_hall' || propertyType === 'rest_hall') {
+                typeLabel = "Hall / Space";
+                namePlaceholder = "e.g. Grand Ballroom or Main Hall";
+            }
+
+            const card = document.createElement('div');
+            card.className = 'room-card bg-gray-50/50 p-8 rounded-3xl border border-gray-100 relative group transition-all hover:bg-white hover:shadow-xl hover:shadow-blue-900/5';
+            card.dataset.index = index;
+            
+            card.innerHTML = `
+                <button type="button" class="remove-room absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <!-- Room Image -->
+                    <div class="lg:col-span-1">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">${typeLabel} Photo</label>
+                        <div class="upload-container relative h-40 group/img" id="room-upload-${index}">
+                            <input type="file" accept="image/*" class="hidden room-file-input" data-index="${index}">
+                            <input type="hidden" name="rooms[${index}][image]" class="room-image-path" value="${data.room_image || ''}">
+                            <div class="w-full h-full border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-white group-hover/img:border-[#006ce4] transition-all cursor-pointer room-upload-trigger">
+                                <i class="fas fa-camera text-gray-300 text-2xl mb-2"></i>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase">Upload</span>
+                            </div>
+                            <div class="preview-container ${data.room_image ? '' : 'hidden'} absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
+                                <img src="${data.room_image || ''}" class="max-w-full max-h-full rounded-xl object-cover">
+                                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-room-image">
+                                    <i class="fas fa-times text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Room Details -->
+                    <div class="lg:col-span-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">${typeLabel} Type Name</label>
+                                <input type="text" name="rooms[${index}][name]" required value="${data.room_name || ''}" placeholder="${namePlaceholder}" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest text-blue-600">Total Number of ${typeLabel}s</label>
+                                <input type="number" name="rooms[${index}][count]" required value="${data.total_rooms || 1}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <input type="hidden" name="rooms[${index}][is_hall]" value="${data.is_hall || 0}">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Adult Capacity</label>
+                                <div class="relative">
+                                    <input type="number" name="rooms[${index}][adults]" required value="${data.max_adults || 2}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <i class="fas fa-user absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Child Capacity</label>
+                                <div class="relative">
+                                    <input type="number" name="rooms[${index}][children]" required value="${data.max_children || 0}" min="0" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <i class="fas fa-child absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing -->
+                        <div class="mt-8 pt-8 border-t border-gray-100">
+                            <h4 class="text-[10px] font-bold text-blue-600 mb-4 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fas fa-tag"></i> Nightly Pricing
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Price per night (LKR)</label>
+                                    <div class="relative">
+                                        <input type="number" name="rooms[${index}][price_lkr]" value="${data.price_lkr || ''}" placeholder="0.00" class="w-full pl-16 pr-5 py-3 rounded-xl border bg-blue-50/30 text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">LKR</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Price per night (USD)</label>
+                                    <div class="relative">
+                                        <input type="number" name="rooms[${index}][price_usd]" value="${data.price_usd || ''}" placeholder="0.00" class="w-full pl-16 pr-5 py-3 rounded-xl border bg-blue-50/30 text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">USD</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            roomContainer.appendChild(card);
+            
+            // Bind Events for this card
+            const uploadTrigger = card.querySelector('.room-upload-trigger');
+            const fileInput = card.querySelector('.room-file-input');
+            const removeBtn = card.querySelector('.remove-room');
+            const removeImgBtn = card.querySelector('.remove-room-image');
+
+            uploadTrigger.onclick = () => fileInput.click();
+
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('action', 'upload');
+
+                uploadTrigger.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500"></i>';
+
+                try {
+                    const response = await fetch('upload_handler.php', { method: 'POST', body: formData });
+                    const result = await response.json();
+                    if (result.success) {
+                        card.querySelector('.preview-container img').src = result.filepath;
+                        card.querySelector('.preview-container').classList.remove('hidden');
+                        card.querySelector('.room-image-path').value = result.filepath;
+                        saveFormData();
+                    }
+                } catch (error) { console.error(error); }
+                finally {
+                    uploadTrigger.innerHTML = '<i class="fas fa-camera text-gray-300 text-2xl mb-2"></i><span class="text-[10px] font-bold text-gray-400 uppercase">Upload</span>';
+                }
+            };
+
+            removeBtn.onclick = () => {
+                card.remove();
+                saveFormData();
+            };
+
+            removeImgBtn.onclick = () => {
+                card.querySelector('.preview-container').classList.add('hidden');
+                card.querySelector('.room-image-path').value = '';
+                saveFormData();
+            };
         }
+
+        addRoomBtn.addEventListener('click', () => addRoomCard());
+
+        // Commission Slider Logic
+        const commissionSlider = document.getElementById('commission-slider');
+        const commissionVal = document.getElementById('commission-val');
+        if (commissionSlider) {
+            commissionSlider.oninput = function() {
+                commissionVal.innerText = this.value;
+                saveFormData();
+            }
+        }
+
+        // Property Media Logic
+        document.querySelectorAll('.property-photo-trigger').forEach(trigger => {
+            const input = trigger.parentElement.querySelector('.property-photo-input');
+            trigger.onclick = () => input.click();
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('action', 'upload');
+                trigger.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500"></i>';
+                try {
+                    const response = await fetch('upload_handler.php', { method: 'POST', body: formData });
+                    const result = await response.json();
+                    if (result.success) {
+                        const preview = trigger.parentElement.querySelector('.preview-container');
+                        preview.querySelector('img').src = result.filepath;
+                        preview.classList.remove('hidden');
+                        trigger.parentElement.querySelector('.property-photo-path').value = result.filepath;
+                        saveFormData();
+                    }
+                } catch (error) { console.error(error); }
+                finally {
+                    trigger.innerHTML = '<i class="fas fa-camera text-gray-300 text-xl mb-1"></i><span class="text-[8px] font-bold text-gray-400 uppercase">Add Photo</span>';
+                }
+            };
+        });
+
+        document.querySelectorAll('.property-video-trigger').forEach(trigger => {
+            const input = trigger.parentElement.querySelector('.property-video-input');
+            trigger.onclick = () => input.click();
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('action', 'upload');
+                trigger.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500"></i>';
+                try {
+                    const response = await fetch('upload_handler.php', { method: 'POST', body: formData });
+                    const result = await response.json();
+                    if (result.success) {
+                        const preview = trigger.parentElement.querySelector('.preview-container');
+                        preview.querySelector('.video-filename').innerText = file.name;
+                        preview.classList.remove('hidden');
+                        trigger.parentElement.querySelector('.property-video-path').value = result.filepath;
+                        saveFormData();
+                    }
+                } catch (error) { console.error(error); }
+                finally {
+                    trigger.innerHTML = '<i class="fas fa-video text-gray-300 text-2xl mb-2"></i><span class="text-[10px] font-bold text-gray-400 uppercase">Add Video</span>';
+                }
+            };
+        });
+
+        document.querySelectorAll('.remove-property-media').forEach(btn => {
+            btn.onclick = async () => {
+                const container = btn.parentElement;
+                const pathInput = container.parentElement.querySelector('input[type="hidden"]');
+                const filepath = pathInput.value;
+
+                if (filepath) {
+                    const formData = new FormData();
+                    formData.append('filepath', filepath);
+                    formData.append('action', 'delete');
+                    try {
+                        await fetch('upload_handler.php', { method: 'POST', body: formData });
+                    } catch (e) { console.error(e); }
+                }
+
+                container.classList.add('hidden');
+                pathInput.value = '';
+                saveFormData();
+            };
+        });
+
+        // Custom Rules Logic
+        const ruleContainer = document.getElementById('custom-rules-container');
+        const addRuleBtn = document.getElementById('add-custom-rule');
+
+        function addRuleRow(value = '') {
+            const row = document.createElement('div');
+            row.className = 'custom-rule-row flex gap-3';
+            row.innerHTML = `
+                <div class="relative flex-1">
+                    <i class="fas fa-gavel absolute left-4 top-1/2 -translate-y-1/2 text-blue-300"></i>
+                    <input type="text" name="custom_rules[]" value="${value}" placeholder="e.g. No shoes inside the hall" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                </div>
+                <button type="button" class="remove-rule-row w-12 h-12 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            ruleContainer.appendChild(row);
+            
+            row.querySelector('.remove-rule-row').onclick = () => {
+                row.remove();
+                saveFormData();
+            };
+        }
+
+        addRuleBtn.addEventListener('click', () => {
+            addRuleRow();
+            saveFormData();
+        });
 
         function loadFormData() {
             const savedData = localStorage.getItem('property_wizard_data');
             if (savedData) {
                 const data = JSON.parse(savedData);
+                // Fill standard fields
                 for (const key in data) {
                     const el = document.getElementsByName(key)[0];
                     if (el) {
@@ -655,14 +1386,66 @@ $type = $_GET['type'] ?? 'hotel';
                             const radio = document.querySelector(`input[name="${key}"][value="${data[key]}"]`);
                             if (radio) radio.checked = true;
                         } else if (el.type === 'checkbox') {
-                            el.checked = data[key] === 'on';
+                            el.checked = data[key] === 'on' || data[key] === '1';
                         } else {
                             el.value = data[key];
                         }
                     }
                 }
 
-                // Reconstruct Room Cards
+                // Handle Rules Checkboxes (Special case for nested names)
+                Object.keys(data).forEach(key => {
+                    if (key.startsWith('rules[')) {
+                        const cb = document.getElementsByName(key)[0];
+                        if (cb) cb.checked = data[key] === '1';
+                    }
+                });
+
+                // Handle Custom Rules
+                const customRules = data['custom_rules[]'];
+                if (customRules) {
+                    ruleContainer.innerHTML = '';
+                    const rulesArray = Array.isArray(customRules) ? customRules : [customRules];
+                    rulesArray.forEach(val => { if(val) addRuleRow(val); });
+                }
+
+                // Handle Property Photos (Array)
+                const photoPaths = data['property_photos[]'];
+                if (photoPaths) {
+                    const inputs = document.querySelectorAll('.property-photo-path');
+                    const photoArray = Array.isArray(photoPaths) ? photoPaths : [photoPaths];
+                    photoArray.forEach((path, i) => {
+                        if (path && inputs[i]) {
+                            inputs[i].value = path;
+                            const container = inputs[i].parentElement;
+                            const preview = container.querySelector('.preview-container');
+                            preview.querySelector('img').src = path;
+                            preview.classList.remove('hidden');
+                        }
+                    });
+                }
+
+                // Handle Property Videos (Array)
+                const videoPaths = data['property_videos[]'];
+                if (videoPaths) {
+                    const inputs = document.querySelectorAll('.property-video-path');
+                    const videoArray = Array.isArray(videoPaths) ? videoPaths : [videoPaths];
+                    videoArray.forEach((path, i) => {
+                        if (path && inputs[i]) {
+                            inputs[i].value = path;
+                            const container = inputs[i].parentElement;
+                            const preview = container.querySelector('.preview-container');
+                            preview.querySelector('.video-filename').innerText = path.split('/').pop();
+                            preview.classList.remove('hidden');
+                        }
+                    });
+                }
+
+                if (data.commission_rate) {
+                    commissionVal.innerText = data.commission_rate;
+                }
+
+                // Reconstruct Room Cards (existing logic)
                 const roomsData = {};
                 Object.keys(data).forEach(key => {
                     if (key.startsWith('rooms[')) {
@@ -686,7 +1469,9 @@ $type = $_GET['type'] ?? 'hotel';
                             max_adults: roomsData[idx].adults,
                             max_children: roomsData[idx].children,
                             room_image: roomsData[idx].image,
-                            is_hall: roomsData[idx].is_hall
+                            is_hall: roomsData[idx].is_hall,
+                            price_lkr: roomsData[idx].price_lkr,
+                            price_usd: roomsData[idx].price_usd
                         });
                     });
                 }
@@ -717,7 +1502,12 @@ $type = $_GET['type'] ?? 'hotel';
         }
 
         document.getElementById('property-form').addEventListener('input', saveFormData);
-        document.getElementById('property-form').addEventListener('change', saveFormData);
+        document.getElementById('property-form').addEventListener('change', (e) => {
+            saveFormData();
+            if (e.target.name === 'amenities[]' || e.target.name === 'popular_amenities[]') {
+                if (currentStep === 9) updatePreview();
+            }
+        });
 
         document.getElementById('property-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -758,41 +1548,44 @@ $type = $_GET['type'] ?? 'hotel';
 
         function generateStaffForms(count) {
             staffFormsContainer.innerHTML = '';
-            staffFormsContainer.classList.add('grid', 'grid-cols-1', 'xl:grid-cols-2', 'gap-8');
-            for (let i = 1; i <= count; i++) {
-                const staffForm = `
-                    <div class="p-5 border rounded-2xl bg-gray-50/30 space-y-4 relative">
-                        <div class="absolute -top-3 left-6 bg-white px-3 py-1 border rounded-lg text-[10px] font-bold text-[#006ce4] uppercase tracking-wider shadow-sm">
-                            Staff Member ${i}
+            if (count > 0) {
+                staffFormsContainer.classList.add('grid', 'grid-cols-1', 'xl:grid-cols-2', 'gap-8');
+                for (let i = 1; i <= count; i++) {
+                    const staffForm = `
+                        <div class="p-5 border rounded-2xl bg-gray-50/30 space-y-4 relative">
+                            <div class="absolute -top-3 left-6 bg-white px-3 py-1 border rounded-lg text-[10px] font-bold text-[#006ce4] uppercase tracking-wider shadow-sm">
+                                Staff Member ${i}
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">First Name</label>
+                                    <input type="text" name="staff_${i}_first_name" required placeholder="Enter first name" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">Last Name</label>
+                                    <input type="text" name="staff_${i}_last_name" required placeholder="Enter last name" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">Contact Number</label>
+                                    <input type="text" name="staff_${i}_phone" required placeholder="Phone number" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">NIC Number</label>
+                                    <input type="text" name="staff_${i}_nic" required placeholder="National ID" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">First Name</label>
-                                <input type="text" name="staff_${i}_first_name" placeholder="Enter first name" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">Last Name</label>
-                                <input type="text" name="staff_${i}_last_name" placeholder="Enter last name" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">Contact Number</label>
-                                <input type="text" name="staff_${i}_phone" placeholder="Phone number" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">NIC Number</label>
-                                <input type="text" name="staff_${i}_nic" placeholder="National ID" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                            </div>
-                        </div>
-                    </div>
-                `;
-                staffFormsContainer.insertAdjacentHTML('beforeend', staffForm);
+                    `;
+                    staffFormsContainer.insertAdjacentHTML('beforeend', staffForm);
+                }
             }
         }
 
         staffCountInput.addEventListener('input', (e) => {
             let count = parseInt(e.target.value);
+            if (isNaN(count)) count = 0;
             if (count > 20) { count = 20; e.target.value = 20; }
             if (count < 0) { count = 0; e.target.value = 0; }
             generateStaffForms(count);
@@ -903,141 +1696,6 @@ $type = $_GET['type'] ?? 'hotel';
             preview.classList.remove('hidden');
         }
 
-        // Room Inventory Logic
-        const roomContainer = document.getElementById('room-inventory-container');
-        const addRoomBtn = document.getElementById('add-room-btn');
-        let roomIndex = 0;
-
-        function addRoomCard(data = {}) {
-            const index = roomIndex++;
-            const isHall = data.is_hall == 1;
-            const propertyType = document.querySelector('input[name="business_type"]:checked')?.value || 'hotel';
-            
-            // Labels based on property type
-            let typeLabel = "Room";
-            let namePlaceholder = "e.g. Deluxe Double Room";
-            if (propertyType === 'reception_hall' || propertyType === 'rest_hall') {
-                typeLabel = "Hall / Space";
-                namePlaceholder = "e.g. Grand Ballroom or Main Hall";
-            }
-
-            const card = document.createElement('div');
-            card.className = 'room-card bg-gray-50/50 p-8 rounded-3xl border border-gray-100 relative group transition-all hover:bg-white hover:shadow-xl hover:shadow-blue-900/5';
-            card.dataset.index = index;
-            
-            card.innerHTML = `
-                <button type="button" class="remove-room absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600">
-                    <i class="fas fa-times text-xs"></i>
-                </button>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    <!-- Room Image -->
-                    <div class="lg:col-span-1">
-                        <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">${typeLabel} Photo</label>
-                        <div class="upload-container relative h-40 group/img" id="room-upload-${index}">
-                            <input type="file" accept="image/*" class="hidden room-file-input" data-index="${index}">
-                            <input type="hidden" name="rooms[${index}][image]" class="room-image-path" value="${data.room_image || ''}">
-                            <div class="w-full h-full border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-white group-hover/img:border-[#006ce4] transition-all cursor-pointer room-upload-trigger">
-                                <i class="fas fa-camera text-gray-300 text-2xl mb-2"></i>
-                                <span class="text-[10px] font-bold text-gray-400 uppercase">Upload</span>
-                            </div>
-                            <div class="preview-container ${data.room_image ? '' : 'hidden'} absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
-                                <img src="${data.room_image || ''}" class="max-w-full max-h-full rounded-xl object-cover">
-                                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-room-image">
-                                    <i class="fas fa-times text-[10px]"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Room Details -->
-                    <div class="lg:col-span-3">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div class="md:col-span-2">
-                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">${typeLabel} Type Name</label>
-                                <input type="text" name="rooms[${index}][name]" value="${data.room_name || ''}" placeholder="${namePlaceholder}" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest text-blue-600">Total Number of ${typeLabel}s</label>
-                                <input type="number" name="rooms[${index}][count]" value="${data.total_rooms || 1}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                <input type="hidden" name="rooms[${index}][is_hall]" value="${data.is_hall || 0}">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Adult Capacity</label>
-                                <div class="relative">
-                                    <input type="number" name="rooms[${index}][adults]" value="${data.max_adults || 2}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                    <i class="fas fa-user absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Child Capacity</label>
-                                <div class="relative">
-                                    <input type="number" name="rooms[${index}][children]" value="${data.max_children || 0}" min="0" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
-                                    <i class="fas fa-child absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            roomContainer.appendChild(card);
-            
-            // Bind Events for this card
-            const uploadTrigger = card.querySelector('.room-upload-trigger');
-            const fileInput = card.querySelector('.room-file-input');
-            const removeBtn = card.querySelector('.remove-room');
-            const removeImgBtn = card.querySelector('.remove-room-image');
-
-            uploadTrigger.onclick = () => fileInput.click();
-
-            fileInput.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('action', 'upload');
-
-                uploadTrigger.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500"></i>';
-
-                try {
-                    const response = await fetch('upload_handler.php', { method: 'POST', body: formData });
-                    const result = await response.json();
-                    if (result.success) {
-                        card.querySelector('.preview-container img').src = result.filepath;
-                        card.querySelector('.preview-container').classList.remove('hidden');
-                        card.querySelector('.room-image-path').value = result.filepath;
-                        saveFormData();
-                    }
-                } catch (error) { console.error(error); }
-                finally {
-                    uploadTrigger.innerHTML = '<i class="fas fa-camera text-gray-300 text-2xl mb-2"></i><span class="text-[10px] font-bold text-gray-400 uppercase">Upload</span>';
-                }
-            };
-
-            removeBtn.onclick = () => {
-                card.remove();
-                saveFormData();
-            };
-
-            removeImgBtn.onclick = () => {
-                card.querySelector('.preview-container').classList.add('hidden');
-                card.querySelector('.room-image-path').value = '';
-                saveFormData();
-            };
-        }
-
-        addRoomBtn.addEventListener('click', () => addRoomCard());
-
-        // Initialize with one room if empty
-        if (roomContainer.children.length === 0) {
-            addRoomCard();
-        }
-
         function hidePreview(containerId) {
             const container = document.getElementById(containerId);
             const preview = container.querySelector('.preview-container');
@@ -1061,6 +1719,7 @@ $type = $_GET['type'] ?? 'hotel';
                 </button>
             `;
             specialContainer.appendChild(row);
+            saveFormData();
             
             // Re-bind removal events
             bindRemovalEvents();
