@@ -313,12 +313,12 @@ $type = $_GET['type'] ?? 'hotel';
                                     <div class="upload-container relative group" id="cover-upload">
                                         <input type="file" accept="image/*" class="hidden file-input" data-type="cover">
                                         <input type="hidden" name="cover_image">
-                                        <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
+                                        <div class="w-full h-44 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
                                             <i class="fas fa-image text-gray-400 text-2xl mb-1"></i>
                                             <span class="text-[10px] font-bold text-gray-400 uppercase">Upload Property Cover Photo</span>
                                         </div>
                                         <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-1">
-                                            <img src="" class="max-w-full max-h-full rounded-xl object-cover w-full h-full">
+                                            <img src="" class="max-w-full max-h-full rounded-xl object-contain w-full h-full">
                                             <button type="button" class="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-image">
                                                 <i class="fas fa-times text-xs"></i>
                                             </button>
@@ -457,6 +457,45 @@ $type = $_GET['type'] ?? 'hotel';
                             <button type="button" id="add-special-amenity" class="mt-4 flex items-center gap-2 text-xs font-bold text-[#006ce4] hover:text-[#003580] transition-all px-4 py-2 rounded-lg hover:bg-blue-50">
                                 <i class="fas fa-plus-circle"></i> ADD ANOTHER SPECIAL AMENITY
                             </button>
+                        </div>
+                        <!-- Popular Appetites Selection -->
+                        <div class="bg-gradient-to-br from-blue-900 to-[#006ce4] p-10 rounded-[3rem] text-white shadow-xl mt-12">
+                            <div class="flex items-center gap-4 mb-8">
+                                <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                                    <i class="fas fa-bullhorn text-yellow-400"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold">Property Appetites</h3>
+                                    <p class="text-blue-100 text-sm opacity-80 uppercase tracking-widest font-bold text-[10px]">Select exactly 3 highlights to show on your property card</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" id="appetites-selection-container">
+                                <?php 
+                                $appetites = [
+                                    ['name' => 'Free WiFi', 'id' => 'wifi', 'icon' => 'fa-wifi'],
+                                    ['name' => 'Swimming Pool', 'id' => 'pool', 'icon' => 'fa-swimming-pool'],
+                                    ['name' => 'Free Parking', 'id' => 'parking', 'icon' => 'fa-parking'],
+                                    ['name' => 'Restaurant', 'id' => 'restaurant', 'icon' => 'fa-utensils'],
+                                    ['name' => 'Room Service', 'id' => 'room_service', 'icon' => 'fa-concierge-bell'],
+                                    ['name' => 'Fitness Center', 'id' => 'gym', 'icon' => 'fa-dumbbell'],
+                                    ['name' => 'Spa & Wellness', 'id' => 'spa', 'icon' => 'fa-spa'],
+                                    ['name' => 'Beachfront', 'icon' => 'fa-umbrella-beach', 'id' => 'beach'],
+                                    ['name' => 'Family Rooms', 'icon' => 'fa-users', 'id' => 'family_rooms'],
+                                    ['name' => 'Airport Shuttle', 'icon' => 'fa-bus', 'id' => 'shuttle'],
+                                    ['name' => 'Bar / Lounge', 'icon' => 'fa-glass-martini-alt', 'id' => 'bar'],
+                                    ['name' => 'AC Rooms', 'icon' => 'fa-wind', 'id' => 'ac'],
+                                ];
+                                foreach($appetites as $app): ?>
+                                    <label class="group relative cursor-pointer">
+                                        <input type="checkbox" name="popular_amenities[]" value="<?= $app['id'] ?>" class="hidden appetite-checkbox">
+                                        <div class="flex flex-col items-center justify-center p-4 rounded-2xl border border-white/20 bg-white/10 group-hover:bg-white/20 transition-all has-[:checked]:bg-white has-[:checked]:border-white group-has-[:checked]:shadow-lg group-has-[:checked]:shadow-blue-900/40">
+                                            <i class="fas <?= $app['icon'] ?> text-2xl mb-2 text-blue-200 group-has-[:checked]:text-[#006ce4] transition-colors"></i>
+                                            <span class="text-[9px] font-bold text-blue-100 group-has-[:checked]:text-gray-900 uppercase tracking-tighter text-center transition-colors"><?= $app['name'] ?></span>
+                                        </div>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -790,6 +829,9 @@ $type = $_GET['type'] ?? 'hotel';
                                 <div class="mt-3">
                                     <h4 id="preview-room-type" class="text-[13px] font-bold text-gray-900">Standard Room</h4>
                                     <p id="preview-room-desc" class="text-[12px] text-gray-600 mt-0.5">Contact property for more info</p>
+                                    <div id="preview-appetites-card" class="mt-2 flex flex-wrap gap-2">
+                                        <!-- Selected 3 appetites will show here -->
+                                    </div>
                                 </div>
                                 <div class="mt-2 flex items-center gap-1.5 text-[#008009] font-bold text-[12px]">
                                     <i class="fas fa-check"></i>
@@ -975,6 +1017,7 @@ $type = $_GET['type'] ?? 'hotel';
             }
 
             // Promoted Badge
+            const promotedBadge = document.getElementById('preview-promoted-badge');
             const boostRadios = document.querySelectorAll('.boost-radio');
             boostRadios.forEach(radio => {
                 radio.onchange = () => {
@@ -1032,21 +1075,36 @@ $type = $_GET['type'] ?? 'hotel';
                 priceEl.innerText = 'Contact for Price';
             }
 
-            // Appetites (Popular Amenities)
-            const appetiteContainer = document.getElementById('appetite-container');
-            appetiteContainer.innerHTML = '';
+            // Featured Appetites on Card (Max 3)
+            const appetiteCardContainer = document.getElementById('preview-appetites-card');
             const popularAmenities = document.querySelectorAll('input[name="popular_amenities[]"]:checked');
+            appetiteCardContainer.innerHTML = '';
+            
             popularAmenities.forEach((amenity, i) => {
-                if (i < 4) { // Show up to 4
+                if (i < 3) {
                     const name = amenity.parentElement.querySelector('span').innerText;
                     const icon = amenity.parentElement.querySelector('i').className;
-                    appetiteContainer.innerHTML += `
-                        <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-blue-100">
-                            <i class="${icon} text-blue-500 text-sm"></i>
-                            <span class="text-[10px] font-bold text-gray-700 uppercase tracking-tight">${name}</span>
+                    appetiteCardContainer.innerHTML += `
+                        <div class="flex items-center gap-1.5 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                            <i class="${icon} text-[10px] text-[#006ce4]"></i>
+                            <span class="text-[10px] font-bold text-gray-700">${name}</span>
                         </div>
                     `;
                 }
+            });
+
+            // Overall Summary Appetites
+            const appetiteContainer = document.getElementById('appetite-container');
+            appetiteContainer.innerHTML = '';
+            popularAmenities.forEach(amenity => {
+                const name = amenity.parentElement.querySelector('span').innerText;
+                const icon = amenity.parentElement.querySelector('i').className;
+                appetiteContainer.innerHTML += `
+                    <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <i class="${icon} text-[#006ce4]"></i>
+                        <span class="text-xs font-bold text-gray-700">${name}</span>
+                    </div>
+                `;
             });
         }
 
@@ -1739,6 +1797,67 @@ $type = $_GET['type'] ?? 'hotel';
         }
         
         bindRemovalEvents();
+        // Limit Popular Amenities (Appetites) to 3
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('appetite-checkbox')) {
+                const checked = document.querySelectorAll('.appetite-checkbox:checked');
+                if (checked.length > 3) {
+                    e.target.checked = false;
+                    alert('You can only select up to 3 featured appetites to highlight on your card.');
+                }
+                updatePreview();
+            }
+        });
+        // Form Submission
+        const propertyForm = document.getElementById('property-form');
+        propertyForm.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Registering Property...';
+
+            const formData = new FormData(propertyForm);
+            formData.append('action', 'register_property');
+
+            try {
+                const response = await fetch('register.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Success! Clear LocalStorage
+                    localStorage.removeItem('property_wizard_data');
+                    
+                    // Show custom success screen or redirect
+                    document.body.innerHTML = `
+                        <div class="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+                            <div class="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl border border-blue-50">
+                                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-green-900/10">
+                                    <i class="fas fa-check text-3xl"></i>
+                                </div>
+                                <h1 class="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">Congratulations!</h1>
+                                <p class="text-gray-500 mb-10 leading-relaxed">Your property <b>${formData.get('property_name')}</b> has been successfully registered and sent for review.</p>
+                                <a href="index.php" class="inline-block w-full bg-[#006ce4] text-white py-5 rounded-2xl font-bold text-lg hover:bg-[#003580] transition-all shadow-xl shadow-blue-900/20">Go to Dashboard</a>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    alert('Error: ' + result.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('An unexpected error occurred. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        };
     </script>
 </body>
 </html>
