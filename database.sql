@@ -29,8 +29,19 @@ CREATE TABLE IF NOT EXISTS properties (
     description TEXT,
     street_address TEXT,
     city VARCHAR(100),
+    district VARCHAR(100),
+    province VARCHAR(100),
     country VARCHAR(100),
     google_map_location TEXT,
+    fixed_telephone VARCHAR(20),
+    mobile_telephone VARCHAR(20),
+    closest_police_station VARCHAR(255),
+    closest_hospital VARCHAR(255),
+    airport_distance VARCHAR(100),
+    closest_main_town VARCHAR(255),
+    postal_code VARCHAR(20),
+    logo_image VARCHAR(255),
+    cover_image VARCHAR(255),
     contact_number VARCHAR(20),
     whatsapp_number VARCHAR(20),
     business_email VARCHAR(100),
@@ -39,6 +50,8 @@ CREATE TABLE IF NOT EXISTS properties (
     manager_name VARCHAR(100),
     manager_email VARCHAR(100),
     manager_phone VARCHAR(20),
+    manager_nic VARCHAR(50),
+    manager_photo VARCHAR(255),
     
     -- Business Rules
     payout_percentage DECIMAL(5,2) DEFAULT 80.00,
@@ -59,11 +72,29 @@ CREATE TABLE IF NOT EXISTS properties (
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Property Amenities
+-- Master Amenities List
+CREATE TABLE IF NOT EXISTS amenities_master (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category VARCHAR(50) NOT NULL,
+    amenity_name VARCHAR(100) NOT NULL,
+    icon VARCHAR(50),
+    is_popular TINYINT(1) DEFAULT 0
+);
+
+-- Property Amenities (Selected from Master)
 CREATE TABLE IF NOT EXISTS property_amenities (
     id INT AUTO_INCREMENT PRIMARY KEY,
     property_id INT NOT NULL,
-    amenity_name VARCHAR(100) NOT NULL,
+    amenity_id INT NOT NULL,
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    FOREIGN KEY (amenity_id) REFERENCES amenities_master(id) ON DELETE CASCADE
+);
+
+-- Custom/Special Amenities for Property
+CREATE TABLE IF NOT EXISTS property_custom_amenities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    property_id INT NOT NULL,
+    amenity_name VARCHAR(255) NOT NULL,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
 );
 

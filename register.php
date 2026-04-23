@@ -56,11 +56,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         try {
             $pdo->beginTransaction();
 
-            $stmt = $pdo->prepare("INSERT INTO properties (owner_id, business_type, property_name, street_address, city, country, contact_number, business_email, check_in_time, check_out_time, cancellation_policy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO properties (owner_id, business_type, hotel_category, property_name, description, street_address, city, district, province, country, google_map_location, fixed_telephone, mobile_telephone, closest_police_station, closest_hospital, airport_distance, closest_main_town, postal_code, logo_image, cover_image, manager_name, manager_phone, manager_nic, manager_photo, contact_number, business_email, check_in_time, check_out_time, cancellation_policy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
-                $owner_id, $data['business_type'], $data['property_name'], 
-                $data['street_address'], $data['city'], $data['country'], 
-                $data['contact_number'], $data['business_email'], 
+                $owner_id, $data['business_type'], $data['hotel_category'] ?? null, 
+                $data['property_name'], $data['description'] ?? '',
+                $data['street_address'], $data['city'], $data['district'] ?? '',
+                $data['province'] ?? '', $data['country'], 
+                $data['google_map_location'] ?? '',
+                $data['fixed_telephone'] ?? '',
+                $data['mobile_telephone'] ?? '',
+                $data['closest_police_station'] ?? '',
+                $data['closest_hospital'] ?? '',
+                $data['airport_distance'] ?? '',
+                $data['closest_main_town'] ?? '',
+                $data['postal_code'] ?? '',
+                $data['logo_image'] ?? '',
+                $data['cover_image'] ?? '',
+                $data['manager_name'] ?? '',
+                $data['manager_phone'] ?? '',
+                $data['manager_nic'] ?? '',
+                $data['manager_photo'] ?? '',
+                $data['contact_number'] ?? '', $data['business_email'] ?? '', 
                 $data['check_in_time'] ?? '14:00', $data['check_out_time'] ?? '12:00',
                 $data['cancellation_policy'] ?? ''
             ]);

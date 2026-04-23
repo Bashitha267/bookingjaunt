@@ -43,135 +43,472 @@ $type = $_GET['type'] ?? 'hotel';
 <body class="min-h-screen flex flex-col">
 
     <!-- Header -->
-    <nav class="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+    <nav class="bg-white border-b p-3 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <div class="flex items-center gap-4">
             <a href="index.php" class="text-xl font-bold text-[#006ce4]">Bookingjaunt</a>
             <span class="text-gray-300">|</span>
-            <span class="text-sm font-semibold text-gray-600">Register your property</span>
+            <div id="header-progress" class="flex flex-col">
+                <span class="text-[10px] font-bold text-[#006ce4] uppercase tracking-wider">Progress</span>
+                <span class="text-xs font-bold text-gray-600" id="step-counter">Step 1 of 7</span>
+            </div>
         </div>
-        <div class="flex items-center gap-4 bg-gray-50 px-4 py-1.5 rounded-full border">
-            <span class="text-sm font-bold"><?= $_SESSION['user_name'] ?></span>
+        <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+                <p class="text-[10px] font-bold text-gray-400 uppercase" id="steps-remaining">6 steps remaining</p>
+                <p class="text-xs font-bold text-gray-700"><?= $_SESSION['user_name'] ?></p>
+            </div>
             <div class="w-8 h-8 bg-[#003580] text-white rounded-full flex items-center justify-center font-bold text-xs">
                 <?= strtoupper(substr($_SESSION['user_name'], 0, 1)) ?>
             </div>
         </div>
     </nav>
 
-    <!-- Stepper Container -->
-    <div class="max-w-5xl mx-auto w-full pt-12 px-6">
-        <div class="flex justify-between relative mb-16">
+    <!-- Stepper Container (Sticky) -->
+    <div class="sticky top-[58px] z-40 bg-[#f8fafc]/90 backdrop-blur-md border-b py-6 mb-12">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="flex justify-between relative">
             <?php 
-            $steps = ["Type", "Info", "Manager", "Rules", "Amenities", "Photos", "Finish"];
+            $steps = ["Type", "Info", "Staff", "Amenities", "Rules", "Photos", "Finish"];
             foreach($steps as $i => $name): 
                 $num = $i + 1;
             ?>
-                <div class="step-item flex-1 flex flex-col items-center group relative" data-step="<?= $num ?>">
-                    <div class="step-line"></div>
-                    <div class="step-circle mb-3"><?= $num ?></div>
-                    <span class="text-xs font-bold text-gray-400 group-[.active]:text-[#006ce4] group-[.completed]:text-[#10b981] transition-all uppercase tracking-wider"><?= $name ?></span>
-                </div>
-            <?php endforeach; ?>
+                    <div class="step-item flex-1 flex flex-col items-center group relative" data-step="<?= $num ?>">
+                        <div class="step-line"></div>
+                        <div class="step-circle mb-2 text-sm"><?= $num ?></div>
+                        <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-[#006ce4] group-[.completed]:text-[#10b981] transition-all uppercase tracking-wider"><?= $name ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
+    </div>
 
         <!-- Wizard Form -->
-        <main class="max-w-3xl mx-auto pb-24">
-            <form id="property-form" class="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 p-12 border border-blue-50">
+        <main class="max-w-7xl mx-auto pb-24 px-6">
+            <form id="property-form" class="bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-10 border border-blue-50">
                 
                 <!-- Step 1: Business Type -->
                 <div class="wizard-step active" data-step="1">
-                    <div class="mb-10">
-                        <span class="text-[#006ce4] font-bold text-sm tracking-widest uppercase mb-2 block">Step 01</span>
-                        <h2 class="text-3xl font-extrabold text-gray-900">What are you listing?</h2>
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 01</span>
+                        <h2 class="text-2xl font-bold text-gray-900">What are you listing?</h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-8">
-                        <label class="group relative border-2 rounded-[2rem] p-10 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                    <div class="grid grid-cols-2 gap-6">
+                        <label class="group relative border-2 rounded-2xl p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
                             <input type="radio" name="business_type" value="hotel" required class="hidden" <?= $type == 'hotel' ? 'checked' : '' ?>>
-                            <div class="w-20 h-20 bg-blue-50 text-[#006ce4] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                                <i class="fas fa-hotel text-3xl"></i>
+                            <div class="w-16 h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                                <i class="fas fa-hotel text-2xl"></i>
                             </div>
-                            <div class="font-bold text-xl mb-2">Hotel / Resort</div>
-                            <p class="text-sm text-gray-500">Provide luxury stay and multiple services.</p>
+                            <div class="font-bold text-lg mb-1">Hotel / Resort</div>
+                            <p class="text-xs text-gray-500 leading-relaxed">Provide luxury stay and multiple services.</p>
                         </label>
-                        <label class="group relative border-2 rounded-[2rem] p-10 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        <label class="group relative border-2 rounded-2xl p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
                             <input type="radio" name="business_type" value="reception_hall" class="hidden" <?= $type == 'reception_hall' ? 'checked' : '' ?>>
-                            <div class="w-20 h-20 bg-blue-50 text-[#006ce4] rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                                <i class="fas fa-glass-cheers text-3xl"></i>
+                            <div class="w-16 h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                                <i class="fas fa-glass-cheers text-2xl"></i>
                             </div>
-                            <div class="font-bold text-xl mb-2">Reception Hall</div>
-                            <p class="text-sm text-gray-500">Host weddings, parties and grand events.</p>
+                            <div class="font-bold text-lg mb-1">Reception Hall</div>
+                            <p class="text-xs text-gray-500 leading-relaxed">Host weddings, parties and grand events.</p>
                         </label>
                     </div>
                 </div>
 
                 <!-- Step 2: Basic Info -->
                 <div class="wizard-step" data-step="2">
-                    <div class="mb-10">
-                        <span class="text-[#006ce4] font-bold text-sm tracking-widest uppercase mb-2 block">Step 02</span>
-                        <h2 class="text-3xl font-extrabold text-gray-900">General Information</h2>
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 02</span>
+                        <h2 class="text-2xl font-bold text-gray-900">General Information</h2>
                     </div>
+                    
                     <div class="space-y-8">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">Property Name</label>
-                            <input type="text" name="property_name" required placeholder="e.g. Grand Plaza Hotel" class="w-full px-6 py-4 rounded-2xl border bg-gray-50 outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
-                        </div>
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">City</label>
-                                <input type="text" name="city" required class="w-full px-6 py-4 rounded-2xl border bg-gray-50 outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        <!-- Basic Property Details -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Basic Property Details</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Property Name</label>
+                                    <input type="text" name="property_name" required placeholder="e.g. Grand Plaza Hotel" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div id="hotel-category-container">
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Hotel Category</label>
+                                    <select name="hotel_category" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                        <option value="budget_friendly">Budget Friendly</option>
+                                        <option value="luxury">Luxury</option>
+                                        <option value="super_luxury">Super Luxury</option>
+                                    </select>
+                                </div>
                             </div>
+
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">Country</label>
-                                <input type="text" name="country" required value="Sri Lanka" class="w-full px-6 py-4 rounded-2xl border bg-gray-50 outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Short Description</label>
+                                <textarea name="description" required rows="2" placeholder="A brief overview of your property..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">Physical Address</label>
-                            <textarea name="street_address" required rows="3" class="w-full px-6 py-4 rounded-2xl border bg-gray-50 outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+
+                        <!-- Location Details -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Location Details</h3>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Street Address</label>
+                                <input type="text" name="street_address" required placeholder="123 Main St" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Fixed Telephone Number <span class="text-xs font-normal text-gray-400 ml-1">(Optional)</span></label>
+                                    <input type="text" name="fixed_telephone" placeholder="+94 ..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Mobile Telephone Number</label>
+                                    <input type="text" name="mobile_telephone" placeholder="+94 ..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">City</label>
+                                    <input type="text" name="city" required placeholder="City Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">District</label>
+                                    <input type="text" name="district" required placeholder="District Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Province</label>
+                                    <input type="text" name="province" required placeholder="Province Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Country</label>
+                                    <input type="text" name="country" required value="Sri Lanka" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Google Map Location (Optional)</label>
+                                    <div class="relative">
+                                        <input type="text" name="google_map_location" placeholder="Paste link or coordinates" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all pl-12">
+                                        <i class="fas fa-map-marker-alt absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logistics & Surroundings -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Surroundings & Logistics <span class="text-xs font-normal text-gray-400 ml-2">(Optional)</span></h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Police Station</label>
+                                    <input type="text" name="closest_police_station" placeholder="Name of station" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Hospital</label>
+                                    <input type="text" name="closest_hospital" placeholder="Name of hospital" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Airport Distance (KM)</label>
+                                    <input type="text" name="airport_distance" placeholder="Distance to Katunayake (CMB)" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Postal Code</label>
+                                    <input type="text" name="postal_code" placeholder="e.g. 11500" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Property Logo <span class="text-xs font-normal text-gray-400 ml-1">(Optional)</span></label>
+                                    <div class="upload-container relative group" id="logo-upload">
+                                        <input type="file" accept="image/*" class="hidden file-input" data-type="logo">
+                                        <input type="hidden" name="logo_image">
+                                        <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
+                                            <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-2"></i>
+                                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Upload Logo</span>
+                                        </div>
+                                        <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
+                                            <img src="" class="max-w-full max-h-full rounded-lg object-contain">
+                                            <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all remove-image">
+                                                <i class="fas fa-times text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Cover Image <span class="text-xs font-normal text-gray-400 ml-1">(Optional)</span></label>
+                                    <div class="upload-container relative group" id="cover-upload">
+                                        <input type="file" accept="image/*" class="hidden file-input" data-type="cover">
+                                        <input type="hidden" name="cover_image">
+                                        <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
+                                            <i class="fas fa-image text-gray-400 text-2xl mb-2"></i>
+                                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Upload Cover</span>
+                                        </div>
+                                        <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
+                                            <img src="" class="max-w-full max-h-full rounded-lg object-cover w-full h-full">
+                                            <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all remove-image">
+                                                <i class="fas fa-times text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logistics & Surroundings -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Surroundings & Logistics <span class="text-xs font-normal text-gray-400 ml-2">(Optional)</span></h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Police Station</label>
+                                    <input type="text" name="closest_police_station" placeholder="Name of station" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Hospital</label>
+                                    <input type="text" name="closest_hospital" placeholder="Name of hospital" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Airport Distance (KM)</label>
+                                    <input type="text" name="airport_distance" placeholder="Distance to Katunayake (CMB)" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Postal Code</label>
+                                    <input type="text" name="postal_code" placeholder="e.g. 11500" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Main Town</label>
+                                <input type="text" name="closest_main_town" placeholder="Name of the nearest town" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Step 3: Manager Setup -->
+                <!-- Step 3: Staff Details -->
                 <div class="wizard-step" data-step="3">
-                    <div class="mb-10">
-                        <span class="text-[#006ce4] font-bold text-sm tracking-widest uppercase mb-2 block">Step 03</span>
-                        <h2 class="text-3xl font-extrabold text-gray-900">Manager Details</h2>
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 03</span>
+                        <h2 class="text-2xl font-bold text-gray-900">Staff Details</h2>
                     </div>
-                    <div class="bg-blue-50/50 p-6 rounded-2xl mb-8 flex items-center justify-between border border-blue-100">
-                        <span class="font-bold text-gray-700">Are you the manager of this property?</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" checked class="sr-only peer">
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:after:w-5 after:transition-all peer-checked:bg-[#006ce4]"></div>
-                        </label>
-                    </div>
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">Manager Name</label>
-                                <input type="text" name="manager_name" class="w-full px-6 py-4 rounded-2xl border bg-gray-50 outline-none transition-all">
+
+                    <!-- Manager Details -->
+                    <div class="space-y-6 mb-10">
+                        <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Manager Details</h3>
+                        <div class="bg-blue-50/50 p-5 rounded-xl mb-6 flex items-center justify-between border border-blue-100">
+                            <span class="font-bold text-sm text-gray-700">Are you the manager of this property?</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="is_manager_checkbox" checked class="sr-only peer">
+                                <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#006ce4]"></div>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+                            <div class="md:col-span-1">
+                                <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Manager Photo <span class="text-xs font-normal text-gray-400 ml-1">(Optional)</span></label>
+                                <div class="upload-container relative group" id="manager-photo-upload">
+                                    <input type="file" accept="image/*" class="hidden file-input" data-type="manager">
+                                    <input type="hidden" name="manager_photo">
+                                    <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
+                                        <i class="fas fa-user-circle text-gray-400 text-2xl mb-2"></i>
+                                        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Upload Photo</span>
+                                    </div>
+                                    <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
+                                        <img src="" class="max-w-full max-h-full rounded-full object-cover w-24 h-24">
+                                        <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all remove-image">
+                                            <i class="fas fa-times text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                            <div class="md:col-span-3">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Manager Name</label>
+                                        <input type="text" name="manager_name" placeholder="Full Name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Contact Number</label>
+                                        <input type="text" name="manager_phone" placeholder="Phone Number" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">NIC Number</label>
+                                        <input type="text" name="manager_nic" placeholder="National ID" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none transition-all">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Staff -->
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Other Staff <span class="text-xs font-normal text-gray-400 ml-2">(Optional)</span></h3>
+                        
+                        <div class="mb-6">
+                            <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">How many staff members do you want to add?</label>
+                            <input type="number" id="staff_count" min="0" max="20" value="0" class="w-32 px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+
+                        <div id="staff_forms_container" class="space-y-8">
+                            <!-- Dynamic staff forms will appear here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Amenities -->
+                <div class="wizard-step" data-step="4">
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 04</span>
+                        <h2 class="text-2xl font-bold text-gray-900">Amenities & Facilities</h2>
+                        <p class="text-sm text-gray-500 mt-1">Select the amenities available at your property to help guests find you.</p>
+                    </div>
+
+                    <div class="space-y-10">
+                        <!-- Most Popular -->
+                        <div>
+                            <h3 class="text-xs font-bold text-[#006ce4] uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-star text-[10px]"></i> Most Popular
+                            </h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                <?php 
+                                $popular = [
+                                    ['id' => 'wifi', 'name' => 'Free WiFi', 'icon' => 'fa-wifi'],
+                                    ['id' => 'pool', 'name' => 'Swimming Pool', 'icon' => 'fa-swimming-pool'],
+                                    ['id' => 'parking', 'name' => 'Free Parking', 'icon' => 'fa-parking'],
+                                    ['id' => 'ac', 'name' => 'Air Conditioning', 'icon' => 'fa-wind'],
+                                    ['id' => 'restaurant', 'name' => 'Restaurant', 'icon' => 'fa-utensils'],
+                                    ['id' => 'gym', 'name' => 'Fitness Center', 'icon' => 'fa-dumbbell'],
+                                    ['id' => 'bar', 'name' => 'Bar', 'icon' => 'fa-glass-martini-alt'],
+                                    ['id' => 'room_service', 'name' => 'Room Service', 'icon' => 'fa-concierge-bell'],
+                                    ['id' => 'spa', 'name' => 'Spa & Wellness', 'icon' => 'fa-spa'],
+                                    ['id' => 'breakfast', 'name' => 'Breakfast Included', 'icon' => 'fa-egg'],
+                                ];
+                                foreach($popular as $item): ?>
+                                    <label class="amenity-card group relative cursor-pointer">
+                                        <input type="checkbox" name="amenities[]" value="<?= $item['id'] ?>" class="hidden peer">
+                                        <div class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 bg-gray-50/30 group-hover:bg-white peer-checked:border-[#006ce4] peer-checked:bg-blue-50/50 transition-all shadow-sm group-hover:shadow-md">
+                                            <i class="fas <?= $item['icon'] ?> text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-xl mb-3"></i>
+                                            <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tighter"><?= $item['name'] ?></span>
+                                        </div>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <!-- Bathroom & Bedroom (Side by Side on Wide Screens) -->
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                            <!-- Bathroom -->
                             <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">Contact Number</label>
-                                <input type="text" name="manager_phone" class="w-full px-6 py-4 rounded-2xl border bg-gray-50 outline-none transition-all">
+                                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <i class="fas fa-bath text-[10px]"></i> Bathroom
+                                </h3>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <?php 
+                                    $bathroom = [
+                                        ['id' => 'hot_water', 'name' => 'Hot Water', 'icon' => 'fa-hot-tub'],
+                                        ['id' => 'toiletries', 'name' => 'Free Toiletries', 'icon' => 'fa-pump-soap'],
+                                        ['id' => 'towels', 'name' => 'Towels', 'icon' => 'fa-scroll'],
+                                        ['id' => 'hairdryer', 'name' => 'Hairdryer', 'icon' => 'fa-wind'],
+                                        ['id' => 'bathtub', 'name' => 'Bathtub', 'icon' => 'fa-bath'],
+                                        ['id' => 'shower', 'name' => 'Rain Shower', 'icon' => 'fa-shower'],
+                                    ];
+                                    foreach($bathroom as $item): ?>
+                                        <label class="amenity-card group relative cursor-pointer">
+                                            <input type="checkbox" name="amenities[]" value="<?= $item['id'] ?>" class="hidden peer">
+                                            <div class="flex items-center gap-3 p-3 rounded-xl border bg-gray-50/20 group-hover:bg-white peer-checked:border-[#006ce4] peer-checked:bg-blue-50/50 transition-all">
+                                                <i class="fas <?= $item['icon'] ?> text-gray-400 peer-checked:text-[#006ce4] text-sm w-5 text-center"></i>
+                                                <span class="text-[10px] font-bold text-gray-600 peer-checked:text-[#003580] uppercase tracking-wide"><?= $item['name'] ?></span>
+                                            </div>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <!-- Bedroom -->
+                            <div>
+                                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <i class="fas fa-bed text-[10px]"></i> Bedroom & Living
+                                </h3>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <?php 
+                                    $bedroom = [
+                                        ['id' => 'linen', 'name' => 'Linen', 'icon' => 'fa-bed'],
+                                        ['id' => 'wardrobe', 'name' => 'Wardrobe', 'icon' => 'fa-door-closed'],
+                                        ['id' => 'iron', 'name' => 'Ironing Facilities', 'icon' => 'fa-tshirt'],
+                                        ['id' => 'fan', 'name' => 'Fan', 'icon' => 'fa-fan'],
+                                        ['id' => 'tv', 'name' => 'Flat-screen TV', 'icon' => 'fa-tv'],
+                                        ['id' => 'desk', 'name' => 'Work Desk', 'icon' => 'fa-laptop'],
+                                    ];
+                                    foreach($bedroom as $item): ?>
+                                        <label class="amenity-card group relative cursor-pointer">
+                                            <input type="checkbox" name="amenities[]" value="<?= $item['id'] ?>" class="hidden peer">
+                                            <div class="flex items-center gap-3 p-3 rounded-xl border bg-gray-50/20 group-hover:bg-white peer-checked:border-[#006ce4] peer-checked:bg-blue-50/50 transition-all">
+                                                <i class="fas <?= $item['icon'] ?> text-gray-400 peer-checked:text-[#006ce4] text-sm w-5 text-center"></i>
+                                                <span class="text-[10px] font-bold text-gray-600 peer-checked:text-[#003580] uppercase tracking-wide"><?= $item['name'] ?></span>
+                                            </div>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Placeholder for Steps 4-6 -->
-                <div class="wizard-step" data-step="4">
-                    <div class="mb-10 text-center py-20">
-                        <i class="fas fa-shield-alt text-6xl text-blue-200 mb-6"></i>
-                        <h2 class="text-3xl font-extrabold text-gray-900">Policies & Rules</h2>
-                        <p class="text-gray-500 mt-4">Define your property rules, cancellation policies and terms.</p>
-                    </div>
-                </div>
-
+                <!-- Step 5: Policies & Rules -->
                 <div class="wizard-step" data-step="5">
-                    <div class="mb-10 text-center py-20">
-                        <i class="fas fa-concierge-bell text-6xl text-blue-200 mb-6"></i>
-                        <h2 class="text-3xl font-extrabold text-gray-900">Amenities & Services</h2>
-                        <p class="text-gray-500 mt-4">What makes your property special? List your features.</p>
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 05</span>
+                        <h2 class="text-2xl font-bold text-gray-900">Policies & Rules</h2>
+                        <p class="text-sm text-gray-500 mt-1">Set the guidelines for guests staying at your property.</p>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Check-in Time</label>
+                                <div class="relative">
+                                    <input type="time" name="check_in_time" value="14:00" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <i class="fas fa-clock absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Check-out Time</label>
+                                <div class="relative">
+                                    <input type="time" name="check_out_time" value="12:00" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <i class="fas fa-clock absolute right-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                            <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Cancellation Policy</label>
+                            <textarea name="cancellation_policy" rows="3" placeholder="e.g. Free cancellation up to 24 hours before check-in. Non-refundable after that." class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+                        </div>
+
+                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                            <label class="block text-xs font-bold text-[#006ce4] mb-3 uppercase tracking-wider">Property Rules</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <label class="flex items-center gap-3 p-3 bg-white rounded-xl border cursor-pointer hover:bg-gray-100 transition-all">
+                                    <input type="checkbox" name="smoking_allowed" class="w-4 h-4 text-[#006ce4] border-gray-300 rounded">
+                                    <span class="text-xs font-bold text-gray-600">Smoking Allowed</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 bg-white rounded-xl border cursor-pointer hover:bg-gray-100 transition-all">
+                                    <input type="checkbox" name="pets_allowed" class="w-4 h-4 text-[#006ce4] border-gray-300 rounded">
+                                    <span class="text-xs font-bold text-gray-600">Pets Allowed</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 bg-white rounded-xl border cursor-pointer hover:bg-gray-100 transition-all">
+                                    <input type="checkbox" name="events_allowed" class="w-4 h-4 text-[#006ce4] border-gray-300 rounded">
+                                    <span class="text-xs font-bold text-gray-600">Events Allowed</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -196,11 +533,11 @@ $type = $_GET['type'] ?? 'hotel';
                 </div>
 
                 <!-- Footer Navigation -->
-                <div class="flex justify-between mt-16 pt-10 border-t border-gray-100">
-                    <button type="button" id="prev-btn" onclick="changeStep(-1)" class="px-8 py-3 font-bold text-gray-400 hover:text-gray-900 transition-all flex items-center gap-2 invisible">
+                <div class="flex justify-between mt-12 pt-8 border-t border-gray-100">
+                    <button type="button" id="prev-btn" onclick="changeStep(-1)" class="px-6 py-2.5 font-bold text-sm text-gray-400 hover:text-gray-900 transition-all flex items-center gap-2 invisible">
                         <i class="fas fa-arrow-left"></i> Previous
                     </button>
-                    <button type="button" id="next-btn" onclick="changeStep(1)" class="px-12 py-4 bg-[#006ce4] text-white rounded-full font-extrabold text-lg shadow-lg shadow-blue-900/10 hover:bg-[#0056b3] transition-all flex items-center gap-3">
+                    <button type="button" id="next-btn" onclick="changeStep(1)" class="px-10 py-3.5 bg-[#006ce4] text-white rounded-full font-bold text-base shadow-lg shadow-blue-900/10 hover:bg-[#0056b3] transition-all flex items-center gap-3">
                         Continue <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
@@ -228,6 +565,14 @@ $type = $_GET['type'] ?? 'hotel';
             // Update Navigation Buttons
             document.getElementById('prev-btn').style.visibility = currentStep === 1 ? 'hidden' : 'visible';
             document.getElementById('next-btn').style.display = currentStep === totalSteps ? 'none' : 'block';
+
+            // Update Header Progress
+            document.getElementById('step-counter').innerText = `Step ${currentStep} of ${totalSteps}`;
+            const remaining = totalSteps - currentStep;
+            document.getElementById('steps-remaining').innerText = remaining === 0 ? 'Last step!' : `${remaining} ${remaining === 1 ? 'step' : 'steps'} remaining`;
+
+            // Save state
+            localStorage.setItem('property_wizard_step', currentStep);
         }
 
         function changeStep(delta) {
@@ -238,14 +583,231 @@ $type = $_GET['type'] ?? 'hotel';
             }
         }
 
+        // Persistence Logic
+        function saveFormData() {
+            const formData = new FormData(document.getElementById('property-form'));
+            const data = {};
+            formData.forEach((value, key) => { data[key] = value; });
+            localStorage.setItem('property_wizard_data', JSON.stringify(data));
+        }
+
+        function loadFormData() {
+            const savedData = localStorage.getItem('property_wizard_data');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                for (const key in data) {
+                    const el = document.getElementsByName(key)[0];
+                    if (el) {
+                        if (el.type === 'radio') {
+                            const radio = document.querySelector(`input[name="${key}"][value="${data[key]}"]`);
+                            if (radio) radio.checked = true;
+                        } else if (el.type === 'checkbox') {
+                            el.checked = data[key] === 'on';
+                        } else {
+                            el.value = data[key];
+                        }
+                    }
+                }
+            }
+            
+            const savedStep = localStorage.getItem('property_wizard_step');
+            if (savedStep) {
+                currentStep = parseInt(savedStep);
+            }
+        }
+
+        document.getElementById('property-form').addEventListener('input', saveFormData);
+        document.getElementById('property-form').addEventListener('change', saveFormData);
+
         document.getElementById('property-form').onsubmit = async (e) => {
             e.preventDefault();
             alert('Congratulations! Your property listing has been submitted successfully.');
+            localStorage.removeItem('property_wizard_step');
+            localStorage.removeItem('property_wizard_data');
             window.location.href = 'index.php';
         };
 
-        // Initial display update
+        // Load data before initial display
+        loadFormData();
         updateDisplay();
+
+        // Category Toggle
+        const hotelCategoryContainer = document.getElementById('hotel-category-container');
+        const businessTypeRadios = document.querySelectorAll('input[name="business_type"]');
+
+        function updateCategoryVisibility(type) {
+            if (type === 'hotel') {
+                hotelCategoryContainer.style.display = 'block';
+            } else {
+                hotelCategoryContainer.style.display = 'none';
+            }
+        }
+
+        businessTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                updateCategoryVisibility(e.target.value);
+            });
+        });
+
+        // Initialize visibility
+        updateCategoryVisibility(document.querySelector('input[name="business_type"]:checked')?.value || 'hotel');
+
+        // Staff Dynamic Forms
+        const staffCountInput = document.getElementById('staff_count');
+        const staffFormsContainer = document.getElementById('staff_forms_container');
+
+        function generateStaffForms(count) {
+            staffFormsContainer.innerHTML = '';
+            staffFormsContainer.classList.add('grid', 'grid-cols-1', 'xl:grid-cols-2', 'gap-8');
+            for (let i = 1; i <= count; i++) {
+                const staffForm = `
+                    <div class="p-5 border rounded-2xl bg-gray-50/30 space-y-4 relative">
+                        <div class="absolute -top-3 left-6 bg-white px-3 py-1 border rounded-lg text-[10px] font-bold text-[#006ce4] uppercase tracking-wider shadow-sm">
+                            Staff Member ${i}
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">First Name</label>
+                                <input type="text" name="staff_${i}_first_name" placeholder="Enter first name" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">Last Name</label>
+                                <input type="text" name="staff_${i}_last_name" placeholder="Enter last name" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">Contact Number</label>
+                                <input type="text" name="staff_${i}_phone" placeholder="Phone number" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase">NIC Number</label>
+                                <input type="text" name="staff_${i}_nic" placeholder="National ID" class="w-full px-4 py-2.5 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                staffFormsContainer.insertAdjacentHTML('beforeend', staffForm);
+            }
+        }
+
+        staffCountInput.addEventListener('input', (e) => {
+            let count = parseInt(e.target.value);
+            if (count > 20) { count = 20; e.target.value = 20; }
+            if (count < 0) { count = 0; e.target.value = 0; }
+            generateStaffForms(count);
+            saveFormData(); // Save the structure change
+        });
+
+        // Initialize staff forms if data was loaded
+        const savedData = localStorage.getItem('property_wizard_data');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            const savedCount = Object.keys(data).filter(key => key.includes('_first_name')).length;
+            if (savedCount > 0) {
+                staffCountInput.value = savedCount;
+                generateStaffForms(savedCount);
+                // Re-load form data to fill the dynamic fields
+                loadFormData();
+            }
+
+            // Load images
+            if (data.logo_image) showPreview('logo-upload', data.logo_image);
+            if (data.cover_image) showPreview('cover-upload', data.cover_image);
+            if (data.manager_photo) showPreview('manager-photo-upload', data.manager_photo);
+        }
+
+        // Image Upload Logic
+        document.querySelectorAll('.upload-trigger').forEach(trigger => {
+            trigger.addEventListener('click', () => {
+                trigger.parentElement.querySelector('.file-input').click();
+            });
+        });
+
+        document.querySelectorAll('.file-input').forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('action', 'upload');
+
+                const containerId = input.parentElement.id;
+                const trigger = input.parentElement.querySelector('.upload-trigger');
+                trigger.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500"></i>';
+
+                try {
+                    const response = await fetch('upload_handler.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showPreview(containerId, result.filepath);
+                        input.parentElement.querySelector('input[type="hidden"]').value = result.filepath;
+                        saveFormData();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                } finally {
+                    const type = input.dataset.type;
+                    let icon = 'fa-cloud-upload-alt';
+                    let text = 'Upload Logo';
+                    if (type === 'cover') { icon = 'fa-image'; text = 'Upload Cover'; }
+                    if (type === 'manager') { icon = 'fa-user-circle'; text = 'Upload Photo'; }
+                    
+                    trigger.innerHTML = `<i class="fas ${icon} text-gray-400 text-2xl mb-2"></i><span class="text-xs font-bold text-gray-500 uppercase tracking-wider">${text}</span>`;
+                }
+            });
+        });
+
+        document.querySelectorAll('.remove-image').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const container = button.closest('.upload-container');
+                const hiddenInput = container.querySelector('input[type="hidden"]');
+                const filepath = hiddenInput.value;
+
+                if (!filepath) return;
+
+                const formData = new FormData();
+                formData.append('filepath', filepath);
+                formData.append('action', 'delete');
+
+                try {
+                    const response = await fetch('upload_handler.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        hidePreview(container.id);
+                        hiddenInput.value = '';
+                        saveFormData();
+                    }
+                } catch (error) {
+                    console.error('Delete error:', error);
+                }
+            });
+        });
+
+        function showPreview(containerId, filepath) {
+            const container = document.getElementById(containerId);
+            const preview = container.querySelector('.preview-container');
+            const img = preview.querySelector('img');
+            img.src = filepath;
+            preview.classList.remove('hidden');
+        }
+
+        function hidePreview(containerId) {
+            const container = document.getElementById(containerId);
+            const preview = container.querySelector('.preview-container');
+            preview.classList.add('hidden');
+        }
     </script>
 </body>
 </html>
