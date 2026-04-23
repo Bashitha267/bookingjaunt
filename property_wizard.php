@@ -74,7 +74,7 @@ $type = $_GET['type'] ?? 'hotel';
 
     <!-- Stepper Container (Sticky) -->
     <div class="sticky top-[58px] z-40 bg-[#f8fafc]/90 backdrop-blur-md border-b py-6 mb-12">
-        <div class="max-w-5xl mx-auto px-6">
+        <div class="max-w-7xl mx-auto px-6">
             <div class="flex justify-between relative">
                 <?php 
                 $steps = ["Type", "Info", "Staff", "Amenities", "Rooms", "Rules", "Photos", "Finish"];
@@ -454,7 +454,54 @@ $type = $_GET['type'] ?? 'hotel';
                     <div class="mb-8">
                         <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 05</span>
                         <h2 class="text-2xl font-bold text-gray-900">Room & Hall Details</h2>
-                        <p class="text-sm text-gray-500 mt-1">Define your inventory. For hotels add rooms, for reception halls add halls.</p>
+                        <p class="text-sm text-gray-500 mt-1">Select a common type to add it quickly, or build your own.</p>
+                    </div>
+
+                    <!-- Quick Suggestions -->
+                    <div class="mb-10">
+                        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Quick Suggestions</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3" id="room-suggestions">
+                            <?php 
+                            $propertyType = $type; 
+                            $suggestions = [
+                                'hotel' => [
+                                    ['name' => 'Couple Room', 'icon' => 'fa-heart', 'adults' => 2, 'children' => 0],
+                                    ['name' => 'Single Room', 'icon' => 'fa-user', 'adults' => 1, 'children' => 0],
+                                    ['name' => 'Family Room', 'icon' => 'fa-users', 'adults' => 2, 'children' => 2],
+                                    ['name' => 'Luxury Suite', 'icon' => 'fa-crown', 'adults' => 2, 'children' => 1],
+                                    ['name' => 'Private Villa', 'icon' => 'fa-home', 'adults' => 4, 'children' => 2],
+                                    ['name' => 'Entire House', 'icon' => 'fa-building', 'adults' => 6, 'children' => 4],
+                                ],
+                                'reception_hall' => [
+                                    ['name' => 'Small Hall', 'icon' => 'fa-users', 'adults' => 100, 'children' => 0, 'is_hall' => 1],
+                                    ['name' => 'Medium Hall', 'icon' => 'fa-glass-cheers', 'adults' => 300, 'children' => 0, 'is_hall' => 1],
+                                    ['name' => 'Large Hall', 'icon' => 'fa-university', 'adults' => 500, 'children' => 0, 'is_hall' => 1],
+                                    ['name' => 'Bridal Suite', 'icon' => 'fa-heart', 'adults' => 2, 'children' => 0, 'is_hall' => 0],
+                                ],
+                                'hostel' => [
+                                    ['name' => 'Single Room', 'icon' => 'fa-user', 'adults' => 1, 'children' => 0],
+                                    ['name' => 'Couple Room', 'icon' => 'fa-heart', 'adults' => 2, 'children' => 0],
+                                    ['name' => 'Family Room', 'icon' => 'fa-users', 'adults' => 2, 'children' => 2],
+                                ],
+                                'rest_hall' => [
+                                    ['name' => 'Single Room', 'icon' => 'fa-user', 'adults' => 1, 'children' => 0],
+                                    ['name' => 'Couple Room', 'icon' => 'fa-heart', 'adults' => 2, 'children' => 0],
+                                    ['name' => 'Family Room', 'icon' => 'fa-users', 'adults' => 2, 'children' => 2],
+                                    ['name' => 'Large Hall', 'icon' => 'fa-vihara', 'adults' => 100, 'children' => 50, 'is_hall' => 1],
+                                ]
+                            ];
+                            
+                            $activeSuggestions = $suggestions[$propertyType] ?? $suggestions['hotel'];
+                            
+                            foreach($activeSuggestions as $s): ?>
+                                <button type="button" 
+                                    onclick="addRoomCard({room_name: '<?= $s['name'] ?>', max_adults: <?= $s['adults'] ?>, max_children: <?= $s['children'] ?>, is_hall: <?= $s['is_hall'] ?? 0 ?>})"
+                                    class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-gray-100 bg-white hover:border-[#006ce4] hover:bg-blue-50/50 transition-all group">
+                                    <i class="fas <?= $s['icon'] ?> text-gray-300 group-hover:text-[#006ce4] mb-2"></i>
+                                    <span class="text-[9px] font-bold text-gray-500 group-hover:text-[#003580] uppercase tracking-tighter text-center leading-tight"><?= $s['name'] ?></span>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
 
                     <div id="room-inventory-container" class="space-y-6">
@@ -462,7 +509,7 @@ $type = $_GET['type'] ?? 'hotel';
                     </div>
 
                     <button type="button" id="add-room-btn" class="mt-8 w-full py-4 border-2 border-dashed border-blue-200 rounded-2xl text-[#006ce4] font-bold hover:bg-blue-50 hover:border-[#006ce4] transition-all flex items-center justify-center gap-2">
-                        <i class="fas fa-plus-circle"></i> ADD ANOTHER ROOM / HALL TYPE
+                        <i class="fas fa-plus-circle"></i> CAN'T FIND IT? ADD CUSTOM TYPE
                     </button>
                 </div>
 
@@ -614,6 +661,53 @@ $type = $_GET['type'] ?? 'hotel';
                         }
                     }
                 }
+
+                // Reconstruct Room Cards
+                const roomsData = {};
+                Object.keys(data).forEach(key => {
+                    if (key.startsWith('rooms[')) {
+                        const match = key.match(/rooms\[(\d+)\]\[(\w+)\]/);
+                        if (match) {
+                            const index = match[1];
+                            const field = match[2];
+                            if (!roomsData[index]) roomsData[index] = {};
+                            roomsData[index][field] = data[key];
+                        }
+                    }
+                });
+
+                const indices = Object.keys(roomsData).sort((a,b) => a-b);
+                if (indices.length > 0) {
+                    roomContainer.innerHTML = ''; // Clear default
+                    indices.forEach(idx => {
+                        addRoomCard({
+                            room_name: roomsData[idx].name,
+                            total_rooms: roomsData[idx].count,
+                            max_adults: roomsData[idx].adults,
+                            max_children: roomsData[idx].children,
+                            room_image: roomsData[idx].image,
+                            is_hall: roomsData[idx].is_hall
+                        });
+                    });
+                }
+
+                // Load staff count and triggers
+                if (data.staff_count) {
+                    document.getElementById('staff_count').value = data.staff_count;
+                    generateStaffForms(data.staff_count);
+                    // Fill staff details (handled by the general loop above, but ensure forms exist first)
+                    for (const key in data) {
+                        if (key.startsWith('staff_')) {
+                            const staffEl = document.getElementsByName(key)[0];
+                            if (staffEl) staffEl.value = data[key];
+                        }
+                    }
+                }
+
+                // Load images
+                if (data.logo_image) showPreview('logo-upload', data.logo_image);
+                if (data.cover_image) showPreview('cover-upload', data.cover_image);
+                if (data.manager_photo) showPreview('manager-photo-upload', data.manager_photo);
             }
             
             const savedStep = localStorage.getItem('property_wizard_step');
@@ -807,6 +901,141 @@ $type = $_GET['type'] ?? 'hotel';
             const img = preview.querySelector('img');
             img.src = filepath;
             preview.classList.remove('hidden');
+        }
+
+        // Room Inventory Logic
+        const roomContainer = document.getElementById('room-inventory-container');
+        const addRoomBtn = document.getElementById('add-room-btn');
+        let roomIndex = 0;
+
+        function addRoomCard(data = {}) {
+            const index = roomIndex++;
+            const isHall = data.is_hall == 1;
+            const propertyType = document.querySelector('input[name="business_type"]:checked')?.value || 'hotel';
+            
+            // Labels based on property type
+            let typeLabel = "Room";
+            let namePlaceholder = "e.g. Deluxe Double Room";
+            if (propertyType === 'reception_hall' || propertyType === 'rest_hall') {
+                typeLabel = "Hall / Space";
+                namePlaceholder = "e.g. Grand Ballroom or Main Hall";
+            }
+
+            const card = document.createElement('div');
+            card.className = 'room-card bg-gray-50/50 p-8 rounded-3xl border border-gray-100 relative group transition-all hover:bg-white hover:shadow-xl hover:shadow-blue-900/5';
+            card.dataset.index = index;
+            
+            card.innerHTML = `
+                <button type="button" class="remove-room absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <!-- Room Image -->
+                    <div class="lg:col-span-1">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">${typeLabel} Photo</label>
+                        <div class="upload-container relative h-40 group/img" id="room-upload-${index}">
+                            <input type="file" accept="image/*" class="hidden room-file-input" data-index="${index}">
+                            <input type="hidden" name="rooms[${index}][image]" class="room-image-path" value="${data.room_image || ''}">
+                            <div class="w-full h-full border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-white group-hover/img:border-[#006ce4] transition-all cursor-pointer room-upload-trigger">
+                                <i class="fas fa-camera text-gray-300 text-2xl mb-2"></i>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase">Upload</span>
+                            </div>
+                            <div class="preview-container ${data.room_image ? '' : 'hidden'} absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-2">
+                                <img src="${data.room_image || ''}" class="max-w-full max-h-full rounded-xl object-cover">
+                                <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-room-image">
+                                    <i class="fas fa-times text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Room Details -->
+                    <div class="lg:col-span-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">${typeLabel} Type Name</label>
+                                <input type="text" name="rooms[${index}][name]" value="${data.room_name || ''}" placeholder="${namePlaceholder}" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest text-blue-600">Total Number of ${typeLabel}s</label>
+                                <input type="number" name="rooms[${index}][count]" value="${data.total_rooms || 1}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <input type="hidden" name="rooms[${index}][is_hall]" value="${data.is_hall || 0}">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Adult Capacity</label>
+                                <div class="relative">
+                                    <input type="number" name="rooms[${index}][adults]" value="${data.max_adults || 2}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <i class="fas fa-user absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Child Capacity</label>
+                                <div class="relative">
+                                    <input type="number" name="rooms[${index}][children]" value="${data.max_children || 0}" min="0" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <i class="fas fa-child absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            roomContainer.appendChild(card);
+            
+            // Bind Events for this card
+            const uploadTrigger = card.querySelector('.room-upload-trigger');
+            const fileInput = card.querySelector('.room-file-input');
+            const removeBtn = card.querySelector('.remove-room');
+            const removeImgBtn = card.querySelector('.remove-room-image');
+
+            uploadTrigger.onclick = () => fileInput.click();
+
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('action', 'upload');
+
+                uploadTrigger.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500"></i>';
+
+                try {
+                    const response = await fetch('upload_handler.php', { method: 'POST', body: formData });
+                    const result = await response.json();
+                    if (result.success) {
+                        card.querySelector('.preview-container img').src = result.filepath;
+                        card.querySelector('.preview-container').classList.remove('hidden');
+                        card.querySelector('.room-image-path').value = result.filepath;
+                        saveFormData();
+                    }
+                } catch (error) { console.error(error); }
+                finally {
+                    uploadTrigger.innerHTML = '<i class="fas fa-camera text-gray-300 text-2xl mb-2"></i><span class="text-[10px] font-bold text-gray-400 uppercase">Upload</span>';
+                }
+            };
+
+            removeBtn.onclick = () => {
+                card.remove();
+                saveFormData();
+            };
+
+            removeImgBtn.onclick = () => {
+                card.querySelector('.preview-container').classList.add('hidden');
+                card.querySelector('.room-image-path').value = '';
+                saveFormData();
+            };
+        }
+
+        addRoomBtn.addEventListener('click', () => addRoomCard());
+
+        // Initialize with one room if empty
+        if (roomContainer.children.length === 0) {
+            addRoomCard();
         }
 
         function hidePreview(containerId) {
