@@ -8,6 +8,15 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Fetch Master Amenities
+$stmt = $pdo->query("SELECT * FROM amenities_master ORDER BY category, amenity_name");
+$all_amenities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$grouped_amenities = [];
+foreach ($all_amenities as $amenity) {
+    $grouped_amenities[$amenity['category']][] = $amenity;
+}
+
 $type = $_GET['type'] ?? 'hotel';
 ?>
 <!DOCTYPE html>
@@ -67,11 +76,11 @@ $type = $_GET['type'] ?? 'hotel';
     <div class="sticky top-[58px] z-40 bg-[#f8fafc]/90 backdrop-blur-md border-b py-6 mb-12">
         <div class="max-w-5xl mx-auto px-6">
             <div class="flex justify-between relative">
-            <?php 
-            $steps = ["Type", "Info", "Staff", "Amenities", "Rules", "Photos", "Finish"];
-            foreach($steps as $i => $name): 
-                $num = $i + 1;
-            ?>
+                <?php 
+                $steps = ["Type", "Info", "Staff", "Amenities", "Rooms", "Rules", "Photos", "Finish"];
+                foreach($steps as $i => $name): 
+                    $num = $i + 1;
+                ?>
                     <div class="step-item flex-1 flex flex-col items-center group relative" data-step="<?= $num ?>">
                         <div class="step-line"></div>
                         <div class="step-circle mb-2 text-sm"><?= $num ?></div>
@@ -92,14 +101,14 @@ $type = $_GET['type'] ?? 'hotel';
                         <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 01</span>
                         <h2 class="text-2xl font-bold text-gray-900">What are you listing?</h2>
                     </div>
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <label class="group relative border-2 rounded-2xl p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
                             <input type="radio" name="business_type" value="hotel" required class="hidden" <?= $type == 'hotel' ? 'checked' : '' ?>>
                             <div class="w-16 h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
                                 <i class="fas fa-hotel text-2xl"></i>
                             </div>
-                            <div class="font-bold text-lg mb-1">Hotel / Resort</div>
-                            <p class="text-xs text-gray-500 leading-relaxed">Provide luxury stay and multiple services.</p>
+                            <div class="font-bold text-lg mb-1">Hotel</div>
+                            <p class="text-xs text-gray-500 leading-relaxed">Full service accommodation & resorts.</p>
                         </label>
                         <label class="group relative border-2 rounded-2xl p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
                             <input type="radio" name="business_type" value="reception_hall" class="hidden" <?= $type == 'reception_hall' ? 'checked' : '' ?>>
@@ -108,6 +117,22 @@ $type = $_GET['type'] ?? 'hotel';
                             </div>
                             <div class="font-bold text-lg mb-1">Reception Hall</div>
                             <p class="text-xs text-gray-500 leading-relaxed">Host weddings, parties and grand events.</p>
+                        </label>
+                        <label class="group relative border-2 rounded-2xl p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                            <input type="radio" name="business_type" value="hostel" class="hidden" <?= $type == 'hostel' ? 'checked' : '' ?>>
+                            <div class="w-16 h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                                <i class="fas fa-bed text-2xl"></i>
+                            </div>
+                            <div class="font-bold text-lg mb-1">Hostel</div>
+                            <p class="text-xs text-gray-500 leading-relaxed">Shared dormitory style accommodations.</p>
+                        </label>
+                        <label class="group relative border-2 rounded-2xl p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                            <input type="radio" name="business_type" value="rest_hall" class="hidden" <?= $type == 'rest_hall' ? 'checked' : '' ?>>
+                            <div class="w-16 h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                                <i class="fas fa-vihara text-2xl"></i>
+                            </div>
+                            <div class="font-bold text-lg mb-1">Pilgrim Hall</div>
+                            <p class="text-xs text-gray-500 leading-relaxed">Vishrama Shalawa / Rest Halls for pilgrims.</p>
                         </label>
                     </div>
                 </div>
@@ -367,104 +392,84 @@ $type = $_GET['type'] ?? 'hotel';
                     <div class="mb-8">
                         <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 04</span>
                         <h2 class="text-2xl font-bold text-gray-900">Amenities & Facilities</h2>
-                        <p class="text-sm text-gray-500 mt-1">Select the amenities available at your property to help guests find you.</p>
+                        <p class="text-sm text-gray-500 mt-1">Select the amenities available at your property. These are managed by our admin.</p>
                     </div>
 
-                    <div class="space-y-10">
-                        <!-- Most Popular -->
-                        <div>
-                            <h3 class="text-xs font-bold text-[#006ce4] uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <i class="fas fa-star text-[10px]"></i> Most Popular
-                            </h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                <?php 
-                                $popular = [
-                                    ['id' => 'wifi', 'name' => 'Free WiFi', 'icon' => 'fa-wifi'],
-                                    ['id' => 'pool', 'name' => 'Swimming Pool', 'icon' => 'fa-swimming-pool'],
-                                    ['id' => 'parking', 'name' => 'Free Parking', 'icon' => 'fa-parking'],
-                                    ['id' => 'ac', 'name' => 'Air Conditioning', 'icon' => 'fa-wind'],
-                                    ['id' => 'restaurant', 'name' => 'Restaurant', 'icon' => 'fa-utensils'],
-                                    ['id' => 'gym', 'name' => 'Fitness Center', 'icon' => 'fa-dumbbell'],
-                                    ['id' => 'bar', 'name' => 'Bar', 'icon' => 'fa-glass-martini-alt'],
-                                    ['id' => 'room_service', 'name' => 'Room Service', 'icon' => 'fa-concierge-bell'],
-                                    ['id' => 'spa', 'name' => 'Spa & Wellness', 'icon' => 'fa-spa'],
-                                    ['id' => 'breakfast', 'name' => 'Breakfast Included', 'icon' => 'fa-egg'],
-                                ];
-                                foreach($popular as $item): ?>
-                                    <label class="amenity-card group relative cursor-pointer">
-                                        <input type="checkbox" name="amenities[]" value="<?= $item['id'] ?>" class="hidden peer">
-                                        <div class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 bg-gray-50/30 group-hover:bg-white peer-checked:border-[#006ce4] peer-checked:bg-blue-50/50 transition-all shadow-sm group-hover:shadow-md">
-                                            <i class="fas <?= $item['icon'] ?> text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-xl mb-3"></i>
-                                            <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tighter"><?= $item['name'] ?></span>
-                                        </div>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Bathroom & Bedroom (Side by Side on Wide Screens) -->
-                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                            <!-- Bathroom -->
+                    <div class="space-y-12">
+                        <?php foreach($grouped_amenities as $category => $items): ?>
                             <div>
-                                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <i class="fas fa-bath text-[10px]"></i> Bathroom
+                                <h3 class="text-xs font-bold text-[#006ce4] uppercase tracking-wider mb-5 flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#006ce4]"></span>
+                                    <?= $category ?>
                                 </h3>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <?php 
-                                    $bathroom = [
-                                        ['id' => 'hot_water', 'name' => 'Hot Water', 'icon' => 'fa-hot-tub'],
-                                        ['id' => 'toiletries', 'name' => 'Free Toiletries', 'icon' => 'fa-pump-soap'],
-                                        ['id' => 'towels', 'name' => 'Towels', 'icon' => 'fa-scroll'],
-                                        ['id' => 'hairdryer', 'name' => 'Hairdryer', 'icon' => 'fa-wind'],
-                                        ['id' => 'bathtub', 'name' => 'Bathtub', 'icon' => 'fa-bath'],
-                                        ['id' => 'shower', 'name' => 'Rain Shower', 'icon' => 'fa-shower'],
-                                    ];
-                                    foreach($bathroom as $item): ?>
-                                        <label class="amenity-card group relative cursor-pointer">
+                                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    <?php foreach($items as $item): ?>
+                                        <label class="amenity-card group relative cursor-pointer h-full">
                                             <input type="checkbox" name="amenities[]" value="<?= $item['id'] ?>" class="hidden peer">
-                                            <div class="flex items-center gap-3 p-3 rounded-xl border bg-gray-50/20 group-hover:bg-white peer-checked:border-[#006ce4] peer-checked:bg-blue-50/50 transition-all">
-                                                <i class="fas <?= $item['icon'] ?> text-gray-400 peer-checked:text-[#006ce4] text-sm w-5 text-center"></i>
-                                                <span class="text-[10px] font-bold text-gray-600 peer-checked:text-[#003580] uppercase tracking-wide"><?= $item['name'] ?></span>
+                                            <div class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 bg-gray-50/30 group-hover:bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md h-full min-h-[110px] relative overflow-hidden">
+                                                <!-- Selection Glow -->
+                                                <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                                
+                                                <i class="fas <?= $item['icon'] ?? 'fa-check' ?> text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-3 transition-all group-hover:scale-110 peer-checked:scale-110"></i>
+                                                <span class="text-[10px] font-black text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tighter leading-tight relative z-10"><?= $item['amenity_name'] ?></span>
+                                                
+                                                <!-- Checkmark Indicator -->
+                                                <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                                    <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                                </div>
                                             </div>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
+                        <?php endforeach; ?>
 
-                            <!-- Bedroom -->
-                            <div>
-                                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <i class="fas fa-bed text-[10px]"></i> Bedroom & Living
-                                </h3>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <?php 
-                                    $bedroom = [
-                                        ['id' => 'linen', 'name' => 'Linen', 'icon' => 'fa-bed'],
-                                        ['id' => 'wardrobe', 'name' => 'Wardrobe', 'icon' => 'fa-door-closed'],
-                                        ['id' => 'iron', 'name' => 'Ironing Facilities', 'icon' => 'fa-tshirt'],
-                                        ['id' => 'fan', 'name' => 'Fan', 'icon' => 'fa-fan'],
-                                        ['id' => 'tv', 'name' => 'Flat-screen TV', 'icon' => 'fa-tv'],
-                                        ['id' => 'desk', 'name' => 'Work Desk', 'icon' => 'fa-laptop'],
-                                    ];
-                                    foreach($bedroom as $item): ?>
-                                        <label class="amenity-card group relative cursor-pointer">
-                                            <input type="checkbox" name="amenities[]" value="<?= $item['id'] ?>" class="hidden peer">
-                                            <div class="flex items-center gap-3 p-3 rounded-xl border bg-gray-50/20 group-hover:bg-white peer-checked:border-[#006ce4] peer-checked:bg-blue-50/50 transition-all">
-                                                <i class="fas <?= $item['icon'] ?> text-gray-400 peer-checked:text-[#006ce4] text-sm w-5 text-center"></i>
-                                                <span class="text-[10px] font-bold text-gray-600 peer-checked:text-[#003580] uppercase tracking-wide"><?= $item['name'] ?></span>
-                                            </div>
-                                        </label>
-                                    <?php endforeach; ?>
+                        <!-- Special Amenities Row by Row -->
+                        <div class="bg-blue-50/30 p-8 rounded-3xl border border-blue-100">
+                            <h3 class="text-lg font-bold text-gray-800 mb-2">Special Amenities</h3>
+                            <p class="text-xs text-gray-500 mb-6 uppercase tracking-wider">Does your hotel have something unique? Add them here row by row.</p>
+                            
+                            <div id="special-amenities-container" class="space-y-3">
+                                <!-- Row 1 (Default) -->
+                                <div class="special-amenity-row flex gap-3">
+                                    <div class="relative flex-1">
+                                        <i class="fas fa-magic absolute left-4 top-1/2 -translate-y-1/2 text-blue-300"></i>
+                                        <input type="text" name="special_amenities[]" placeholder="e.g. Traditional Sri Lankan Welcome Drink" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    </div>
+                                    <button type="button" class="remove-special-row w-12 h-12 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
+
+                            <button type="button" id="add-special-amenity" class="mt-4 flex items-center gap-2 text-xs font-bold text-[#006ce4] hover:text-[#003580] transition-all px-4 py-2 rounded-lg hover:bg-blue-50">
+                                <i class="fas fa-plus-circle"></i> ADD ANOTHER SPECIAL AMENITY
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Step 5: Policies & Rules -->
+                <!-- Step 5: Room Details -->
                 <div class="wizard-step" data-step="5">
                     <div class="mb-8">
                         <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 05</span>
+                        <h2 class="text-2xl font-bold text-gray-900">Room & Hall Details</h2>
+                        <p class="text-sm text-gray-500 mt-1">Define your inventory. For hotels add rooms, for reception halls add halls.</p>
+                    </div>
+
+                    <div id="room-inventory-container" class="space-y-6">
+                        <!-- Room Cards will be injected here -->
+                    </div>
+
+                    <button type="button" id="add-room-btn" class="mt-8 w-full py-4 border-2 border-dashed border-blue-200 rounded-2xl text-[#006ce4] font-bold hover:bg-blue-50 hover:border-[#006ce4] transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-plus-circle"></i> ADD ANOTHER ROOM / HALL TYPE
+                    </button>
+                </div>
+
+                <!-- Step 6: Policies & Rules -->
+                <div class="wizard-step" data-step="6">
+                    <div class="mb-8">
+                        <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 06</span>
                         <h2 class="text-2xl font-bold text-gray-900">Policies & Rules</h2>
                         <p class="text-sm text-gray-500 mt-1">Set the guidelines for guests staying at your property.</p>
                     </div>
@@ -512,7 +517,8 @@ $type = $_GET['type'] ?? 'hotel';
                     </div>
                 </div>
 
-                <div class="wizard-step" data-step="6">
+                <!-- Step 7: Property Photos -->
+                <div class="wizard-step" data-step="7">
                     <div class="mb-10 text-center py-20">
                         <i class="fas fa-images text-6xl text-blue-200 mb-6"></i>
                         <h2 class="text-3xl font-extrabold text-gray-900">Property Photos</h2>
@@ -520,8 +526,8 @@ $type = $_GET['type'] ?? 'hotel';
                     </div>
                 </div>
 
-                <!-- Step 7: Final Review -->
-                <div class="wizard-step" data-step="7">
+                <!-- Step 8: Final Review -->
+                <div class="wizard-step" data-step="8">
                     <div class="mb-10 text-center">
                         <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
                             <i class="fas fa-check text-4xl"></i>
@@ -547,7 +553,7 @@ $type = $_GET['type'] ?? 'hotel';
 
     <script>
         let currentStep = 1;
-        const totalSteps = 7;
+        const totalSteps = 8;
 
         function updateDisplay() {
             // Update Wizard Steps
@@ -808,6 +814,43 @@ $type = $_GET['type'] ?? 'hotel';
             const preview = container.querySelector('.preview-container');
             preview.classList.add('hidden');
         }
+
+        // Special Amenities dynamic rows
+        const specialContainer = document.getElementById('special-amenities-container');
+        const addSpecialBtn = document.getElementById('add-special-amenity');
+
+        addSpecialBtn.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'special-amenity-row flex gap-3';
+            row.innerHTML = `
+                <div class="relative flex-1">
+                    <i class="fas fa-magic absolute left-4 top-1/2 -translate-y-1/2 text-blue-300"></i>
+                    <input type="text" name="special_amenities[]" placeholder="e.g. Another unique feature" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                </div>
+                <button type="button" class="remove-special-row w-12 h-12 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            specialContainer.appendChild(row);
+            
+            // Re-bind removal events
+            bindRemovalEvents();
+        });
+
+        function bindRemovalEvents() {
+            document.querySelectorAll('.remove-special-row').forEach(btn => {
+                btn.onclick = () => {
+                    if (document.querySelectorAll('.special-amenity-row').length > 1) {
+                        btn.closest('.special-amenity-row').remove();
+                        saveFormData();
+                    } else {
+                        btn.closest('.special-amenity-row').querySelector('input').value = '';
+                    }
+                };
+            });
+        }
+        
+        bindRemovalEvents();
     </script>
 </body>
 </html>

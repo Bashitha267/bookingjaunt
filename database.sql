@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS properties (
     id INT AUTO_INCREMENT PRIMARY KEY,
     owner_id INT NOT NULL,
-    business_type ENUM('hotel', 'reception_hall') NOT NULL,
+    business_type ENUM('hotel', 'reception_hall', 'hostel', 'rest_hall') NOT NULL,
     hotel_category ENUM('budget_friendly', 'luxury', 'super_luxury') NULL,
     property_name VARCHAR(255) NOT NULL,
     description TEXT,
