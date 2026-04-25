@@ -14,6 +14,7 @@ $total_reception_halls = $pdo->query("SELECT COUNT(*) FROM properties WHERE busi
 $total_pilgrim_rests = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'rest_hall'")->fetchColumn();
 $total_hostels = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'hostel'")->fetchColumn();
 $total_users = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
+$total_properties = $total_hotels + $total_reception_halls + $total_pilgrim_rests + $total_hostels;
 
 // Fetch Recent Properties
 $stmt = $pdo->query("SELECT p.*, u.first_name, u.last_name FROM properties p JOIN users u ON p.owner_id = u.id ORDER BY p.created_at DESC LIMIT 5");

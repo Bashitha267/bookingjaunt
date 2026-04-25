@@ -136,6 +136,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
             }
 
+            // 6. Insert Gallery Photos
+            if (isset($data['property_photos']) && is_array($data['property_photos'])) {
+                $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type) VALUES (?, ?, 'image')");
+                foreach ($data['property_photos'] as $photo) {
+                    if (!empty($photo))
+                        $stmt->execute([$property_id, $photo]);
+                }
+            }
+
+            // 7. Insert Videos
+            if (isset($data['property_videos']) && is_array($data['property_videos'])) {
+                $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type) VALUES (?, ?, 'video')");
+                foreach ($data['property_videos'] as $video) {
+                    if (!empty($video))
+                        $stmt->execute([$property_id, $video]);
+                }
+            }
+
             $pdo->commit();
             echo json_encode(['success' => true, 'redirect' => 'index.php']);
             exit;
