@@ -215,88 +215,88 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
 <body class="flex flex-col items-center justify-center p-6">
 
-    <div class="glass-container max-w-lg w-full p-10 md:p-14 rounded-[3rem] animate-fade-in my-10">
-        <div class="flex flex-col items-center mb-10 text-center">
-            <div class="w-36 h-24 rounded-2xl flex items-center justify-center  mb-8">
-                <img src="assets/logo.png" class="w-32 h-24 object-cover">
+    <div class="glass-container max-w-md w-full p-8 md:p-10 rounded-[2rem] animate-fade-in my-10">
+        <div class="flex flex-col items-center mb-6 text-center">
+            <div class="w-28 h-20 rounded-2xl flex items-center justify-center mb-6">
+                <img src="assets/logo.png" class="w-24 h-18 object-cover">
             </div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tighter mb-2"
+            <h1 class="text-2xl font-extrabold text-white tracking-tighter mb-1"
                 style="font-family: 'Playfair Display', serif;">Bookingjaunt</h1>
-            <p class="text-gray-300 text-[10px] font-bold tracking-[0.2em] opacity-80 uppercase">Where every booking
+            <p class="text-gray-300 text-[9px] font-bold tracking-[0.2em] opacity-80 uppercase">Where every booking
                 feels like a vacation</p>
         </div>
 
         <!-- Step 1: Email Entry -->
         <div id="email-step" class="step-content active">
-            <h2 class="text-xl font-bold text-white mb-6 text-center">Start your journey</h2>
-            <form id="email-form" class="space-y-8">
+            <h2 class="text-lg font-bold text-white mb-5 text-center">Start your journey</h2>
+            <form id="email-form" class="space-y-6">
                 <div class="relative group">
-                    <label class="block text-[10px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">Email
+                    <label class="block text-[9px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">Email
                         Address</label>
                     <div class="flex items-center">
                         <i
-                            class="fas fa-envelope text-gray-400 mr-4 transition-colors group-focus-within:text-[#fbbd23]"></i>
+                            class="fas fa-envelope text-gray-400 mr-3 transition-colors group-focus-within:text-[#fbbd23] text-xs"></i>
                         <input type="email" id="email-input" name="email" required placeholder="name@example.com"
-                            class="w-full py-2 input-underline outline-none text-white text-lg placeholder-gray-500 transition-all">
+                            class="w-full py-1.5 input-underline outline-none text-white text-sm placeholder-gray-500 transition-all">
                     </div>
                 </div>
                 <button type="submit"
-                    class="w-full gold-accent text-gray-900 py-5 rounded-2xl font-bold text-xl shadow-2xl shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Continue</button>
+                    class="w-full gold-accent text-gray-900 py-3.5 rounded-xl font-bold text-base shadow-2xl shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Continue</button>
             </form>
         </div>
 
         <!-- Step 2: Full Registration -->
         <div id="registration-step" class="step-content">
-            <h2 class="text-xl font-bold text-white mb-8 text-center">Complete your profile</h2>
-            <form id="registration-form" class="space-y-8">
+            <h2 class="text-lg font-bold text-white mb-6 text-center">Complete your profile</h2>
+            <form id="registration-form" class="space-y-6">
                 <input type="hidden" name="action" value="register_user">
                 <input type="hidden" name="email" id="final-email">
                 <input type="hidden" name="role" id="user-role" value="user">
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+ 
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="relative group">
                         <label
-                            class="block text-[10px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">First
+                            class="block text-[9px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">First
                             Name</label>
                         <input type="text" name="first_name" required placeholder="John"
-                            class="w-full py-2 input-underline outline-none text-white text-lg placeholder-gray-500 transition-all">
+                            class="w-full py-1.5 input-underline outline-none text-white text-sm placeholder-gray-500 transition-all">
                     </div>
                     <div class="relative group">
                         <label
-                            class="block text-[10px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">Last
+                            class="block text-[9px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">Last
                             Name</label>
                         <input type="text" name="last_name" required placeholder="Doe"
-                            class="w-full py-2 input-underline outline-none text-white text-lg placeholder-gray-500 transition-all">
+                            class="w-full py-1.5 input-underline outline-none text-white text-sm placeholder-gray-500 transition-all">
                     </div>
                 </div>
-
+ 
                 <div class="relative group">
                     <label
-                        class="block text-[10px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">Create
+                        class="block text-[9px] font-bold text-[#fbbd23] mb-1 uppercase tracking-[0.2em] ml-1">Create
                         Password</label>
                     <div class="flex items-center">
-                        <i class="fas fa-lock text-gray-400 mr-4"></i>
+                        <i class="fas fa-lock text-gray-400 mr-3 text-xs"></i>
                         <input type="password" name="password" required placeholder="••••••••"
-                            class="w-full py-2 input-underline outline-none text-white text-lg placeholder-gray-500 transition-all">
+                            class="w-full py-1.5 input-underline outline-none text-white text-sm placeholder-gray-500 transition-all">
                     </div>
                 </div>
 
-                <div class="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center justify-between">
+                <div class="bg-white/5 p-3 rounded-xl border border-white/10 flex items-center justify-between">
                     <div class="flex flex-col">
-                        <span class="text-xs font-bold text-white">List your property?</span>
-                        <span class="text-[10px] text-gray-400">Register as a property owner</span>
+                        <span class="text-[11px] font-bold text-white">List your property?</span>
+                        <span class="text-[9px] text-gray-400">Register as a property owner</span>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="is-owner" class="sr-only peer"
                             onchange="document.getElementById('user-role').value = this.checked ? 'owner' : 'user'">
                         <div
-                            class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#fbbd23]">
+                            class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#fbbd23]">
                         </div>
                     </label>
                 </div>
-
+ 
                 <button type="submit"
-                    class="w-full gold-accent text-gray-900 py-5 rounded-2xl font-bold text-xl shadow-2xl shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Create
+                    class="w-full gold-accent text-gray-900 py-3.5 rounded-xl font-bold text-base shadow-2xl shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Create
                     Account</button>
             </form>
         </div>

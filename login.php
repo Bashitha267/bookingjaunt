@@ -93,55 +93,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <body class="flex flex-col items-center justify-center min-h-screen p-6">
 
-    <div class="glass-container max-w-md w-full p-10 rounded-[2.5rem] animate-fade-in">
-        <div class="flex flex-col items-center mb-8 text-center">
-            <div class="w-32 h-24 flex items-center justify-center mb-4">
-                <img src="assets/logo.png" class="w-28 h-20 object-contain">
+    <div class="glass-container max-w-sm w-full p-8 rounded-[2rem] animate-fade-in">
+        <div class="flex flex-col items-center mb-6 text-center">
+            <div class="w-24 h-18 flex items-center justify-center mb-3">
+                <img src="assets/logo.png" class="w-20 h-16 object-contain">
             </div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tighter mb-1"
+            <h1 class="text-2xl font-extrabold text-white tracking-tighter mb-1"
                 style="font-family: 'Playfair Display', serif;">Bookingjaunt</h1>
-            <p class="text-gray-300 text-[10px] font-bold tracking-[0.2em] opacity-80 uppercase">Where every booking feels like a vacation</p>
+            <p class="text-gray-300 text-[9px] font-bold tracking-[0.2em] opacity-80 uppercase">Where every booking feels like a vacation</p>
         </div>
 
         <?php if ($error): ?>
             <div
-                class="bg-red-500/20 backdrop-blur-md text-red-200 p-4 rounded-xl mb-8 text-sm font-bold flex items-center gap-3 border border-red-500/30">
+                class="bg-red-500/20 backdrop-blur-md text-red-200 p-3 rounded-lg mb-6 text-xs font-bold flex items-center gap-2 border border-red-500/30">
                 <i class="fas fa-exclamation-circle"></i>
                 <?= $error ?>
             </div>
         <?php endif; ?>
 
-        <form method="POST" class="space-y-8">
+        <form method="POST" class="space-y-6">
             <div class="relative group">
-                <label class="block text-[9px] font-bold text-[#f37021] mb-1 uppercase tracking-[0.2em] ml-1 text-left">Email Address</label>
+                <label class="block text-[8px] font-bold text-[#f37021] mb-1 uppercase tracking-[0.2em] ml-1 text-left">Email Address</label>
                 <div class="flex items-center">
-                    <i class="fas fa-envelope text-gray-500 mr-4 transition-colors group-focus-within:text-[#f37021] text-xs"></i>
+                    <i class="fas fa-envelope text-gray-500 mr-3 transition-colors group-focus-within:text-[#f37021] text-[10px]"></i>
                     <input type="email" name="email" required value="<?= htmlspecialchars($_GET['email'] ?? '') ?>"
                         placeholder="name@example.com"
-                        class="w-full py-2 input-underline outline-none text-white text-sm placeholder-gray-500 transition-all">
+                        class="w-full py-1.5 input-underline outline-none text-white text-xs placeholder-gray-500 transition-all">
                 </div>
             </div>
 
             <div class="relative group">
-                <label class="block text-[9px] font-bold text-[#f37021] mb-1 uppercase tracking-[0.2em] ml-1 text-left">Password</label>
+                <label class="block text-[8px] font-bold text-[#f37021] mb-1 uppercase tracking-[0.2em] ml-1 text-left">Password</label>
                 <div class="flex items-center">
-                    <i class="fas fa-lock text-gray-500 mr-4 transition-colors group-focus-within:text-[#f37021] text-xs"></i>
+                    <i class="fas fa-lock text-gray-500 mr-3 transition-colors group-focus-within:text-[#f37021] text-[10px]"></i>
                     <input type="password" name="password" required placeholder="••••••••"
-                        class="w-full py-2 input-underline outline-none text-white text-sm placeholder-gray-500 transition-all">
+                        class="w-full py-1.5 input-underline outline-none text-white text-xs placeholder-gray-500 transition-all">
                 </div>
             </div>
 
-            <div class="flex items-center justify-between text-[10px] font-bold px-1">
-                <label class="flex items-center gap-2 cursor-pointer group text-gray-400">
+            <div class="flex items-center justify-between text-[9px] font-bold px-1">
+                <label class="flex items-center gap-1.5 cursor-pointer group text-gray-400">
                     <input type="checkbox"
-                        class="w-3.5 h-3.5 rounded border-gray-600 bg-transparent text-[#f37021] focus:ring-[#f37021]">
+                        class="w-3 h-3 rounded border-gray-600 bg-transparent text-[#f37021] focus:ring-[#f37021]">
                     <span class="group-hover:text-white transition-colors uppercase tracking-wider">Remember me</span>
                 </label>
                 <a href="#" class="text-[#f37021] hover:text-white transition-colors uppercase tracking-wider">Forgot Password?</a>
             </div>
 
             <button type="submit"
-                class="w-full orange-gradient text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-orange-600/20 hover:scale-[1.02] active:scale-95 transition-all">
+                class="w-full orange-gradient text-white py-3 rounded-xl font-bold text-xs shadow-xl shadow-orange-600/20 hover:scale-[1.02] active:scale-95 transition-all">
                 Sign In
             </button>
         </form>
