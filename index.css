@@ -1,29 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
-    /* Core Brand */
-    --primary-teal: #155E63;
-    --primary-orange: #F97316;
-
-    /* Supporting (Sri Lanka vibe) */
-    --tropical-teal: #2CA6A4;
-    --sun-gold: #FBBF24;
-    --palm-green: #2F855A;
+    /* Booking.com Theme - Core */
+    --primary: #003580;
+    --secondary: #006ce4;
+    --accent: #febb02;
+    --white: #ffffff;
+    
+    /* Branding Aliases */
+    --primary-blue: #003580;
+    --action-blue: #006ce4;
+    --accent-yellow: #febb02;
 
     /* Neutrals */
-    --bg-main: #F9FAFB;
+    --bg-main: #f5f5f5;
     --bg-card: #FFFFFF;
-    --border: #E2E8F0;
-    --text-primary: #1F2937;
-    --text-secondary: #64748B;
+    --border: #e7e7e7;
+    --text-primary: #1a1a1a;
+    --text-secondary: #4a4a4a;
 
-    /* Accents */
-    --accent-coral: #FF6B4A;
-    --deep-ocean: #0F3D3E;
+    /* Semantic */
+    --success-green: #008009;
+    --palm-green: #008009;
 
     /* Transition & Radius */
-    --radius: 12px;
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius: 8px;
+    --transition: all 0.2s ease-in-out;
 }
 
 * {

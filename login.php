@@ -38,39 +38,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
+        <style>body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: url('assets/login-bg.png') no-repeat center center fixed;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(rgba(0, 15, 40, 0.4), rgba(0, 15, 40, 0.8)), url('assets/login-bg.png') no-repeat center center;
             background-size: cover;
-            height: 100vh;
-            overflow: hidden;
         }
 
-        .orange-gradient {
-            background: linear-gradient(135deg, #f37021 0%, #ff8c00 100%);
+        .blue-gradient {
+            background: linear-gradient(135deg, #006ce4 0%, #003580 100%);
         }
 
-        .orange-text {
-            color: #f37021;
+        .blue-text {
+            color: #006ce4;
         }
 
         .glass-container {
-            background: rgba(15, 15, 15, 0.4);
+            background: rgba(0, 20, 50, 0.6);
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        .input-underline {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            background: transparent;
+        .custom-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .input-underline:focus {
-            border-bottom: 1px solid #fbbd23;
+        .custom-input:focus-within {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #006ce4;
+            box-shadow: 0 0 0 4px rgba(0, 108, 228, 0.15);
         }
 
         @keyframes fadeIn {
@@ -95,12 +110,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <div class="glass-container max-w-sm w-full p-8 rounded-[2rem] animate-fade-in">
         <div class="flex flex-col items-center mb-6 text-center">
-            <div class="w-24 h-18 flex items-center justify-center mb-3">
-                <img src="assets/logo.png" class="w-20 h-16 object-contain">
+            <div class="w-24 h-18 flex items-center justify-center mb-1">
+                <img src="assets/white_logo.png" class="w-24 h-20 object-contain">
             </div>
             <h1 class="text-2xl font-extrabold text-white tracking-tighter mb-1"
                 style="font-family: 'Playfair Display', serif;">Bookingjaunt</h1>
-            <p class="text-gray-300 text-[9px] font-bold tracking-[0.2em] opacity-80 uppercase">Where every booking feels like a vacation</p>
+            <p class="text-gray-300 text-[9px] font-bold tracking-[0.2em] opacity-80 uppercase">Where every booking
+                feels like a vacation</p>
         </div>
 
         <?php if ($error): ?>
@@ -112,36 +128,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php endif; ?>
 
         <form method="POST" class="space-y-6">
-            <div class="relative group">
-                <label class="block text-[8px] font-bold text-[#f37021] mb-1 uppercase tracking-[0.2em] ml-1 text-left">Email Address</label>
-                <div class="flex items-center">
-                    <i class="fas fa-envelope text-gray-500 mr-3 transition-colors group-focus-within:text-[#f37021] text-[10px]"></i>
+            <div class="space-y-1">
+                <label class="block text-[10px] font-bold text-blue-400 mb-1.5 uppercase tracking-widest ml-1">Email
+                    Address</label>
+                <div class="flex items-center px-4 py-3 custom-input group">
+                    <i
+                        class="fas fa-envelope text-gray-500 mr-3 group-focus-within:text-blue-400 transition-colors"></i>
                     <input type="email" name="email" required value="<?= htmlspecialchars($_GET['email'] ?? '') ?>"
                         placeholder="name@example.com"
-                        class="w-full py-1.5 input-underline outline-none text-white text-xs placeholder-gray-500 transition-all">
+                        class="w-full bg-transparent outline-none text-white text-[13px] placeholder-gray-500">
                 </div>
             </div>
 
-            <div class="relative group">
-                <label class="block text-[8px] font-bold text-[#f37021] mb-1 uppercase tracking-[0.2em] ml-1 text-left">Password</label>
-                <div class="flex items-center">
-                    <i class="fas fa-lock text-gray-500 mr-3 transition-colors group-focus-within:text-[#f37021] text-[10px]"></i>
+            <div class="space-y-1">
+                <label
+                    class="block text-[10px] font-bold text-blue-400 mb-1.5 uppercase tracking-widest ml-1">Password</label>
+                <div class="flex items-center px-4 py-3 custom-input group">
+                    <i class="fas fa-lock text-gray-500 mr-3 group-focus-within:text-blue-400 transition-colors"></i>
                     <input type="password" name="password" required placeholder="••••••••"
-                        class="w-full py-1.5 input-underline outline-none text-white text-xs placeholder-gray-500 transition-all">
+                        class="w-full bg-transparent outline-none text-white text-[13px] placeholder-gray-500">
                 </div>
             </div>
 
             <div class="flex items-center justify-between text-[9px] font-bold px-1">
                 <label class="flex items-center gap-1.5 cursor-pointer group text-gray-400">
                     <input type="checkbox"
-                        class="w-3 h-3 rounded border-gray-600 bg-transparent text-[#f37021] focus:ring-[#f37021]">
+                        class="w-3 h-3 rounded border-gray-600 bg-transparent text-[#006ce4] focus:ring-[#006ce4]">
                     <span class="group-hover:text-white transition-colors uppercase tracking-wider">Remember me</span>
                 </label>
-                <a href="#" class="text-[#f37021] hover:text-white transition-colors uppercase tracking-wider">Forgot Password?</a>
+                <a href="#" class="text-[#006ce4] hover:text-white transition-colors uppercase tracking-wider">Forgot
+                    Password?</a>
             </div>
 
             <button type="submit"
-                class="w-full orange-gradient text-white py-3 rounded-xl font-bold text-xs shadow-xl shadow-orange-600/20 hover:scale-[1.02] active:scale-95 transition-all">
+                class="w-full blue-gradient text-white py-4 rounded-xl font-bold text-sm shadow-xl shadow-blue-900/40 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-widest mt-2">
                 Sign In
             </button>
         </form>
@@ -149,7 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="text-center mt-10">
             <p class="text-gray-400 text-[11px] font-medium uppercase tracking-wider">
                 New to Bookingjaunt? <a href="register.php"
-                    class="text-white font-black hover:text-[#f37021] transition-colors ml-1 border-b border-white/20 hover:border-[#f37021]">Register Now</a>
+                    class="text-white font-black hover:text-[#006ce4] transition-colors ml-1 border-b border-white/20 hover:border-[#006ce4]">Register
+                    Now</a>
             </p>
         </div>
     </div>
