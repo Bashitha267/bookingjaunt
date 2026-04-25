@@ -1,0 +1,330 @@
+<?php
+require_once '../../config.php';
+session_start();
+
+// Check if user is admin
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../../admin.php");
+    exit();
+}
+
+// Handle Approval/Rejection
+if (isset($_POST['action'])) {
+    $request_id = $_POST['request_id'];
+    $status = $_POST['status']; // 'approved' or 'rejected'
+    $notes = $_POST['admin_notes'] ?? '';
+
+    try {
+        $pdo->beginTransaction();
+
+        // Fetch the request
+        $stmt = $pdo->prepare("SELECT * FROM property_requests WHERE id = ?");
+        $stmt->execute([$request_id]);
+        $request = $stmt->fetch();
+
+        if ($request) {
+            if ($status === 'approved') {
+                if ($request['request_type'] === 'delete') {
+                    // Delete Property
+                    $stmt = $pdo->prepare("DELETE FROM properties WHERE id = ?");
+                    $stmt->execute([$request['property_id']]);
+                } elseif ($request['request_type'] === 'edit') {
+                    $new_data = json_decode($request['new_data'], true);
+                    if ($new_data) {
+                        $property_id = $request['property_id'];
+                        
+                        // Update full property info
+                        $stmt = $pdo->prepare("UPDATE properties SET 
+                            property_name = ?, 
+                            description = ?, 
+                            street_address = ?, 
+                            city = ?, 
+                            district = ?, 
+                            province = ?, 
+                            country = ?, 
+                            google_map_location = ?, 
+                            fixed_telephone = ?, 
+                            mobile_telephone = ?, 
+                            closest_police_station = ?, 
+                            closest_hospital = ?, 
+                            airport_distance = ?, 
+                            closest_main_town = ?, 
+                            postal_code = ?,
+                            hotel_category = ?,
+                            manager_name = ?,
+                            manager_phone = ?,
+                            manager_nic = ?,
+                            contact_number = ?,
+                            business_email = ?,
+                            bank_name = ?,
+                            bank_branch = ?,
+                            bank_account_name = ?,
+                            bank_account_number = ?,
+                            commission_rate = ?,
+                            check_in_time = ?,
+                            check_out_time = ?,
+                            cancellation_policy = ?,
+                            smoking_allowed = ?,
+                            pets_allowed = ?,
+                            events_allowed = ?,
+                            rules_json = ?,
+                            popular_amenities_json = ?,
+                            custom_rules_json = ?,
+                            logo_image = ?,
+                            cover_image = ?,
+                            manager_photo = ?
+                            WHERE id = ?");
+                            
+                        $stmt->execute([
+                            $new_data['property_name'] ?? '',
+                            $new_data['description'] ?? '',
+                            $new_data['street_address'] ?? '',
+                            $new_data['city'] ?? '',
+                            $new_data['district'] ?? '',
+                            $new_data['province'] ?? '',
+                            $new_data['country'] ?? '',
+                            $new_data['google_map_location'] ?? '',
+                            $new_data['fixed_telephone'] ?? '',
+                            $new_data['mobile_telephone'] ?? '',
+                            $new_data['closest_police_station'] ?? '',
+                            $new_data['closest_hospital'] ?? '',
+                            $new_data['airport_distance'] ?? '',
+                            $new_data['closest_main_town'] ?? '',
+                            $new_data['postal_code'] ?? '',
+                            $new_data['hotel_category'] ?? null,
+                            $new_data['manager_name'] ?? '',
+                            $new_data['manager_phone'] ?? '',
+                            $new_data['manager_nic'] ?? '',
+                            $new_data['contact_number'] ?? '',
+                            $new_data['business_email'] ?? '',
+                            $new_data['bank_name'] ?? null,
+                            $new_data['bank_branch'] ?? null,
+                            $new_data['bank_account_name'] ?? null,
+                            $new_data['bank_account_number'] ?? null,
+                            $new_data['commission_rate'] ?? 80,
+                            $new_data['check_in_time'] ?? '14:00',
+                            $new_data['check_out_time'] ?? '12:00',
+                            $new_data['cancellation_policy'] ?? '',
+                            ($new_data['smoking_allowed'] ?? '0') == '1' ? 1 : 0,
+                            ($new_data['pets_allowed'] ?? '0') == '1' ? 1 : 0,
+                            ($new_data['events_allowed'] ?? '0') == '1' ? 1 : 0,
+                            json_encode($new_data['rules'] ?? []),
+                            json_encode($new_data['popular_amenities'] ?? []),
+                            json_encode($new_data['custom_rules'] ?? []),
+                            $new_data['logo_image'] ?? '',
+                            $new_data['cover_image'] ?? '',
+                            $new_data['manager_photo'] ?? '',
+                            $property_id
+                        ]);
+
+                        // Update Media (Photos/Videos)
+                        $pdo->prepare("DELETE FROM property_media WHERE property_id = ?")->execute([$property_id]);
+                        if (isset($new_data['property_photos']) && is_array($new_data['property_photos'])) {
+                            $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type) VALUES (?, ?, 'image')");
+                            foreach ($new_data['property_photos'] as $photo) {
+                                if (!empty($photo)) $stmt->execute([$property_id, $photo]);
+                            }
+                        }
+                        if (isset($new_data['property_videos']) && is_array($new_data['property_videos'])) {
+                            $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type) VALUES (?, ?, 'video')");
+                            foreach ($new_data['property_videos'] as $video) {
+                                if (!empty($video)) $stmt->execute([$property_id, $video]);
+                            }
+                        }
+
+                        // Update Rooms
+                        $pdo->prepare("DELETE FROM property_rooms WHERE property_id = ?")->execute([$property_id]);
+                        if (isset($new_data['rooms']) && is_array($new_data['rooms'])) {
+                            $stmt = $pdo->prepare("INSERT INTO property_rooms (property_id, room_name, adults, children, price_lkr, price_usd, room_image) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                            foreach ($new_data['rooms'] as $room) {
+                                if (!empty($room['name'])) {
+                                    $stmt->execute([
+                                        $property_id,
+                                        $room['name'],
+                                        $room['adults'] ?? 2,
+                                        $room['children'] ?? 0,
+                                        $room['price_lkr'] ?? 0,
+                                        $room['price_usd'] ?? 0,
+                                        $room['image'] ?? ''
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Update request status
+            $stmt = $pdo->prepare("UPDATE property_requests SET status = ?, admin_notes = ? WHERE id = ?");
+            $stmt->execute([$status, $notes, $request_id]);
+        }
+
+        $pdo->commit();
+        header("Location: actions.php?success=1");
+        exit();
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $error = $e->getMessage();
+    }
+}
+
+// Fetch Pending Requests
+$stmt = $pdo->query("SELECT r.*, p.property_name, u.first_name, u.last_name 
+                     FROM property_requests r 
+                     JOIN properties p ON r.property_id = p.id 
+                     JOIN users u ON r.user_id = u.id 
+                     WHERE r.status = 'pending' 
+                     ORDER BY r.created_at DESC");
+$requests = $stmt->fetchAll();
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Actions - Bookingjaunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #febb02;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="flex min-h-screen">
+
+    <?php include 'sidebar.php'; ?>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 bg-[#f8fafc] min-h-screen">
+        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-6">
+            <h1 class="text-2xl font-black text-[#003580]">Approval Actions</h1>
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Review property edit and deletion requests</p>
+        </header>
+
+        <div class="p-8">
+            <?php if (empty($requests)): ?>
+                <div class="bg-white rounded-3xl p-16 text-center border border-gray-100 shadow-xl shadow-blue-900/5">
+                    <div class="w-20 h-20 bg-blue-50 text-[#006ce4] rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-check-double text-3xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">No Pending Requests</h2>
+                    <p class="text-gray-400 text-sm">Everything is up to date. Good job!</p>
+                </div>
+            <?php else: ?>
+                <div class="space-y-6">
+                    <?php foreach ($requests as $req): ?>
+                        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-blue-900/5 overflow-hidden">
+                            <div class="p-6 md:p-8 flex flex-col md:flex-row justify-between gap-6">
+                                <div class="flex gap-6">
+                                    <div class="w-16 h-16 <?php echo $req['request_type'] === 'delete' ? 'bg-red-50 text-red-500' : 'bg-orange-50 text-orange-500'; ?> rounded-2xl flex flex-col items-center justify-center flex-shrink-0">
+                                        <i class="fas <?php echo $req['request_type'] === 'delete' ? 'fa-trash-alt' : 'fa-edit'; ?> text-xl mb-1"></i>
+                                        <span class="text-[8px] font-black uppercase tracking-tighter"><?php echo $req['request_type']; ?></span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-black text-[#003580]"><?php echo htmlspecialchars($req['property_name']); ?></h3>
+                                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Requested by: <?php echo htmlspecialchars($req['first_name'] . ' ' . $req['last_name']); ?></p>
+                                        
+                                        <?php if ($req['request_type'] === 'edit'): 
+                                            $old_data = json_decode($req['old_data'], true) ?: [];
+                                            $new_data = json_decode($req['new_data'], true) ?: [];
+                                            $changes = [];
+                                            
+                                            foreach ($new_data as $key => $value) {
+                                                if (isset($old_data[$key])) {
+                                                    if ($old_data[$key] != $value) {
+                                                        $changes[$key] = [
+                                                            'old' => $old_data[$key],
+                                                            'new' => $value
+                                                        ];
+                                                    }
+                                                } else {
+                                                    $changes[$key] = [
+                                                        'old' => '(Not Set)',
+                                                        'new' => $value
+                                                    ];
+                                                }
+                                            }
+                                        ?>
+                                            <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-4 max-w-3xl">
+                                                <div class="flex items-center justify-between mb-4">
+                                                    <p class="text-[10px] font-black text-[#003580] uppercase tracking-widest">Change Comparison</p>
+                                                    <span class="bg-blue-100 text-[#006ce4] text-[9px] font-black px-2 py-0.5 rounded-full uppercase"><?php echo count($changes); ?> Fields Changed</span>
+                                                </div>
+                                                
+                                                <div class="space-y-4">
+                                                    <?php foreach ($changes as $field => $data): 
+                                                        if (is_array($data['new'])) continue; // Handle arrays separately if needed, but for now skip
+                                                    ?>
+                                                        <div class="border-b border-gray-200/50 pb-3 last:border-0 last:pb-0">
+                                                            <p class="text-[10px] font-bold text-gray-400 uppercase mb-1"><?php echo str_replace('_', ' ', $field); ?></p>
+                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                                                <div class="relative pl-4 border-l-2 border-red-200">
+                                                                    <span class="absolute -left-[7px] top-1/2 -translate-y-1/2 w-3 h-3 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-[8px]"><i class="fas fa-minus"></i></span>
+                                                                    <div class="text-gray-400 line-through opacity-60"><?php echo htmlspecialchars((string)$data['old']); ?></div>
+                                                                </div>
+                                                                <div class="relative pl-4 border-l-2 border-green-400">
+                                                                    <span class="absolute -left-[7px] top-1/2 -translate-y-1/2 w-3 h-3 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-[8px]"><i class="fas fa-plus"></i></span>
+                                                                    <div class="text-gray-900 font-bold"><?php echo htmlspecialchars((string)$data['new']); ?></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                
+                                                <button class="mt-6 text-[10px] font-bold text-[#006ce4] uppercase tracking-widest hover:underline flex items-center gap-2">
+                                                    <i class="fas fa-search-plus"></i> View Full Details
+                                                </button>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="bg-red-50/50 rounded-2xl p-4 border border-red-100 mb-4 inline-block">
+                                                <p class="text-xs font-bold text-red-600 flex items-center gap-2">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                    The owner wants to permanently delete this property.
+                                                </p>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <p class="text-[10px] text-gray-400 font-bold italic uppercase tracking-tighter">Submitted on <?php echo date('M d, Y @ H:i', strtotime($req['created_at'])); ?></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex flex-col gap-3 min-w-[200px]">
+                                    <form method="POST" class="space-y-3">
+                                        <input type="hidden" name="request_id" value="<?php echo $req['id']; ?>">
+                                        <textarea name="admin_notes" placeholder="Add optional notes for the owner..." class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-[#003580] transition-all h-24 resize-none"></textarea>
+                                        <div class="flex gap-2">
+                                            <button type="submit" name="action" value="approve" onclick="return confirm('Approve this request?')" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-green-600 transition-all shadow-lg shadow-green-900/10">Approve</button>
+                                            <button type="submit" name="action" value="reject" onclick="return confirm('Reject this request?')" class="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">Reject</button>
+                                        </div>
+                                        <input type="hidden" name="status" id="status_input_<?php echo $req['id']; ?>" value="">
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </main>
+
+    <script>
+        document.querySelectorAll('button[name="action"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const status = this.value === 'approve' ? 'approved' : 'rejected';
+                this.closest('form').querySelector('input[name="status"]').value = status;
+            });
+        });
+    </script>
+</body>
+
+</html>

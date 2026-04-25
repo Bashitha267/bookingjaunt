@@ -59,7 +59,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $pdo->beginTransaction();
 
             // 1. Insert Property
-            $stmt = $pdo->prepare("INSERT INTO properties (owner_id, business_type, hotel_category, property_name, description, street_address, city, district, province, country, google_map_location, fixed_telephone, mobile_telephone, closest_police_station, closest_hospital, airport_distance, closest_main_town, postal_code, logo_image, cover_image, manager_name, manager_phone, manager_nic, manager_photo, contact_number, business_email, check_in_time, check_out_time, cancellation_policy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO properties (
+                owner_id, business_type, hotel_category, property_name, description, 
+                street_address, city, district, province, country, google_map_location, 
+                fixed_telephone, mobile_telephone, closest_police_station, closest_hospital, 
+                airport_distance, closest_main_town, postal_code, logo_image, cover_image, 
+                manager_name, manager_phone, manager_nic, manager_photo, contact_number, 
+                business_email, check_in_time, check_out_time, cancellation_policy, 
+                rules_json, popular_amenities_json, custom_rules_json,
+                bank_name, bank_branch, bank_account_name, bank_account_number, commission_rate
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            
             $stmt->execute([
                 $owner_id,
                 $data['business_type'],
@@ -89,7 +99,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $data['business_email'] ?? '',
                 $data['check_in_time'] ?? '14:00',
                 $data['check_out_time'] ?? '12:00',
-                $data['cancellation_policy'] ?? ''
+                $data['cancellation_policy'] ?? '',
+                json_encode($data['rules'] ?? []),
+                json_encode($data['popular_amenities'] ?? []),
+                json_encode($data['custom_rules'] ?? []),
+                $data['bank_name'] ?? null,
+                $data['bank_branch'] ?? null,
+                $data['bank_account_name'] ?? null,
+                $data['bank_account_number'] ?? null,
+                $data['commission_rate'] ?? 80
             ]);
 
             $property_id = $pdo->lastInsertId();
@@ -136,21 +154,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
             }
 
-            // 6. Insert Gallery Photos
+            // 6. Insert Cover Image as featured media (first slot)
+            if (!empty($data['cover_image'])) {
+                $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type, is_featured, sort_order) VALUES (?, ?, 'image', 1, 0)");
+                $stmt->execute([$property_id, $data['cover_image']]);
+            }
+
+            // 7. Insert Gallery Photos
             if (isset($data['property_photos']) && is_array($data['property_photos'])) {
-                $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type) VALUES (?, ?, 'image')");
+                $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type, is_featured, sort_order) VALUES (?, ?, 'image', 0, ?)");
+                $sort = 1;
                 foreach ($data['property_photos'] as $photo) {
-                    if (!empty($photo))
-                        $stmt->execute([$property_id, $photo]);
+                    if (!empty($photo) && $photo !== $data['cover_image']) {
+                        $stmt->execute([$property_id, $photo, $sort++]);
+                    }
                 }
             }
 
-            // 7. Insert Videos
+            // 8. Insert Videos
             if (isset($data['property_videos']) && is_array($data['property_videos'])) {
-                $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type) VALUES (?, ?, 'video')");
+                $stmt = $pdo->prepare("INSERT INTO property_media (property_id, media_path, media_type, is_featured, sort_order) VALUES (?, ?, 'video', 0, ?)");
+                $sort = 1;
                 foreach ($data['property_videos'] as $video) {
                     if (!empty($video))
-                        $stmt->execute([$property_id, $video]);
+                        $stmt->execute([$property_id, $video, $sort++]);
                 }
             }
 
@@ -162,6 +189,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
             exit;
         }
+    }
+
+    // 2. Request Edit logic
+    if ($_POST['action'] == 'request_edit') {
+        $user_id = $_SESSION['user_id'] ?? 0;
+        $property_id = $_POST['property_id'];
+        
+        // Fetch current data for old_data
+        $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
+        $stmt->execute([$property_id]);
+        $old_data = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        $new_data = json_encode($_POST);
+        
+        $stmt = $pdo->prepare("INSERT INTO property_requests (property_id, user_id, request_type, old_data, new_data) VALUES (?, ?, 'edit', ?, ?)");
+        $stmt->execute([$property_id, $user_id, json_encode($old_data), $new_data]);
+        
+        echo json_encode(['success' => true, 'message' => 'Edit request submitted for admin approval.']);
+        exit;
+    }
+
+    // 3. Request Delete logic
+    if ($_POST['action'] == 'request_delete') {
+        $user_id = $_SESSION['user_id'] ?? 0;
+        $property_id = $_POST['property_id'];
+        
+        $stmt = $pdo->prepare("INSERT INTO property_requests (property_id, user_id, request_type) VALUES (?, ?, 'delete')");
+        $stmt->execute([$property_id, $user_id]);
+        
+        echo json_encode(['success' => true, 'message' => 'Deletion request submitted for admin approval.']);
+        exit;
     }
 }
 ?>

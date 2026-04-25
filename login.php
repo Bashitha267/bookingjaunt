@@ -17,7 +17,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
             $_SESSION['role'] = $user['role'];
-            header("Location: index.php");
+
+            // Check if user has a property
+            $stmt = $pdo->prepare("SELECT id FROM properties WHERE owner_id = ? LIMIT 1");
+            $stmt->execute([$user['id']]);
+            $has_property = $stmt->fetch();
+
+            if ($user['role'] === 'admin') {
+                header("Location: system/admin/dashboard.php");
+            } elseif ($has_property) {
+                header("Location: system/hotel/dashboard.php");
+            } else {
+                header("Location: index.php");
+            }
             exit();
         } else {
             $error = "Invalid email or password.";

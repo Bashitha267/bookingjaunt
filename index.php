@@ -268,16 +268,22 @@ try {
                         if ($property['district'])
                             $location .= ", " . $property['district'];
 
-                        $image = !empty($property['cover_image']) ? $property['cover_image'] : 'assets/hotel1.png';
+                        $image = !empty($property['cover_image']) ? $property['cover_image'] : null;
                         ?>
                         <!-- Property Listing Card -->
                         <div class="bg-white border border-border rounded-lg md:rounded-xl overflow-hidden flex flex-col md:flex-row mb-0 md:mb-4 transition-all hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] group w-[72vw] min-w-[240px] max-w-[280px] md:max-w-none md:w-full snap-start shrink-0 md:shrink cursor-pointer"
                             onclick="window.location.href='hotel_info.php?id=<?php echo $property['id']; ?>'">
                             <!-- Image Wrapper -->
                             <div class="relative w-full md:w-[240px] md:h-auto h-[150px] p-0 md:p-4 flex-shrink-0">
-                                <img src="<?php echo htmlspecialchars($image); ?>"
-                                    alt="<?php echo htmlspecialchars($property['property_name']); ?>"
-                                    class="w-full h-full object-cover rounded-none md:rounded group-hover:scale-[1.02] transition-transform duration-500">
+                                <?php if ($image): ?>
+                                    <img src="<?php echo htmlspecialchars($image); ?>"
+                                        alt="<?php echo htmlspecialchars($property['property_name']); ?>"
+                                        class="w-full h-full object-cover rounded-none md:rounded group-hover:scale-[1.02] transition-transform duration-500">
+                                <?php else: ?>
+                                    <div class="w-full h-full bg-gray-100 rounded-none md:rounded flex items-center justify-center">
+                                        <i class="fas fa-image text-3xl text-gray-300"></i>
+                                    </div>
+                                <?php endif; ?>
                                 <?php if ($property['hotel_category'] == 'super_luxury'): ?>
                                     <div
                                         class="absolute top-6 left-6 bg-secondary text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest shadow-md">

@@ -18,6 +18,54 @@ foreach ($all_amenities as $amenity) {
 }
 
 $type = $_GET['type'] ?? 'hotel';
+$edit_id = $_GET['edit'] ?? null;
+$edit_data = null;
+
+if ($edit_id) {
+    // Fetch property details for editing
+    $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
+    $stmt->execute([$edit_id]);
+    $edit_data = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Safety check: ensure owner or admin
+    if ($edit_data && $edit_data['owner_id'] != $_SESSION['user_id'] && $_SESSION['role'] !== 'admin') {
+        header("Location: system/hotel/dashboard.php");
+        exit();
+    }
+
+    if ($edit_data) {
+        // Fetch Rooms
+        $stmt = $pdo->prepare("SELECT * FROM property_rooms WHERE property_id = ?");
+        $stmt->execute([$edit_id]);
+        $edit_data['rooms'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch Amenities
+        $stmt = $pdo->prepare("SELECT amenity_id FROM property_amenities WHERE property_id = ?");
+        $stmt->execute([$edit_id]);
+        $edit_data['amenities'] = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Fetch Custom Amenities (Special Amenities)
+        $stmt = $pdo->prepare("SELECT amenity_name FROM property_custom_amenities WHERE property_id = ?");
+        $stmt->execute([$edit_id]);
+        $edit_data['special_amenities'] = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Fetch Staff Names
+        $stmt = $pdo->prepare("SELECT staff_name FROM property_staff_names WHERE property_id = ?");
+        $stmt->execute([$edit_id]);
+        $edit_data['staff_names'] = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Fetch Media (Photos & Videos)
+        $stmt = $pdo->prepare("SELECT media_path, media_type FROM property_media WHERE property_id = ?");
+        $stmt->execute([$edit_id]);
+        $media = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $edit_data['property_photos'] = [];
+        $edit_data['property_videos'] = [];
+        foreach ($media as $m) {
+            if ($m['media_type'] === 'image') $edit_data['property_photos'][] = $m['media_path'];
+            else $edit_data['property_videos'][] = $m['media_path'];
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1243,6 +1291,16 @@ $type = $_GET['type'] ?? 'hotel';
     </div>
 
     <script>
+        const editMode = <?php echo $edit_data ? 'true' : 'false'; ?>;
+        const editData = <?php echo json_encode($edit_data); ?>;
+        const propertyId = <?php echo $edit_id ?? 'null'; ?>;
+
+        // In edit mode, discard any stale localStorage data immediately
+        if (editMode) {
+            localStorage.removeItem('property_wizard_data');
+            localStorage.removeItem('property_wizard_step');
+        }
+
         let currentStep = 1;
         const totalSteps = 9;
 
@@ -1425,6 +1483,9 @@ $type = $_GET['type'] ?? 'hotel';
         }
 
         function saveFormData() {
+            // In edit mode, we don't persist to localStorage — DB is the source of truth
+            if (editMode) return;
+
             const form = document.getElementById('property-form');
             const formData = new FormData(form);
             const data = {};
@@ -1749,6 +1810,158 @@ $type = $_GET['type'] ?? 'hotel';
         });
 
         function loadFormData() {
+            if (editMode && editData) {
+                const form = document.getElementById('property-form');
+
+                // --- STEP 1: Explicit fill for all known fields ---
+                function setField(name, value) {
+                    if (value === null || value === undefined) return;
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if (!el) return;
+                    if (el.type === 'radio') {
+                        const r = document.querySelector(`input[name="${name}"][value="${value}"]`);
+                        if (r) r.checked = true;
+                    } else if (el.type === 'checkbox') {
+                        el.checked = (value == 1);
+                    } else {
+                        el.value = value;
+                    }
+                }
+
+                const fields = [
+                    'business_type','hotel_category','property_name','description',
+                    'street_address','city','district','province','country',
+                    'google_map_location','fixed_telephone','mobile_telephone',
+                    'closest_police_station','closest_hospital','airport_distance',
+                    'closest_main_town','postal_code',
+                    'manager_name','manager_phone','manager_nic',
+                    'contact_number','business_email',
+                    'bank_name','bank_branch','bank_account_name','bank_account_number',
+                    'check_in_time','check_out_time','cancellation_policy',
+                    'smoking_allowed','pets_allowed','events_allowed',
+                    'commission_rate','vat_percentage','service_charge_percentage',
+                    'cancellation_time','cancellation_details','is_manager_checkbox'
+                ];
+                fields.forEach(f => setField(f, editData[f]));
+
+                // --- STEP 2: Category visibility & commission slider ---
+                if (editData.business_type) updateCategoryVisibility(editData.business_type);
+                if (editData.commission_rate && commissionVal) commissionVal.innerText = editData.commission_rate;
+                const slider = document.getElementById('commission-slider');
+                if (slider && editData.commission_rate) slider.value = editData.commission_rate;
+
+                // --- STEP 3: Amenities checkboxes (use == for int/string match) ---
+                if (editData.amenities && editData.amenities.length > 0) {
+                    form.querySelectorAll('input[name="amenities[]"]').forEach(cb => {
+                        cb.checked = editData.amenities.some(id => id == cb.value);
+                    });
+                }
+
+                // --- STEP 4: Popular Amenities (Appetites) ---
+                try {
+                    const popular = editData.popular_amenities_json ? JSON.parse(editData.popular_amenities_json) : [];
+                    if (popular.length > 0) {
+                        form.querySelectorAll('input[name="popular_amenities[]"]').forEach(cb => {
+                            cb.checked = popular.some(id => id == cb.value);
+                        });
+                    }
+                } catch(e) { console.warn('popular_amenities_json parse error', e); }
+
+                // --- STEP 5: Property Rules (predefined) ---
+                try {
+                    const rules = editData.rules_json ? JSON.parse(editData.rules_json) : {};
+                    Object.keys(rules).forEach(ruleKey => {
+                        const cb = form.querySelector(`input[name="rules[${ruleKey}]"]`);
+                        if (cb) cb.checked = true;
+                    });
+                } catch(e) { console.warn('rules_json parse error', e); }
+
+                // --- STEP 6: Rooms ---
+                if (editData.rooms && editData.rooms.length > 0) {
+                    roomContainer.innerHTML = '';
+                    roomIndex = 0;
+                    editData.rooms.forEach(room => {
+                        addRoomCard({
+                            room_name:  room.room_name,
+                            max_adults: room.adults,
+                            max_children: room.children,
+                            room_image: room.room_image,
+                            price_lkr:  room.price_lkr,
+                            price_usd:  room.price_usd,
+                            is_hall: 0
+                        });
+                    });
+                }
+
+                // --- STEP 7: Special Amenities ---
+                if (editData.special_amenities && editData.special_amenities.length > 0) {
+                    specialContainer.innerHTML = '';
+                    editData.special_amenities.forEach(val => addSpecialRow(val));
+                    bindRemovalEvents();
+                }
+
+                // --- STEP 8: Custom Rules ---
+                try {
+                    const customRules = editData.custom_rules_json ? JSON.parse(editData.custom_rules_json) : [];
+                    if (customRules.length > 0) {
+                        ruleContainer.innerHTML = '';
+                        customRules.forEach(val => addRuleRow(val));
+                    }
+                } catch(e) { console.warn('custom_rules_json parse error', e); }
+
+                // --- STEP 9: Staff ---
+                if (editData.staff_names && editData.staff_names.length > 0) {
+                    staffCountInput.value = editData.staff_names.length;
+                    generateStaffForms(editData.staff_names.length);
+                    editData.staff_names.forEach((name, i) => {
+                        const idx = i + 1;
+                        const parts = (name || '').split(' ');
+                        const first = parts.shift() || '';
+                        const last  = parts.join(' ') || '';
+                        const fInp = form.querySelector(`[name="staff_${idx}_first_name"]`);
+                        const lInp = form.querySelector(`[name="staff_${idx}_last_name"]`);
+                        if (fInp) fInp.value = first;
+                        if (lInp) lInp.value = last;
+                    });
+                }
+
+                // --- STEP 10: Gallery Photos ---
+                if (editData.property_photos && editData.property_photos.length > 0) {
+                    const photoSlots = form.querySelectorAll('.property-photo-path');
+                    editData.property_photos.forEach((path, i) => {
+                        if (!path || !photoSlots[i]) return;
+                        photoSlots[i].value = path;
+                        const wrap    = photoSlots[i].closest('.upload-container') || photoSlots[i].parentElement;
+                        const preview = wrap.querySelector('.preview-container');
+                        const img     = wrap.querySelector('img');
+                        if (img) img.src = path;
+                        if (preview) preview.classList.remove('hidden');
+                    });
+                }
+
+                // --- STEP 11: Gallery Videos ---
+                if (editData.property_videos && editData.property_videos.length > 0) {
+                    const videoSlots = form.querySelectorAll('.property-video-path');
+                    editData.property_videos.forEach((path, i) => {
+                        if (!path || !videoSlots[i]) return;
+                        videoSlots[i].value = path;
+                        const wrap    = videoSlots[i].closest('.upload-container') || videoSlots[i].parentElement;
+                        const preview = wrap.querySelector('.preview-container');
+                        const label   = wrap.querySelector('.video-filename');
+                        if (label)   label.innerText = path.split('/').pop();
+                        if (preview) preview.classList.remove('hidden');
+                    });
+                }
+
+                // --- STEP 12: Logo / Cover / Manager Photo previews ---
+                if (editData.logo_image)    showPreview('logo-upload',          editData.logo_image);
+                if (editData.cover_image)   showPreview('cover-upload',         editData.cover_image);
+                if (editData.manager_photo) showPreview('manager-photo-upload', editData.manager_photo);
+
+                updatePreview();
+                return;   // skip localStorage restore
+            }
+
             const savedData = localStorage.getItem('property_wizard_data');
             if (savedData) {
                 const data = JSON.parse(savedData);
@@ -1891,8 +2104,7 @@ $type = $_GET['type'] ?? 'hotel';
             window.location.href = 'index.php';
         };
 
-        // Load data before initial display
-        loadFormData();
+        // Only run display update here. loadFormData() is called at the bottom after all helpers are defined.
         updateDisplay();
 
         // Category Toggle
@@ -1966,23 +2178,7 @@ $type = $_GET['type'] ?? 'hotel';
             saveFormData(); // Save the structure change
         });
 
-        // Initialize staff forms if data was loaded
-        const savedData = localStorage.getItem('property_wizard_data');
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            const savedCount = Object.keys(data).filter(key => key.includes('_first_name')).length;
-            if (savedCount > 0) {
-                staffCountInput.value = savedCount;
-                generateStaffForms(savedCount);
-                // Re-load form data to fill the dynamic fields
-                loadFormData();
-            }
-
-            // Load images
-            if (data.logo_image) showPreview('logo-upload', data.logo_image);
-            if (data.cover_image) showPreview('cover-upload', data.cover_image);
-            if (data.manager_photo) showPreview('manager-photo-upload', data.manager_photo);
-        }
+        // Staff initialization is handled inside loadFormData() at the bottom.
 
         // Image Upload Logic
         document.querySelectorAll('.upload-trigger').forEach(trigger => {
@@ -2080,13 +2276,13 @@ $type = $_GET['type'] ?? 'hotel';
         const specialContainer = document.getElementById('special-amenities-container');
         const addSpecialBtn = document.getElementById('add-special-amenity');
 
-        addSpecialBtn.addEventListener('click', () => {
+        function addSpecialRow(value = '') {
             const row = document.createElement('div');
             row.className = 'special-amenity-row flex gap-3';
             row.innerHTML = `
                 <div class="relative flex-1">
                     <i class="fas fa-magic absolute left-4 top-1/2 -translate-y-1/2 text-blue-300"></i>
-                    <input type="text" name="special_amenities[]" placeholder="e.g. Another unique feature" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    <input type="text" name="special_amenities[]" value="${value}" placeholder="e.g. Another unique feature" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                 </div>
                 <button type="button" class="remove-special-row w-12 h-12 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
                     <i class="fas fa-times"></i>
@@ -2094,10 +2290,10 @@ $type = $_GET['type'] ?? 'hotel';
             `;
             specialContainer.appendChild(row);
             saveFormData();
-
-            // Re-bind removal events
             bindRemovalEvents();
-        });
+        }
+
+        addSpecialBtn.addEventListener('click', () => addSpecialRow());
 
         function bindRemovalEvents() {
             document.querySelectorAll('.remove-special-row').forEach(btn => {
@@ -2130,12 +2326,24 @@ $type = $_GET['type'] ?? 'hotel';
             e.preventDefault();
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            if (editMode) {
+                if (!confirm('Are you sure you want to submit these changes for admin approval?')) {
+                    return;
+                }
+            }
+
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Registering Property...';
+            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${editMode ? 'Submitting for Approval...' : 'Registering Property...'}`;
 
             const formData = new FormData(propertyForm);
-            formData.append('action', 'register_property');
+            if (editMode) {
+                formData.append('action', 'request_edit');
+                formData.append('property_id', propertyId);
+            } else {
+                formData.append('action', 'register_property');
+            }
 
             try {
                 const response = await fetch('register.php', {
@@ -2174,6 +2382,9 @@ $type = $_GET['type'] ?? 'hotel';
                 submitBtn.innerHTML = originalBtnText;
             }
         };
+        // Call loadFormData HERE — after all helpers (addRoomCard, generateStaffForms,
+        // updateCategoryVisibility, specialContainer, ruleContainer) are defined.
+        loadFormData();
     </script>
 </body>
 
