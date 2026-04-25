@@ -9,18 +9,15 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Fetch Stats
-$total_users = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
-$total_properties = $pdo->query("SELECT COUNT(*) FROM properties")->fetchColumn();
-$total_rooms = $pdo->query("SELECT COUNT(*) FROM property_rooms")->fetchColumn();
-$total_amenities = $pdo->query("SELECT COUNT(*) FROM amenities_master")->fetchColumn();
+$total_hotels = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'hotel'")->fetchColumn();
+$total_reception_halls = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'reception_hall'")->fetchColumn();
+$total_pilgrim_rests = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'rest_hall'")->fetchColumn();
+$total_hostels = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'hostel'")->fetchColumn();
+$total_users = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
 
 // Fetch Recent Properties
 $stmt = $pdo->query("SELECT p.*, u.first_name, u.last_name FROM properties p JOIN users u ON p.owner_id = u.id ORDER BY p.created_at DESC LIMIT 5");
 $recent_properties = $stmt->fetchAll();
-
-// Fetch Recent Users
-$stmt = $pdo->query("SELECT * FROM users ORDER BY created_at DESC LIMIT 5");
-$recent_users = $stmt->fetchAll();
 
 // Group properties by type for chart
 $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM properties GROUP BY business_type")->fetchAll(PDO::FETCH_KEY_PAIR);
@@ -167,59 +164,71 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
 
         <div class="p-8">
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Stat Card 1 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <!-- Hotels -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
                     <div class="flex justify-between items-start mb-4">
                         <div class="w-12 h-12 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center text-xl">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+12%</span>
-                    </div>
-                    <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Total Users</p>
-                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_users); ?></h3>
-                </div>
-
-                <!-- Stat Card 2 -->
-                <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center text-xl">
                             <i class="fas fa-hotel"></i>
                         </div>
                         <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+5%</span>
                     </div>
-                    <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Active Properties</p>
-                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_properties); ?></h3>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Hotels</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_hotels); ?></h3>
                 </div>
 
-                <!-- Stat Card 3 -->
+                <!-- Reception Halls -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-synagogue"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+2%</span>
+                    </div>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Recep. Halls</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_reception_halls); ?></h3>
+                </div>
+
+                <!-- Pilgrim Rests -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
                     <div class="flex justify-between items-start mb-4">
                         <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
-                            <i class="fas fa-door-open"></i>
+                            <i class="fas fa-place-of-worship"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full">-2%</span>
+                        <span class="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">0%</span>
                     </div>
-                    <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Total Rooms</p>
-                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_rooms); ?></h3>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Pilgrim Rests</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_pilgrim_rests); ?></h3>
                 </div>
 
-                <!-- Stat Card 4 -->
+                <!-- Hostels -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
                     <div class="flex justify-between items-start mb-4">
                         <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-xl">
-                            <i class="fas fa-check-circle"></i>
+                            <i class="fas fa-bed"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+18%</span>
+                        <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full">-3%</span>
                     </div>
-                    <p class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Amenities</p>
-                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_amenities); ?></h3>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Hostels</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_hostels); ?></h3>
+                </div>
+
+                <!-- Users -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+12%</span>
+                    </div>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Users</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_users); ?></h3>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 gap-8">
                 <!-- Recent Properties -->
-                <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                         <h3 class="font-bold text-[#003580]">Recent Properties</h3>
                         <a href="#" class="text-[10px] font-bold text-[#006ce4] uppercase tracking-widest hover:underline">View All</a>
@@ -269,71 +278,37 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
                         </table>
                     </div>
                 </div>
-
-                <!-- Recent Users -->
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                        <h3 class="font-bold text-[#003580]">Latest Users</h3>
-                        <i class="fas fa-user-plus text-gray-300"></i>
-                    </div>
-                    <div class="p-4 space-y-4">
-                        <?php foreach($recent_users as $user): ?>
-                        <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-[#003580]/5 text-[#003580] rounded-full flex items-center justify-center font-bold text-xs border border-[#003580]/10">
-                                    <?php echo strtoupper(substr($user['first_name'], 0, 1)); ?>
-                                </div>
-                                <div class="overflow-hidden">
-                                    <p class="text-xs font-bold text-gray-800 truncate"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></p>
-                                    <p class="text-[10px] text-gray-400 truncate"><?php echo htmlspecialchars($user['email']); ?></p>
-                                </div>
-                            </div>
-                            <span class="text-[9px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full uppercase group-hover:bg-[#006ce4] group-hover:text-white transition-all"><?php echo $user['role']; ?></span>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <div class="p-4 bg-gray-50 mt-2">
-                        <button class="w-full py-2 text-[10px] font-bold text-[#006ce4] uppercase tracking-widest hover:bg-white rounded-lg border border-transparent hover:border-blue-100 transition-all">Manage All Users</button>
-                    </div>
-                </div>
             </div>
 
             <!-- Additional Stats / Chart Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            <div class="mt-8">
                 <div class="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
                     <h3 class="font-bold text-[#003580] mb-6">Property Distribution</h3>
-                    <div class="space-y-4">
-                        <?php
-                        $colors = ['hotel' => 'bg-blue-500', 'reception_hall' => 'bg-orange-500', 'hostel' => 'bg-purple-500', 'rest_hall' => 'bg-green-500'];
-                        foreach($type_counts as $type => $count):
-                            $percentage = ($total_properties > 0) ? ($count / $total_properties) * 100 : 0;
-                        ?>
-                        <div>
-                            <div class="flex justify-between text-[11px] font-bold mb-1.5 uppercase tracking-wide text-gray-600">
-                                <span><?php echo str_replace('_', ' ', $type); ?></span>
-                                <span><?php echo $count; ?> (<?php echo round($percentage); ?>%)</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <?php
+                            $colors = ['hotel' => 'bg-blue-500', 'reception_hall' => 'bg-orange-500', 'hostel' => 'bg-purple-500', 'rest_hall' => 'bg-green-500'];
+                            foreach($type_counts as $type => $count):
+                                $percentage = ($total_properties > 0) ? ($count / $total_properties) * 100 : 0;
+                            ?>
+                            <div>
+                                <div class="flex justify-between text-[11px] font-bold mb-1.5 uppercase tracking-wide text-gray-600">
+                                    <span><?php echo str_replace('_', ' ', $type); ?></span>
+                                    <span><?php echo $count; ?> (<?php echo round($percentage); ?>%)</span>
+                                </div>
+                                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="<?php echo $colors[$type] ?? 'bg-gray-400'; ?> h-full" style="width: <?php echo $percentage; ?>%"></div>
+                                </div>
                             </div>
-                            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="<?php echo $colors[$type] ?? 'bg-gray-400'; ?> h-full" style="width: <?php echo $percentage; ?>%"></div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="flex items-center justify-center bg-gray-50 rounded-2xl p-6 border border-dashed border-gray-200">
+                            <div class="text-center">
+                                <i class="fas fa-chart-pie text-4xl text-gray-200 mb-3"></i>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type Breakdown</p>
                             </div>
                         </div>
-                        <?php endforeach; ?>
                     </div>
-                </div>
-
-                <div class="bg-gradient-to-br from-[#003580] to-[#006ce4] p-8 rounded-3xl text-white relative overflow-hidden shadow-xl shadow-blue-900/20">
-                    <div class="relative z-10">
-                        <p class="text-blue-200 text-xs font-bold uppercase tracking-[0.2em] mb-2">Platform Performance</p>
-                        <h2 class="text-3xl font-black mb-6">Growth Analysis</h2>
-                        <p class="text-blue-100 text-sm leading-relaxed mb-8 opacity-80">Your platform has seen a <span class="text-white font-bold">24% increase</span> in property listings over the last 30 days. Payout requests are processed within an average of <span class="text-white font-bold">1.2 days</span>.</p>
-                        <div class="flex gap-4">
-                            <button class="bg-[#febb02] text-[#003580] px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-yellow-600/20 hover:scale-105 active:scale-95 transition-all">Download Report</button>
-                            <button class="bg-white/10 hover:bg-white/20 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">Analytics</button>
-                        </div>
-                    </div>
-                    <!-- Decorative shapes -->
-                    <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-white/5 rounded-full"></div>
-                    <div class="absolute -right-10 top-0 w-32 h-32 bg-white/5 rounded-full"></div>
                 </div>
             </div>
         </div>
