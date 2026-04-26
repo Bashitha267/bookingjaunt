@@ -24,9 +24,28 @@ $amenities_stmt = $pdo->prepare("SELECT am.amenity_name, am.icon FROM property_a
 $amenities_stmt->execute([$property_id]);
 $amenities = $amenities_stmt->fetchAll();
 
-// Fetch Rooms
-$rooms_stmt = $pdo->prepare("SELECT * FROM property_rooms WHERE property_id = ?");
-$rooms_stmt->execute([$property_id]);
+// Handle Availability Dates
+$check_in = $_GET['checkin'] ?? date('Y-m-d');
+$check_out = $_GET['checkout'] ?? date('Y-m-d', strtotime('+1 day'));
+
+// Fetch Rooms with availability check
+$rooms_stmt = $pdo->prepare("
+    SELECT pr.*, 
+           (pr.total_rooms - COALESCE(b_count.booked_rooms, 0)) as available_count
+    FROM property_rooms pr
+    LEFT JOIN (
+        SELECT room_id, COUNT(*) as booked_rooms 
+        FROM bookings 
+        WHERE status NOT IN ('cancelled', 'checked_out')
+        AND (
+            (check_in_date < ? AND check_out_date > ?)
+        )
+        GROUP BY room_id
+    ) b_count ON pr.id = b_count.room_id
+    WHERE pr.property_id = ?
+    HAVING available_count > 0
+");
+$rooms_stmt->execute([$check_out, $check_in, $property_id]);
 $rooms = $rooms_stmt->fetchAll();
 
 // Fetch Media
@@ -202,8 +221,32 @@ $reviews = [
         </div>
 
         <!-- Availability -->
-        <div class="mt-12">
+        <div class="mt-12" id="availability">
             <h3 class="text-2xl font-bold font-display mb-6">Availability</h3>
+            
+            <!-- Date Selection Form -->
+            <form method="GET" action="#availability" class="bg-white border border-neutral-200 rounded-xl p-4 mb-8 flex flex-col md:flex-row items-end gap-4 shadow-sm">
+                <input type="hidden" name="id" value="<?php echo $property_id; ?>">
+                <div class="flex-1 w-full">
+                    <label class="block text-[11px] font-bold text-neutral-500 uppercase mb-1.5 ml-1">Check-in Date</label>
+                    <div class="relative">
+                        <i class="far fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                        <input type="date" name="checkin" value="<?php echo $check_in; ?>" min="<?php echo date('Y-m-d'); ?>" 
+                               class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
+                    </div>
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-[11px] font-bold text-neutral-500 uppercase mb-1.5 ml-1">Check-out Date</label>
+                    <div class="relative">
+                        <i class="far fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                        <input type="date" name="checkout" value="<?php echo $check_out; ?>" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>"
+                               class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
+                    </div>
+                </div>
+                <button type="submit" class="w-full md:w-auto bg-brand-600 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-brand-700 transition-colors">
+                    Check Availability
+                </button>
+            </form>
             <div class="hidden md:block border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-brand-900 text-white text-[11px] uppercase">
@@ -265,17 +308,23 @@ $reviews = [
                                     </div>
                                 </td>
                                 <td class="p-5 align-top">
-                                    <select class="w-full p-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 bg-white text-sm font-medium">
-                                        <option>0</option>
-                                        <option>1</option>
-                                        <option>2</option>
-                                    </select>
-                                </td>
-                                <td class="p-5 align-top">
-                                    <button class="w-full bg-brand-600 text-white py-2.5 rounded-lg font-bold hover:bg-brand-700 transition-all shadow-md shadow-brand-600/10 mb-2">
-                                        Reserve
-                                    </button>
-                                    <p class="text-[10px] text-neutral-500 font-medium text-center">Confirmation is instant</p>
+                                    <form action="newbooking.php" method="GET">
+                                        <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
+                                        <input type="hidden" name="room_id" value="<?php echo $room['id']; ?>">
+                                        <input type="hidden" name="checkin" value="<?php echo $check_in; ?>">
+                                        <input type="hidden" name="checkout" value="<?php echo $check_out; ?>">
+                                        
+                                        <select name="qty" class="w-full p-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 bg-white text-sm font-medium mb-3">
+                                            <?php for($i = 1; $i <= $room['available_count']; $i++): ?>
+                                                <option value="<?php echo $i; ?>"><?php echo $i; ?> (<?php echo number_format($room['price_lkr'] * $i); ?> LKR)</option>
+                                            <?php endfor; ?>
+                                        </select>
+                                        
+                                        <button type="submit" class="w-full bg-brand-600 text-white py-2.5 rounded-lg font-bold hover:bg-brand-700 transition-all shadow-md shadow-brand-600/10 mb-2">
+                                            Reserve
+                                        </button>
+                                        <p class="text-[10px] text-neutral-500 font-medium text-center">Confirmation is instant</p>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -307,7 +356,10 @@ $reviews = [
                             </div>
                             <div class="flex items-center justify-between">
                                 <div class="font-black text-xl">LKR <?php echo number_format($room['price_lkr']); ?></div>
-                                <button class="bg-brand-600 text-white px-6 py-2.5 rounded-xl font-bold text-[14px]">Select</button>
+                                <a href="newbooking.php?property_id=<?php echo $property_id; ?>&room_id=<?php echo $room['id']; ?>&checkin=<?php echo $check_in; ?>&checkout=<?php echo $check_out; ?>&qty=1" 
+                                   class="bg-brand-600 text-white px-6 py-2.5 rounded-xl font-bold text-[14px] no-underline">
+                                    Select
+                                </a>
                             </div>
                         </div>
                     </div>

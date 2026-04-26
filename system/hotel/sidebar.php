@@ -17,7 +17,7 @@ $view = $_GET['view'] ?? 'dashboard';
             <i class="fas fa-th-large w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Dashboard
         </a>
-        <a href="dashboard.php?view=bookings" class="sidebar-link <?php echo ($current_page == 'dashboard.php' && $view === 'bookings') ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+        <a href="bookings.php" class="sidebar-link <?php echo ($current_page == 'bookings.php') ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all hover:bg-white/10 hover:text-white group">
             <i class="fas fa-calendar-check w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Bookings
         </a>

@@ -22,6 +22,57 @@ if (!$property && $_SESSION['role'] !== 'admin') {
 }
 
 $property_id = $property['id'] ?? 0;
+
+// --- Real Data Fetching for Dashboard ---
+$total_bookings_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE property_id = ?");
+$total_bookings_stmt->execute([$property_id]);
+$total_bookings_count = $total_bookings_stmt->fetchColumn();
+
+$monthly_revenue_stmt = $pdo->prepare("SELECT SUM(amount_paid) FROM bookings WHERE property_id = ? AND MONTH(created_at) = MONTH(CURRENT_DATE())");
+$monthly_revenue_stmt->execute([$property_id]);
+$monthly_revenue = $monthly_revenue_stmt->fetchColumn() ?? 0;
+
+$pending_bookings_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE property_id = ? AND status = 'pending'");
+$pending_bookings_stmt->execute([$property_id]);
+$pending_bookings = $pending_bookings_stmt->fetchColumn();
+
+// Fetch Recent Bookings for the table
+$recent_bookings_stmt = $pdo->prepare("
+    SELECT b.*, pr.room_name 
+    FROM bookings b 
+    JOIN property_rooms pr ON b.room_id = pr.id 
+    WHERE b.property_id = ? 
+    ORDER BY b.created_at DESC 
+    LIMIT 5
+");
+$recent_bookings_stmt->execute([$property_id]);
+$recent_bookings = $recent_bookings_stmt->fetchAll();
+
+// Fetch Calendar Events
+$events_stmt = $pdo->prepare("
+    SELECT b.guest_name, b.check_in_date, b.check_out_date, b.status, pr.room_name 
+    FROM bookings b 
+    JOIN property_rooms pr ON b.room_id = pr.id 
+    WHERE b.property_id = ?
+");
+$events_stmt->execute([$property_id]);
+$bookings_raw = $events_stmt->fetchAll();
+
+$calendar_events = [];
+foreach ($bookings_raw as $b) {
+    $color = '#fb923c'; // Pending
+    if ($b['status'] == 'confirmed') $color = '#4ade80';
+    if ($b['status'] == 'checked_in') $color = '#3b82f6';
+    if ($b['status'] == 'checked_out') $color = '#94a3b8';
+    if ($b['status'] == 'cancelled') $color = '#ef4444';
+    
+    $calendar_events[] = [
+        'title' => $b['guest_name'] . ' (' . $b['room_name'] . ')',
+        'start' => $b['check_in_date'],
+        'end' => $b['check_out_date'],
+        'color' => $color
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -147,14 +198,11 @@ $property_id = $property['id'] ?? 0;
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
                         <div class="flex justify-between items-start mb-6">
                             <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-xl">
-                                <i class="fas fa-mobile-alt"></i>
+                                <i class="fas fa-calendar-check"></i>
                             </div>
-                            <span class="text-[10px] font-bold text-green-500 flex items-center gap-1">
-                                <i class="fas fa-arrow-up"></i> +12%
-                            </span>
                         </div>
                         <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Bookings</p>
-                        <h3 class="text-2xl font-black text-[#003580]">1,284</h3>
+                        <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_bookings_count); ?></h3>
                     </div>
 
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
@@ -162,12 +210,19 @@ $property_id = $property['id'] ?? 0;
                             <div class="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center text-xl">
                                 <i class="fas fa-wallet"></i>
                             </div>
-                            <span class="text-[10px] font-bold text-green-500 flex items-center gap-1">
-                                <i class="fas fa-arrow-up"></i> +8%
-                            </span>
                         </div>
                         <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Monthly Revenue</p>
-                        <h3 class="text-2xl font-black text-[#003580]">$42,920</h3>
+                        <h3 class="text-2xl font-black text-[#003580]">LKR <?php echo number_format($monthly_revenue); ?></h3>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center text-xl">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Pending Bookings</p>
+                        <h3 class="text-2xl font-black text-[#003580]"><?php echo $pending_bookings; ?></h3>
                     </div>
 
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
@@ -175,24 +230,64 @@ $property_id = $property['id'] ?? 0;
                             <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl flex items-center justify-center text-xl">
                                 <i class="fas fa-bed"></i>
                             </div>
-                            <span class="text-[10px] font-bold text-gray-400">Steady</span>
                         </div>
-                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Occupancy Rate</p>
-                        <h3 class="text-2xl font-black text-[#003580]">84.2%</h3>
+                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Rooms</p>
+                        <h3 class="text-2xl font-black text-[#003580]">
+                            <?php 
+                                $rooms_count_stmt = $pdo->prepare("SELECT SUM(total_rooms) FROM property_rooms WHERE property_id = ?");
+                                $rooms_count_stmt->execute([$property_id]);
+                                echo $rooms_count_stmt->fetchColumn() ?: 0;
+                            ?>
+                        </h3>
+                    </div>
+                </div>
+
+                <!-- Recent Bookings Table -->
+                <div class="mb-8">
+                    <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-gray-50 flex justify-between items-center">
+                            <h2 class="text-lg font-black text-[#003580]">Recent Bookings</h2>
+                            <a href="bookings.php" class="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">View All</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    <tr>
+                                        <th class="px-6 py-4">Guest</th>
+                                        <th class="px-6 py-4">Room</th>
+                                        <th class="px-6 py-4">Stay</th>
+                                        <th class="px-6 py-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50 text-sm">
+                                    <?php foreach ($recent_bookings as $rb): ?>
+                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                            <td class="px-6 py-4">
+                                                <div class="font-bold text-gray-800"><?php echo htmlspecialchars($rb['guest_name']); ?></div>
+                                                <div class="text-[10px] text-gray-400"><?php echo htmlspecialchars($rb['guest_phone']); ?></div>
+                                            </td>
+                                            <td class="px-6 py-4 font-semibold text-gray-600 text-xs"><?php echo htmlspecialchars($rb['room_name']); ?></td>
+                                            <td class="px-6 py-4 text-xs">
+                                                <?php echo date('M d', strtotime($rb['check_in_date'])); ?> - <?php echo date('M d', strtotime($rb['check_out_date'])); ?>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider
+                                                    <?php 
+                                                        if($rb['status'] == 'confirmed') echo 'bg-green-50 text-green-600';
+                                                        elseif($rb['status'] == 'pending') echo 'bg-orange-50 text-orange-600';
+                                                        elseif($rb['status'] == 'cancelled') echo 'bg-red-50 text-red-600';
+                                                        else echo 'bg-gray-50 text-gray-600';
+                                                    ?>">
+                                                    <?php echo $rb['status']; ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center text-xl">
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <span class="text-[10px] font-bold text-green-500 flex items-center gap-1">
-                                <i class="fas fa-arrow-up"></i> +0.2
-                            </span>
-                        </div>
-                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Avg. Rating</p>
-                        <h3 class="text-2xl font-black text-[#003580]">4.8</h3>
-                    </div>
                 </div>
 
                 <!-- Calendar View (Booking Schedule) -->
@@ -288,32 +383,7 @@ $property_id = $property['id'] ?? 0;
                         center: 'title',
                         right: 'dayGridMonth,timeGridWeek,timeGridDay'
                     },
-                    events: [
-                        {
-                            title: 'Mark Stevens - Room 402',
-                            start: '2024-03-01',
-                            end: '2024-03-04',
-                            color: '#fb923c' // Pending
-                        },
-                        {
-                            title: 'Sarah Jenkins - Deluxe Suite',
-                            start: '2024-03-04',
-                            end: '2024-03-09',
-                            color: '#4ade80' // Confirmed
-                        },
-                        {
-                            title: 'Dr. Alan Turing - Room 101',
-                            start: '2024-03-11',
-                            end: '2024-03-15',
-                            color: '#3b82f6' // Checked-in
-                        },
-                        {
-                            title: 'Emma Watson - Standard',
-                            start: '2024-03-15',
-                            end: '2024-03-19',
-                            color: '#4ade80'
-                        }
-                    ],
+                    events: <?php echo json_encode($calendar_events); ?>,
                     height: 'auto',
                     contentHeight: 600,
                     firstDay: 1
