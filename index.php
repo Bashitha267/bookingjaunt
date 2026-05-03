@@ -16,8 +16,8 @@ try {
     $q = $_GET['q'] ?? '';
     $checkin = $_GET['checkin'] ?? '';
     $checkout = $_GET['checkout'] ?? '';
-    $adults = (int)($_GET['adults'] ?? 1);
-    $children = (int)($_GET['children'] ?? 0);
+    $adults = (int) ($_GET['adults'] ?? 1);
+    $children = (int) ($_GET['children'] ?? 0);
     $type = $_GET['type'] ?? 'hotel';
 
     $params = [];
@@ -51,6 +51,10 @@ try {
 
     $where_sql = implode(" AND ", $where);
 
+    // Fetch unique property types for the "Browse by" section
+    $stmt_types = $pdo->query("SELECT DISTINCT business_type FROM properties WHERE business_type IS NOT NULL");
+    $db_property_types = $stmt_types->fetchAll(PDO::FETCH_COLUMN);
+
     // Fetch properties and their cheapest matching room
     $query = "SELECT p.*, r.room_name, r.adults, r.children, r.price_lkr, r.room_image as first_room_image, r.id as room_id,
               AVG(rev.rating) as avg_rating, COUNT(rev.id) as review_count
@@ -72,7 +76,7 @@ try {
               )
               GROUP BY p.id
               ORDER BY p.created_at DESC";
-    
+
     // Add subquery params
     $params[] = $adults;
     $params[] = ($adults + $children);
@@ -94,7 +98,7 @@ try {
     if (isset($_SESSION['user_id'])) {
         $check_stmt = $pdo->prepare("SELECT id FROM properties WHERE owner_id = ? LIMIT 1");
         $check_stmt->execute([$_SESSION['user_id']]);
-        $user_has_properties = (bool)$check_stmt->fetch();
+        $user_has_properties = (bool) $check_stmt->fetch();
     }
 } catch (PDOException $e) {
     error_log("Query failed: " . $e->getMessage());
@@ -160,25 +164,28 @@ try {
         <!-- Search Bar -->
         <form action="index.php" method="GET"
             class="absolute -bottom-[190px] md:-bottom-[40px] left-1/2 -translate-x-1/2 w-[94%] md:w-[80%] max-w-[1100px] bg-[#10b981] p-1 md:p-1.5 rounded-xl md:rounded-2xl flex flex-col md:flex-row shadow-[0_10px_30px_rgba(0,0,0,0.2)] md:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 z-20">
-            
+
             <input type="hidden" name="type" value="<?php echo htmlspecialchars($type); ?>">
 
             <!-- Row 1: Location -->
             <div
                 class="flex-[1.5] bg-white m-0.5 p-3 md:p-4 rounded-t-lg md:rounded-xl flex items-center gap-3 text-neutral-800">
                 <i class="fas fa-search text-neutral-600 md:text-[#10b981] md:text-xl"></i>
-                <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" placeholder="Around current location"
+                <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>"
+                    placeholder="Around current location"
                     class="border-none outline-none w-full text-[15px] font-bold md:font-medium placeholder:text-neutral-800 md:placeholder:text-neutral-400">
             </div>
 
             <!-- Row 2: Dates -->
             <div class="flex-1 flex m-0.5 gap-1 md:gap-0 bg-transparent md:bg-white md:rounded-xl">
                 <!-- Dates Container (Combined for Desktop) -->
-                <div class="flex-1 bg-white p-2 px-3 md:p-0 md:rounded-xl flex flex-row items-center gap-2 md:gap-0 overflow-hidden">
+                <div
+                    class="flex-1 bg-white p-2 px-3 md:p-0 md:rounded-xl flex flex-row items-center gap-2 md:gap-0 overflow-hidden">
                     <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center relative">
                         <i class="far fa-calendar-alt text-[#10b981] hidden md:inline-block text-xl ml-4 mr-2"></i>
                         <div class="flex flex-col flex-1">
-                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Check-in</span>
+                            <span
+                                class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Check-in</span>
                             <input type="date" name="checkin" value="<?php echo htmlspecialchars($checkin); ?>"
                                 class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
                         </div>
@@ -186,7 +193,8 @@ try {
                     <div class="hidden md:block w-[1px] h-8 bg-neutral-100"></div>
                     <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center">
                         <div class="flex flex-col flex-1 md:pl-3">
-                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Check-out</span>
+                            <span
+                                class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Check-out</span>
                             <input type="date" name="checkout" value="<?php echo htmlspecialchars($checkout); ?>"
                                 class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
                         </div>
@@ -194,32 +202,72 @@ try {
                 </div>
             </div>
 
-            <!-- Row 3: Guests -->
-            <div class="flex-1 flex m-0.5 gap-1 md:gap-0 bg-transparent md:bg-white md:rounded-xl">
-                <div class="flex-1 bg-white p-2 px-3 md:p-0 md:rounded-xl flex flex-row items-center gap-2 md:gap-0 overflow-hidden">
-                    <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center relative">
-                        <i class="fas fa-user-friends text-[#10b981] hidden md:inline-block text-xl ml-4 mr-2"></i>
-                        <div class="flex flex-col flex-1">
-                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Adults</span>
-                            <div class="flex items-center gap-1">
-                                <span class="hidden md:inline text-[13px] text-neutral-400 font-bold">A:</span>
-                                <input type="number" name="adults" min="1" value="<?php echo $adults; ?>"
-                                    class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
-                            </div>
-                        </div>
+            <!-- Row 3: Guests Dropdown -->
+            <div class="flex-1 flex m-0.5 relative" id="guestDropdownContainer">
+                <div class="flex-1 bg-white p-3 md:p-4 md:rounded-xl flex items-center gap-3 text-neutral-800 cursor-pointer select-none"
+                    onclick="toggleGuestDropdown()">
+                    <i class="fas fa-user-friends text-[#10b981] text-xl"></i>
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                        <span class="text-[14px] font-bold md:font-medium text-neutral-800 truncate"
+                            id="guestInputDisplay">
+                            <?php echo $adults; ?> adults · <?php echo $children; ?> children
+                        </span>
                     </div>
-                    <div class="hidden md:block w-[1px] h-8 bg-neutral-100"></div>
-                    <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center">
-                        <div class="flex flex-col flex-1 md:pl-3">
-                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Children</span>
-                            <div class="flex items-center gap-1">
-                                <span class="hidden md:inline text-[13px] text-neutral-400 font-bold">C:</span>
-                                <input type="number" name="children" min="0" value="<?php echo $children; ?>"
-                                    class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
-                            </div>
-                        </div>
-                    </div>
+                    <i class="fas fa-chevron-down text-neutral-400 text-xs transition-transform duration-300"
+                        id="guestChevron"></i>
                 </div>
+
+                <!-- Dropdown Popup -->
+                <div id="guestPopup"
+                    class="fixed inset-x-4 bottom-10 md:absolute md:top-[calc(100%+8px)] md:left-0 md:right-auto md:bottom-auto md:w-[360px] bg-white rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.3)] border border-neutral-100 p-6 z-[100] hidden animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-top-2 duration-300">
+                    <!-- Adults Row -->
+                    <div class="flex items-center justify-between mb-6">
+                        <span class="font-bold text-neutral-800 text-lg">Adults</span>
+                        <div class="flex items-center border border-neutral-300 rounded-lg overflow-hidden h-12 w-44">
+                            <button type="button" onclick="updateGuestCount('adults', -1)"
+                                class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50 transition-colors">
+                                <i class="fas fa-minus text-sm"></i>
+                            </button>
+                            <div
+                                class="w-14 h-full flex items-center justify-center font-bold text-neutral-800 text-lg border-x border-neutral-100">
+                                <span id="adultsCount">2</span>
+                                <input type="hidden" name="adults" id="adultsHidden" value="<?php echo $adults; ?>">
+                            </div>
+                            <button type="button" onclick="updateGuestCount('adults', 1)"
+                                class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50 transition-colors">
+                                <i class="fas fa-plus text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Children Row -->
+                    <div class="flex items-center justify-between mb-8">
+                        <span class="font-bold text-neutral-800 text-lg">Children</span>
+                        <div class="flex items-center border border-neutral-300 rounded-lg overflow-hidden h-12 w-44">
+                            <button type="button" onclick="updateGuestCount('children', -1)"
+                                class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50 transition-colors">
+                                <i class="fas fa-minus text-sm"></i>
+                            </button>
+                            <div
+                                class="w-14 h-full flex items-center justify-center font-bold text-neutral-800 text-lg border-x border-neutral-100">
+                                <span id="childrenCount">0</span>
+                                <input type="hidden" name="children" id="childrenHidden"
+                                    value="<?php echo $children; ?>">
+                            </div>
+                            <button type="button" onclick="updateGuestCount('children', 1)"
+                                class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50 transition-colors">
+                                <i class="fas fa-plus text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="toggleGuestDropdown()"
+                        class="w-full py-3.5 bg-white border border-secondary text-secondary rounded-xl font-bold hover:bg-secondary/5 transition-colors text-lg">Done</button>
+                </div>
+
+                <!-- Mobile Overlay -->
+                <div id="guestOverlay" class="fixed inset-0 bg-black/40 z-[90] hidden md:hidden"
+                    onclick="toggleGuestDropdown()"></div>
             </div>
 
             <!-- Search Button -->
@@ -227,7 +275,7 @@ try {
                 <button type="submit"
                     class="bg-[#003580] hover:bg-[#002b66] text-white px-8 py-3.5 md:py-4 rounded-b-lg md:rounded-xl font-bold text-[18px] md:text-[16px] transition-all shadow-md active:scale-95">Search</button>
                 <?php if (!empty($q) || !empty($checkin) || !empty($checkout)): ?>
-                    <a href="index.php" 
+                    <a href="index.php"
                         class="bg-white/20 hover:bg-white/30 text-white px-4 py-3.5 md:py-4 rounded-xl flex items-center justify-center transition-all">
                         <i class="fas fa-times"></i>
                     </a>
@@ -236,9 +284,115 @@ try {
         </form>
     </section>
 
+    <!-- Trending Destinations -->
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-52 md:mt-16">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-2xl md:text-3xl font-bold text-neutral-800 tracking-tight">Trending destinations</h2>
+                <p class="text-text-secondary font-medium">Most popular choices for travelers from Sri Lanka</p>
+            </div>
+            <div class="hidden md:flex gap-2">
+                <button
+                    class="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors shadow-sm">
+                    <i class="fas fa-chevron-left text-sm text-neutral-400"></i>
+                </button>
+                <button
+                    class="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors shadow-sm">
+                    <i class="fas fa-chevron-right text-sm text-neutral-400"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 snap-x">
+            <div class="min-w-[200px] md:min-w-[220px] snap-start group cursor-pointer">
+                <div class="relative h-[150px] rounded-xl overflow-hidden mb-3">
+                    <img src="assets/destinations/negombo.png" alt="Negombo"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <h3 class="font-bold text-neutral-800 text-lg group-hover:text-primary transition-colors">Negombo</h3>
+            </div>
+            <div class="min-w-[200px] md:min-w-[220px] snap-start group cursor-pointer">
+                <div class="relative h-[150px] rounded-xl overflow-hidden mb-3">
+                    <img src="assets/destinations/colombo.png" alt="Colombo"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <h3 class="font-bold text-neutral-800 text-lg group-hover:text-primary transition-colors">Colombo</h3>
+            </div>
+            <div class="min-w-[200px] md:min-w-[220px] snap-start group cursor-pointer">
+                <div class="relative h-[150px] rounded-xl overflow-hidden mb-3">
+                    <img src="assets/destinations/kandy.png" alt="Kandy"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <h3 class="font-bold text-neutral-800 text-lg group-hover:text-primary transition-colors">Kandy</h3>
+            </div>
+            <div class="min-w-[200px] md:min-w-[220px] snap-start group cursor-pointer">
+                <div class="relative h-[150px] rounded-xl overflow-hidden mb-3">
+                    <img src="assets/destinations/nuwara_eliya.png" alt="Nuwara Eliya"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <h3 class="font-bold text-neutral-800 text-lg group-hover:text-primary transition-colors">Nuwara Eliya
+                </h3>
+            </div>
+            <div class="min-w-[200px] md:min-w-[220px] snap-start group cursor-pointer">
+                <div class="relative h-[150px] rounded-xl overflow-hidden mb-3">
+                    <img src="assets/destinations/galle.png" alt="Galle"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <h3 class="font-bold text-neutral-800 text-lg group-hover:text-primary transition-colors">Galle</h3>
+            </div>
+            <div class="min-w-[200px] md:min-w-[220px] snap-start group cursor-pointer">
+                <div class="relative h-[150px] rounded-xl overflow-hidden mb-3">
+                    <img src="assets/destinations/anuradhapura.png" alt="Anuradhapura"
+                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <h3 class="font-bold text-neutral-800 text-lg group-hover:text-primary transition-colors">Anuradhapura
+                </h3>
+            </div>
+        </div>
+    </section>
+
+    <!-- Browse by property type -->
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16">
+        <h2 class="text-2xl md:text-3xl font-bold text-neutral-800 tracking-tight mb-6">Browse by property type</h2>
+        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 snap-x">
+            <?php
+            $type_meta = [
+                'hotel' => ['label' => 'Hotels', 'img' => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80'],
+                'apartment' => ['label' => 'Apartments', 'img' => 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80'],
+                'resort' => ['label' => 'Resorts', 'img' => 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=400&q=80'],
+                'villa' => ['label' => 'Villas', 'img' => 'https://images.unsplash.com/photo-1580587771525-78b9bed3b928?auto=format&fit=crop&w=400&q=80'],
+                'hostel' => ['label' => 'Hostels', 'img' => 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=400&q=80'],
+                'reception_hall' => ['label' => 'Reception Halls', 'img' => 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=400&q=80'],
+                'rest_hall' => ['label' => 'Rest Halls', 'img' => 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80'],
+            ];
+
+            foreach ($db_property_types as $p_type):
+                $meta = $type_meta[strtolower($p_type)] ?? ['label' => ucfirst(str_replace('_', ' ', $p_type)), 'img' => 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=400&q=80'];
+                ?>
+                <a href="index.php?type=<?php echo urlencode($p_type); ?>"
+                    class="min-w-[260px] snap-start group cursor-pointer">
+                    <div class="relative h-[180px] rounded-xl overflow-hidden mb-3">
+                        <img src="<?php echo $meta['img']; ?>" alt="<?php echo $meta['label']; ?>"
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                    </div>
+                    <h3 class="font-bold text-neutral-800 text-lg group-hover:text-primary transition-colors">
+                        <?php echo $meta['label']; ?>
+                    </h3>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
     <!-- Main Content -->
     <main
-        class="max-w-[1400px] mx-auto flex flex-col md:grid md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr] gap-6 px-0 md:px-4 lg:px-6 md:mt-16 <?php echo !isset($_SESSION['user_id']) ? 'mt-[220px]' : 'mt-[220px]'; ?>">
+        class="max-w-[1400px] mx-auto flex flex-col md:grid md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr] gap-6 px-0 md:px-4 lg:px-6 md:mt-16 mt-12">
 
         <!-- Mobile Filters & Quick Buttons (Hidden on Desktop) -->
         <div class="md:hidden px-4 mb-2">
@@ -320,22 +474,29 @@ try {
             </div>
 
             <!-- Ads Box (Desktop Sidebar) -->
-            <?php if (!empty($ads)): 
+            <?php if (!empty($ads)):
                 $ad_display_count = 1;
-            ?>
+                ?>
                 <div class="mt-6 space-y-4">
                     <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 pl-1">Sponsored</h4>
                     <?php foreach ($ads as $ad): ?>
                         <div class="bg-gray-100 p-2 rounded-2xl border border-gray-200">
-                            <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block group relative overflow-hidden rounded-xl">
-                                <div class="w-full h-40 bg-neutral-200 border border-neutral-300 flex flex-col items-center justify-center text-neutral-400 rounded-xl transition-all group-hover:bg-neutral-300">
+                            <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank"
+                                class="block group relative overflow-hidden rounded-xl">
+                                <div
+                                    class="w-full h-40 bg-neutral-200 border border-neutral-300 flex flex-col items-center justify-center text-neutral-400 rounded-xl transition-all group-hover:bg-neutral-300">
                                     <i class="fas fa-ad text-3xl mb-1 opacity-20"></i>
-                                    <span class="text-[10px] font-black uppercase tracking-widest">Advertisement <?php echo $ad_display_count++; ?></span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest">Advertisement
+                                        <?php echo $ad_display_count++; ?></span>
                                 </div>
                                 <div class="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
                                     <div class="flex justify-between items-end">
-                                        <p class="text-[9px] text-white/80 font-bold"><?php echo htmlspecialchars($ad['owner_name']); ?></p>
-                                        <p class="text-[10px] text-white font-black">LKR <?php echo number_format($ad['price']); ?></p>
+                                        <p class="text-[9px] text-white/80 font-bold">
+                                            <?php echo htmlspecialchars($ad['owner_name']); ?>
+                                        </p>
+                                        <p class="text-[10px] text-white font-black">LKR
+                                            <?php echo number_format($ad['price']); ?>
+                                        </p>
                                     </div>
                                 </div>
                             </a>
@@ -354,10 +515,13 @@ try {
                     <div class="grid grid-cols-2 gap-6">
                         <?php foreach ($ads as $ad): ?>
                             <div class="bg-gray-100 p-2 rounded-[2rem] border border-gray-200 overflow-hidden">
-                                <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block w-full h-[120px] group overflow-hidden rounded-[1.8rem]">
-                                    <div class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-hover:bg-neutral-300">
+                                <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank"
+                                    class="block w-full h-[120px] group overflow-hidden rounded-[1.8rem]">
+                                    <div
+                                        class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-hover:bg-neutral-300">
                                         <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
-                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement <?php echo $ad_display_count++; ?></span>
+                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement
+                                            <?php echo $ad_display_count++; ?></span>
                                     </div>
                                 </a>
                             </div>
@@ -367,18 +531,21 @@ try {
             <?php endif; ?>
 
             <!-- Mobile Ads (Horizontal Scroll) -->
-            <?php if (!empty($ads)): 
+            <?php if (!empty($ads)):
                 $ad_mobile_count = 1;
-            ?>
+                ?>
                 <div class="md:hidden px-4 mb-6">
                     <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Promotions</h4>
                     <div class="flex gap-4 overflow-x-auto no-scrollbar">
                         <?php foreach ($ads as $ad): ?>
                             <div class="min-w-[300px] bg-gray-100 p-2 rounded-2xl border border-gray-200 shrink-0">
-                                <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block relative h-32 overflow-hidden rounded-xl group">
-                                    <div class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-active:bg-neutral-300">
+                                <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank"
+                                    class="block relative h-32 overflow-hidden rounded-xl group">
+                                    <div
+                                        class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-active:bg-neutral-300">
                                         <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
-                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement <?php echo $ad_mobile_count++; ?></span>
+                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement
+                                            <?php echo $ad_mobile_count++; ?></span>
                                     </div>
                                 </a>
                             </div>
@@ -556,6 +723,41 @@ try {
                 </div>
             <?php endif; ?>
 
+            <!-- Additional Advertisement Row -->
+            <?php if (!empty($ads)): ?>
+                <div class="mt-12 mb-8">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Featured Partners</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <?php foreach ($ads as $ad): ?>
+                            <div
+                                class="bg-gradient-to-br from-primary/5 to-secondary/5 p-4 rounded-[2rem] border border-primary/10 overflow-hidden group hover:shadow-lg transition-all">
+                                <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank"
+                                    class="flex items-center gap-6">
+                                    <div
+                                        class="w-24 h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                                        <i class="fas fa-ad text-3xl text-primary opacity-20"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-start">
+                                            <h5 class="font-bold text-neutral-800 group-hover:text-primary transition-colors">
+                                                <?php echo htmlspecialchars($ad['owner_name']); ?>
+                                            </h5>
+                                            <span class="text-xs font-black text-primary">LKR
+                                                <?php echo number_format($ad['price']); ?></span>
+                                        </div>
+                                        <p class="text-sm text-text-secondary mt-1">Exclusive deal for Bookingjaunt members.
+                                            Book now and save big on your next trip.</p>
+                                        <div class="mt-2 text-xs font-bold text-secondary flex items-center gap-1">
+                                            Visit Partner <i class="fas fa-external-link-alt text-[10px]"></i>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- Pagination -->
             <div class="hidden md:flex" style="justify-content:center; gap:5px; margin-top:20px;">
                 <button style="padding:8px 12px; border:1px solid #ddd; background:#fff; border-radius:4px;"><i
@@ -596,43 +798,93 @@ try {
         </section>
     </main>
 
-    <?php if (isset($_SESSION['user_id']) && !$user_has_properties): ?>
-    <!-- Property Listing CTA for New/Propertyless Owners -->
-    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16">
-        <div class="relative overflow-hidden bg-primary rounded-[2.5rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 group">
-            <!-- Background Decoration -->
-            <div class="absolute -right-20 -top-20 w-96 h-96 bg-white/5 rounded-full blur-3xl transition-all group-hover:scale-110"></div>
-            <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-[#10b981]/10 rounded-full blur-3xl"></div>
-            
-            <div class="relative z-10 flex-1">
-                <div class="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981]/20 text-[#10b981] rounded-full text-xs font-black uppercase tracking-[0.2em] mb-6">
-                    <i class="fas fa-gift"></i> Limited Offer
+    <!-- Why Choose Us -->
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-20 mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="flex gap-4 items-start">
+                <div
+                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
+                    <i class="fas fa-shield-alt text-xl"></i>
                 </div>
-                <h2 class="text-3xl md:text-5xl font-black text-white leading-tight mb-6">List your property & get a <span class="text-[#10b981]">Free Management System</span></h2>
-                <p class="text-lg text-white/70 max-w-xl mb-8 leading-relaxed font-medium">Join thousands of property owners in Sri Lanka. Manage bookings, tracks expenses, and grow your business with our all-in-one platform.</p>
-                
-                <div class="flex flex-wrap gap-4">
-                    <a href="property_wizard.php" class="bg-[#10b981] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#059669] transition-all shadow-xl shadow-[#10b981]/20 flex items-center gap-3">
-                        <i class="fas fa-plus-circle"></i> Start Listing Now
-                    </a>
-                    <div class="flex items-center gap-3 px-6 py-4 bg-white/5 rounded-2xl border border-white/10 text-white/80 font-bold text-sm">
-                        <i class="fas fa-check text-[#10b981]"></i> No hidden fees
-                    </div>
+                <div>
+                    <h3 class="font-bold text-neutral-800 mb-1">Secure Bookings</h3>
+                    <p class="text-sm text-text-secondary">Your data is safe with our 256-bit SSL encrypted payment
+                        gateway.</p>
                 </div>
             </div>
-
-            <div class="relative z-10 w-full md:w-1/3 flex justify-center">
-                <div class="relative">
-                    <div class="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center animate-pulse">
-                        <i class="fas fa-hotel text-8xl text-white/20"></i>
-                    </div>
-                    <div class="absolute -bottom-4 -right-4 bg-[#febb02] p-6 rounded-3xl shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                        <i class="fas fa-chart-line text-4xl text-primary"></i>
-                    </div>
+            <div class="flex gap-4 items-start">
+                <div
+                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
+                    <i class="fas fa-headset text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-neutral-800 mb-1">24/7 Support</h3>
+                    <p class="text-sm text-text-secondary">Our dedicated team is here to help you anytime, anywhere in
+                        Sri Lanka.</p>
+                </div>
+            </div>
+            <div class="flex gap-4 items-start">
+                <div
+                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
+                    <i class="fas fa-thumbs-up text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-neutral-800 mb-1">Best Price Guarantee</h3>
+                    <p class="text-sm text-text-secondary">Find a lower price? We'll match it and give you an extra 5%
+                        off.</p>
                 </div>
             </div>
         </div>
     </section>
+
+    <?php if (isset($_SESSION['user_id']) && !$user_has_properties): ?>
+        <!-- Property Listing CTA for New/Propertyless Owners -->
+        <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16">
+            <div
+                class="relative overflow-hidden bg-primary rounded-[2.5rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 group">
+                <!-- Background Decoration -->
+                <div
+                    class="absolute -right-20 -top-20 w-96 h-96 bg-white/5 rounded-full blur-3xl transition-all group-hover:scale-110">
+                </div>
+                <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-[#10b981]/10 rounded-full blur-3xl"></div>
+
+                <div class="relative z-10 flex-1">
+                    <div
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981]/20 text-[#10b981] rounded-full text-xs font-black uppercase tracking-[0.2em] mb-6">
+                        <i class="fas fa-gift"></i> Limited Offer
+                    </div>
+                    <h2 class="text-3xl md:text-5xl font-black text-white leading-tight mb-6">List your property & get a
+                        <span class="text-[#10b981]">Free Management System</span>
+                    </h2>
+                    <p class="text-lg text-white/70 max-w-xl mb-8 leading-relaxed font-medium">Join thousands of property
+                        owners in Sri Lanka. Manage bookings, tracks expenses, and grow your business with our all-in-one
+                        platform.</p>
+
+                    <div class="flex flex-wrap gap-4">
+                        <a href="property_wizard.php"
+                            class="bg-[#10b981] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#059669] transition-all shadow-xl shadow-[#10b981]/20 flex items-center gap-3">
+                            <i class="fas fa-plus-circle"></i> Start Listing Now
+                        </a>
+                        <div
+                            class="flex items-center gap-3 px-6 py-4 bg-white/5 rounded-2xl border border-white/10 text-white/80 font-bold text-sm">
+                            <i class="fas fa-check text-[#10b981]"></i> No hidden fees
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative z-10 w-full md:w-1/3 flex justify-center">
+                    <div class="relative">
+                        <div class="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center animate-pulse">
+                            <i class="fas fa-hotel text-8xl text-white/20"></i>
+                        </div>
+                        <div
+                            class="absolute -bottom-4 -right-4 bg-[#febb02] p-6 rounded-3xl shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                            <i class="fas fa-chart-line text-4xl text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     <?php endif; ?>
 
     <section
@@ -714,6 +966,70 @@ try {
         <div>© 2026 Bookingjaunt.com All rights reserved.</div>
     </div>
 
+    <script>
+        function toggleGuestDropdown() {
+            const popup = document.getElementById('guestPopup');
+            const overlay = document.getElementById('guestOverlay');
+            const chevron = document.getElementById('guestChevron');
+            const isHidden = popup.classList.contains('hidden');
+
+            if (isHidden) {
+                popup.classList.remove('hidden');
+                overlay.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+                // Prevent scrolling on mobile when dropdown is open
+                if (window.innerWidth < 768) {
+                    document.body.style.overflow = 'hidden';
+                }
+            } else {
+                popup.classList.add('hidden');
+                overlay.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function updateGuestCount(type, change) {
+            const countSpan = document.getElementById(type + 'Count');
+            const hiddenInput = document.getElementById(type + 'Hidden');
+            const displaySpan = document.getElementById('guestInputDisplay');
+
+            let currentCount = parseInt(countSpan.innerText);
+            let newCount = currentCount + change;
+
+            // Validation
+            if (type === 'adults' && newCount < 1) newCount = 1;
+            if (type === 'children' && newCount < 0) newCount = 0;
+
+            countSpan.innerText = newCount;
+            hiddenInput.value = newCount;
+
+            // Update display text
+            const adults = document.getElementById('adultsCount').innerText;
+            const children = document.getElementById('childrenCount').innerText;
+            displaySpan.innerText = `${adults} adults · ${children} children`;
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (event) {
+            const container = document.getElementById('guestDropdownContainer');
+            const popup = document.getElementById('guestPopup');
+            const chevron = document.getElementById('guestChevron');
+
+            if (!container.contains(event.target)) {
+                popup.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        });
+
+        // Initialize counts on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const adults = document.getElementById('adultsHidden').value;
+            const children = document.getElementById('childrenHidden').value;
+            document.getElementById('adultsCount').innerText = adults;
+            document.getElementById('childrenCount').innerText = children;
+        });
+    </script>
 </body>
 
 </html>
