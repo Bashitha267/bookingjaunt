@@ -23,6 +23,28 @@ if (!$property && $_SESSION['role'] !== 'admin') {
 
 $property_id = $property['id'] ?? 0;
 
+// --- Post Handlers ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'new_inplace_booking') {
+    $room_id = $_POST['room_id'];
+    $guest_name = $_POST['guest_name'];
+    $guest_email = $_POST['guest_email'] ?? '';
+    $guest_nic = $_POST['guest_nic'] ?? '';
+    $guest_address = $_POST['guest_address'] ?? '';
+    $country = $_POST['country'] ?? 'Sri Lanka';
+    $status = 'confirmed'; 
+    
+    $ins = $pdo->prepare("INSERT INTO bookings (property_id, room_id, booking_type, guest_name, guest_phone, guest_email, guest_nic, guest_address, country, room_number, check_in_date, check_out_date, adults, children, price_per_room, total_price, amount_paid, status) VALUES (?, ?, 'inplace', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $ins->execute([$property_id, $room_id, $guest_name, $guest_phone, $guest_email, $guest_nic, $guest_address, $country, $room_number, $check_in, $check_out, $adults, $children, $price, $price, $paid, $status]);
+    
+    header("Location: dashboard.php?msg=success");
+    exit();
+}
+
+// Fetch all room types for this property
+$rooms_stmt = $pdo->prepare("SELECT id, room_name FROM property_rooms WHERE property_id = ?");
+$rooms_stmt->execute([$property_id]);
+$property_rooms = $rooms_stmt->fetchAll();
+
 // --- Real Data Fetching for Dashboard ---
 $total_bookings_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE property_id = ?");
 $total_bookings_stmt->execute([$property_id]);
@@ -50,7 +72,7 @@ $recent_bookings = $recent_bookings_stmt->fetchAll();
 
 // Fetch Calendar Events
 $events_stmt = $pdo->prepare("
-    SELECT b.guest_name, b.check_in_date, b.check_out_date, b.status, pr.room_name 
+    SELECT b.guest_name, b.room_number, b.check_in_date, b.check_out_date, b.status, pr.room_name 
     FROM bookings b 
     JOIN property_rooms pr ON b.room_id = pr.id 
     WHERE b.property_id = ?
@@ -67,12 +89,28 @@ foreach ($bookings_raw as $b) {
     if ($b['status'] == 'cancelled') $color = '#ef4444';
     
     $calendar_events[] = [
-        'title' => $b['guest_name'] . ' (' . $b['room_name'] . ')',
+        'title' => $b['guest_name'] . ' (' . ($b['room_number'] ? '#' . $b['room_number'] : $b['room_name']) . ')',
         'start' => $b['check_in_date'],
         'end' => $b['check_out_date'],
         'color' => $color
     ];
 }
+
+// Fetch Room Availability for Today
+$today = date('Y-m-d');
+$rooms_availability_stmt = $pdo->prepare("
+    SELECT pr.id, pr.room_name, pr.total_rooms, 
+           (SELECT COUNT(*) FROM bookings b 
+            WHERE b.room_id = pr.id 
+              AND b.property_id = ? 
+              AND b.check_in_date <= ? 
+              AND b.check_out_date > ?
+              AND b.status IN ('confirmed', 'checked_in')) as booked_count
+    FROM property_rooms pr 
+    WHERE pr.property_id = ?
+");
+$rooms_availability_stmt->execute([$property_id, $today, $today, $property_id]);
+$rooms_availability = $rooms_availability_stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -181,6 +219,10 @@ foreach ($bookings_raw as $b) {
                 <button class="bg-[#003580] text-white px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">
                     <i class="fas fa-plus"></i>
                     New Booking
+                </button>
+                <button onclick="toggleRoomAvailability()" class="bg-indigo-50 text-indigo-600 px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm">
+                    <i class="fas fa-door-open"></i>
+                    Room Status
                 </button>
                 <div class="w-[1px] h-8 bg-gray-100 mx-2"></div>
                 <button class="w-10 h-10 text-gray-400 hover:text-[#003580] transition-colors relative">
@@ -372,7 +414,217 @@ foreach ($bookings_raw as $b) {
         </div>
     </main>
 
+    <!-- Room Availability Offcanvas -->
+    <div id="roomAvailabilityOverlay" onclick="toggleRoomAvailability()" class="fixed inset-0 bg-black/20 z-40 hidden backdrop-blur-sm transition-opacity"></div>
+    <div id="roomAvailabilitySidebar" class="fixed inset-y-0 right-0 w-80 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div>
+                <h3 class="text-lg font-black text-[#003580]">Today's Status</h3>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest"><?php echo date('M d, Y'); ?></p>
+            </div>
+            <button onclick="toggleRoomAvailability()" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 bg-[#f8fafc] custom-scrollbar">
+            <?php foreach ($rooms_availability as $room): 
+                $free = max(0, $room['total_rooms'] - $room['booked_count']);
+            ?>
+            <div class="bg-white rounded-2xl p-5 mb-4 border border-gray-100 shadow-sm relative overflow-hidden group hover:border-indigo-100 transition-colors">
+                <div class="absolute top-0 left-0 w-1 h-full <?php echo $free > 0 ? 'bg-green-400' : 'bg-red-400'; ?>"></div>
+                <h4 class="font-bold text-gray-800 mb-4 ml-2 flex items-center gap-2">
+                    <i class="fas fa-bed text-gray-400 text-sm"></i>
+                    <?php echo htmlspecialchars($room['room_name']); ?>
+                </h4>
+                <div class="flex justify-between items-center ml-2 bg-gray-50 rounded-xl p-3">
+                    <div class="text-center">
+                        <span class="block text-[9px] text-gray-400 uppercase tracking-widest font-bold mb-1">Total</span>
+                        <span class="block text-sm font-black text-gray-700"><?php echo $room['total_rooms']; ?></span>
+                    </div>
+                    <div class="w-[1px] h-6 bg-gray-200"></div>
+                    <div class="text-center">
+                        <span class="block text-[9px] text-gray-400 uppercase tracking-widest font-bold mb-1">Booked</span>
+                        <span class="block text-sm font-black text-red-500"><?php echo $room['booked_count']; ?></span>
+                    </div>
+                    <div class="w-[1px] h-6 bg-gray-200"></div>
+                    <div class="text-center">
+                        <span class="block text-[9px] text-gray-400 uppercase tracking-widest font-bold mb-1">Free</span>
+                        <span class="block text-sm font-black text-green-500"><?php echo $free; ?></span>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            
+            <?php if (empty($rooms_availability)): ?>
+                <div class="text-center py-8 text-gray-400">
+                    <i class="fas fa-door-closed text-3xl mb-3 opacity-50"></i>
+                    <p class="text-xs uppercase font-bold tracking-widest">No rooms configured.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+        <div class="p-6 border-t border-gray-100 bg-white">
+            <button onclick="toggleRoomAvailability()" class="w-full bg-gray-50 text-gray-600 px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-100 transition-all border border-gray-200">
+                Close Panel
+            </button>
+        </div>
+    </div>
+
+    <!-- New Booking Modal -->
+    <div id="bookingModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-black/40 backdrop-blur-sm" onclick="closeBookingModal()"></div>
+            <div class="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-[2.5rem] border border-gray-100">
+                <div class="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                    <div>
+                        <h3 class="text-xl font-black text-[#003580]">New In-place Booking</h3>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Manual reservation entry</p>
+                    </div>
+                    <button onclick="closeBookingModal()" class="text-gray-400 hover:text-red-500 transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form action="dashboard.php" method="POST" class="p-8">
+                    <input type="hidden" name="action" value="new_inplace_booking">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Guest Details -->
+                        <div class="space-y-4">
+                            <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Guest Information</h4>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Full Name</label>
+                                <input type="text" name="guest_name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Phone Number</label>
+                                <input type="text" name="guest_phone" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Email Address (Optional)</label>
+                                <input type="email" name="guest_email" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">NIC / Passport (Optional)</label>
+                                <input type="text" name="guest_nic" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Country</label>
+                                    <input type="text" name="country" value="Sri Lanka" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                                </div>
+                                <div class="hidden"></div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Full Address (Optional)</label>
+                                <textarea name="guest_address" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Room Selection -->
+                        <div class="space-y-4">
+                            <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Room Details</h4>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Room Type</label>
+                                <select name="room_id" required onchange="updateRoomNumbers()" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none appearance-none">
+                                    <option value="">Select Room Type</option>
+                                    <?php foreach ($property_rooms as $pr): ?>
+                                        <option value="<?php echo $pr['id']; ?>"><?php echo htmlspecialchars($pr['room_name']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Room Number (Optional)</label>
+                                <div id="room_number_input_container">
+                                    <input type="text" name="room_number" id="modal_room_number_input" placeholder="e.g. 101" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                                </div>
+                                <div id="room_number_select_container" class="hidden">
+                                    <select id="modal_room_number_select" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none appearance-none">
+                                        <!-- Options populated by JS -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stay Dates -->
+                        <div class="space-y-4">
+                            <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Stay Schedule</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Check-in</label>
+                                    <input type="date" name="check_in" id="modal_check_in" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Check-out</label>
+                                    <input type="date" name="check_out" id="modal_check_out" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Adults</label>
+                                    <input type="number" name="adults" value="1" min="1" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Children</label>
+                                    <input type="number" name="children" value="0" min="0" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pricing -->
+                        <div class="space-y-4">
+                            <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Payment Info</h4>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Total Price (LKR)</label>
+                                <input type="number" name="price" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Amount Paid (LKR)</label>
+                                <input type="number" name="paid" value="0" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-10 flex gap-4">
+                        <button type="button" onclick="closeBookingModal()" class="flex-1 px-6 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">Cancel</button>
+                        <button type="submit" class="flex-[2] px-6 py-4 bg-[#003580] text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">Confirm Booking</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const roomData = <?php echo json_encode($property_rooms); ?>;
+
+        function updateRoomNumbers() {
+            const roomId = document.querySelector('select[name="room_id"]').value;
+            const room = roomData.find(r => r.id == roomId);
+            const inputContainer = document.getElementById('room_number_input_container');
+            const selectContainer = document.getElementById('room_number_select_container');
+            const input = document.getElementById('modal_room_number_input');
+            const select = document.getElementById('modal_room_number_select');
+            
+            if (room && room.room_numbers && room.room_numbers.trim() !== '') {
+                const numbers = room.room_numbers.split(',').map(n => n.trim()).filter(n => n !== '');
+                if (numbers.length > 0) {
+                    select.innerHTML = '<option value="">Select Room Number</option>';
+                    numbers.forEach(n => {
+                        select.innerHTML += `<option value="${n}">${n}</option>`;
+                    });
+                    
+                    inputContainer.classList.add('hidden');
+                    selectContainer.classList.remove('hidden');
+                    
+                    // Sync select value to hidden input or just use select value on submit
+                    select.onchange = () => { input.value = select.value; };
+                    return;
+                }
+            }
+            
+            inputContainer.classList.remove('hidden');
+            selectContainer.classList.add('hidden');
+            input.value = '';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             if (document.getElementById('calendar')) {
                 var calendarEl = document.getElementById('calendar');
@@ -386,11 +638,43 @@ foreach ($bookings_raw as $b) {
                     events: <?php echo json_encode($calendar_events); ?>,
                     height: 'auto',
                     contentHeight: 600,
-                    firstDay: 1
+                    firstDay: 1,
+                    dateClick: function(info) {
+                        openBookingModal(info.dateStr);
+                    }
                 });
                 calendar.render();
             }
         });
+
+        function openBookingModal(date) {
+            document.getElementById('modal_check_in').value = date;
+            // Default checkout to next day
+            let nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+            document.getElementById('modal_check_out').value = nextDay.toISOString().split('T')[0];
+            
+            document.getElementById('bookingModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function toggleRoomAvailability() {
+            const sidebar = document.getElementById('roomAvailabilitySidebar');
+            const overlay = document.getElementById('roomAvailabilityOverlay');
+            
+            if (sidebar.classList.contains('translate-x-full')) {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
 
         async function requestDeletion(id) {
             if (confirm('Are you sure you want to request deletion of this property? This requires admin approval and will take effect once reviewed.')) {

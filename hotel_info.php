@@ -28,6 +28,12 @@ $amenities = $amenities_stmt->fetchAll();
 $check_in = $_GET['checkin'] ?? date('Y-m-d');
 $check_out = $_GET['checkout'] ?? date('Y-m-d', strtotime('+1 day'));
 
+// Calculate Nights
+$date1 = new DateTime($check_in);
+$date2 = new DateTime($check_out);
+$nights = $date1->diff($date2)->days;
+if ($nights <= 0) $nights = 1;
+
 // Fetch Rooms with availability check
 $rooms_stmt = $pdo->prepare("
     SELECT pr.*, 
@@ -75,11 +81,23 @@ if ($property['hotel_category'] == 'budget_friendly') $stars = 3;
 if ($property['hotel_category'] == 'luxury') $stars = 4;
 if ($property['hotel_category'] == 'super_luxury') $stars = 5;
 
-$reviews = [
-    ['name' => 'John Doe', 'country' => 'United States', 'avatar' => 'JD', 'text' => 'The location was absolutely perfect, right next to the beach.'],
-    ['name' => 'Sarah Miller', 'country' => 'United Kingdom', 'avatar' => 'SM', 'text' => 'Exceptional spa treatments! Highly recommended.'],
-    ['name' => 'Alex Murphy', 'country' => 'Canada', 'avatar' => 'AM', 'text' => 'Modern rooms with stunning views. best place to catch the sunset.']
-];
+// Fetch real reviews
+$reviews_stmt = $pdo->prepare("
+    SELECT r.*, CONCAT(u.first_name, ' ', u.last_name) as user_name 
+    FROM reviews r 
+    JOIN users u ON r.user_id = u.id 
+    WHERE r.property_id = ? 
+    ORDER BY r.created_at DESC
+");
+$reviews_stmt->execute([$property_id]);
+$reviews = $reviews_stmt->fetchAll();
+
+// Calculate average rating
+$avg_rating_stmt = $pdo->prepare("SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM reviews WHERE property_id = ?");
+$avg_rating_stmt->execute([$property_id]);
+$rating_stats = $avg_rating_stmt->fetch();
+$avg_rating = round($rating_stats['avg_rating'], 1) ?: 'New';
+$review_count = $rating_stats['review_count'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -294,8 +312,16 @@ $reviews = [
                                     </div>
                                 </td>
                                 <td class="p-5 align-top">
-                                    <div class="font-black text-xl text-neutral-900">LKR <?php echo number_format($room['price_lkr']); ?></div>
-                                    <div class="text-[10px] text-neutral-500 uppercase font-bold mt-1 tracking-tight">taxes & fees included</div>
+                                    <?php 
+                                    $display_price = ($currency == 'USD') ? ($room['price_lkr'] / $exchange_rate) : $room['price_lkr'];
+                                    $total_display_price = $display_price * $nights;
+                                    ?>
+                                    <div class="flex flex-wrap items-baseline gap-x-2">
+                                        <span class="font-black text-xl text-neutral-900"><?php echo $currency; ?> <?php echo number_format($total_display_price, ($currency == 'USD' ? 2 : 0)); ?></span>
+                                        <span class="text-[11px] text-neutral-500 font-bold">for <?php echo $nights; ?> night<?php echo $nights > 1 ? 's' : ''; ?></span>
+                                    </div>
+                                    <div class="text-[10px] text-neutral-400 font-medium mt-1 italic">(<?php echo $currency; ?> <?php echo number_format($display_price, ($currency == 'USD' ? 2 : 0)); ?> / night)</div>
+                                    <div class="text-[10px] text-neutral-500 uppercase font-bold mt-2 tracking-tight">taxes & fees included</div>
                                 </td>
                                 <td class="p-5 align-top">
                                     <div class="space-y-2">
@@ -316,7 +342,7 @@ $reviews = [
                                         
                                         <select name="qty" class="w-full p-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 bg-white text-sm font-medium mb-3">
                                             <?php for($i = 1; $i <= $room['available_count']; $i++): ?>
-                                                <option value="<?php echo $i; ?>"><?php echo $i; ?> (<?php echo number_format($room['price_lkr'] * $i); ?> LKR)</option>
+                                                <option value="<?php echo $i; ?>"><?php echo $i; ?> room<?php echo $i > 1 ? 's' : ''; ?> (<?php echo $currency; ?> <?php echo number_format($total_display_price * $i, ($currency == 'USD' ? 2 : 0)); ?>)</option>
                                             <?php endfor; ?>
                                         </select>
                                         
@@ -355,7 +381,17 @@ $reviews = [
                                 </div>
                             </div>
                             <div class="flex items-center justify-between">
-                                <div class="font-black text-xl">LKR <?php echo number_format($room['price_lkr']); ?></div>
+                                <div>
+                                    <?php 
+                                    $display_price = ($currency == 'USD') ? ($room['price_lkr'] / $exchange_rate) : $room['price_lkr'];
+                                    $total_display_price = $display_price * $nights;
+                                    ?>
+                                    <div class="flex items-baseline gap-1.5">
+                                        <span class="font-black text-xl"><?php echo $currency; ?> <?php echo number_format($total_display_price, ($currency == 'USD' ? 2 : 0)); ?></span>
+                                        <span class="text-[10px] text-neutral-500 font-bold uppercase">/ <?php echo $nights; ?> nights</span>
+                                    </div>
+                                    <div class="text-[10px] text-neutral-400 font-medium italic"><?php echo $currency; ?> <?php echo number_format($display_price, ($currency == 'USD' ? 2 : 0)); ?> per night</div>
+                                </div>
                                 <a href="newbooking.php?property_id=<?php echo $property_id; ?>&room_id=<?php echo $room['id']; ?>&checkin=<?php echo $check_in; ?>&checkout=<?php echo $check_out; ?>&qty=1" 
                                    class="bg-brand-600 text-white px-6 py-2.5 rounded-xl font-bold text-[14px] no-underline">
                                     Select
@@ -365,6 +401,55 @@ $reviews = [
                     </div>
                 <?php endforeach; ?>
             </div>
+        </div>
+
+        <!-- Guest Reviews Section -->
+        <div class="mt-20 pt-12 border-t border-neutral-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                <div>
+                    <h3 class="text-2xl font-bold font-display text-primary">Guest reviews</h3>
+                    <div class="flex items-center gap-3 mt-2">
+                        <div class="bg-primary text-white font-black px-3 py-1.5 rounded-lg text-lg"><?php echo $avg_rating; ?></div>
+                        <div>
+                            <p class="font-bold text-neutral-800 leading-none">Overall Score</p>
+                            <p class="text-[12px] text-neutral-500 mt-1"><?php echo $review_count; ?> real reviews from our guests</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (empty($reviews)): ?>
+                <div class="bg-neutral-50 rounded-2xl p-10 text-center border border-neutral-100">
+                    <p class="text-neutral-500 font-medium">No reviews yet for this property. Be the first to share your experience after your stay!</p>
+                </div>
+            <?php else: ?>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <?php foreach ($reviews as $review): ?>
+                        <div class="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center font-bold text-primary">
+                                            <?php echo strtoupper(substr($review['user_name'], 0, 1)); ?>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-sm text-neutral-800 leading-tight"><?php echo htmlspecialchars($review['user_name']); ?></p>
+                                            <p class="text-[11px] text-neutral-500">Guest</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex text-gold text-[10px]">
+                                        <?php for($i=1; $i<=5; $i++): ?>
+                                            <i class="<?php echo $i <= $review['rating'] ? 'fas' : 'far'; ?> fa-star"></i>
+                                        <?php endfor; ?>
+                                    </div>
+                                </div>
+                                <p class="text-[14px] text-neutral-700 leading-relaxed italic">"<?php echo nl2br(htmlspecialchars($review['comment'])); ?>"</p>
+                            </div>
+                            <p class="text-[10px] text-neutral-400 font-bold mt-4 uppercase tracking-tighter"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </main>
 

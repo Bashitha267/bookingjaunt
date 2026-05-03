@@ -132,22 +132,55 @@ if (isset($_POST['action'])) {
                             }
                         }
 
-                        // Update Rooms
-                        $pdo->prepare("DELETE FROM property_rooms WHERE property_id = ?")->execute([$property_id]);
+                        // Update Rooms (Safely)
                         if (isset($new_data['rooms']) && is_array($new_data['rooms'])) {
-                            $stmt = $pdo->prepare("INSERT INTO property_rooms (property_id, room_name, adults, children, price_lkr, price_usd, room_image) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                            // We'll update existing rooms and only delete ones that are gone
+                            $current_room_ids = [];
                             foreach ($new_data['rooms'] as $room) {
                                 if (!empty($room['name'])) {
-                                    $stmt->execute([
-                                        $property_id,
-                                        $room['name'],
-                                        $room['adults'] ?? 2,
-                                        $room['children'] ?? 0,
-                                        $room['price_lkr'] ?? 0,
-                                        $room['price_usd'] ?? 0,
-                                        $room['image'] ?? ''
-                                    ]);
+                                    // Check if this room (by name) exists
+                                    $check = $pdo->prepare("SELECT id FROM property_rooms WHERE property_id = ? AND room_name = ?");
+                                    $check->execute([$property_id, $room['name']]);
+                                    $existing = $check->fetch();
+
+                                    if ($existing) {
+                                        $room_id = $existing['id'];
+                                        $current_room_ids[] = $room_id;
+                                        $stmt = $pdo->prepare("UPDATE property_rooms SET adults = ?, children = ?, price_lkr = ?, price_usd = ?, room_image = ?, total_rooms = ?, room_numbers = ? WHERE id = ?");
+                                        $stmt->execute([
+                                            $room['adults'] ?? 2,
+                                            $room['children'] ?? 0,
+                                            $room['price_lkr'] ?? 0,
+                                            $room['price_usd'] ?? 0,
+                                            $room['image'] ?? '',
+                                            $room['count'] ?? 1,
+                                            $room['room_numbers'] ?? '',
+                                            $room_id
+                                        ]);
+                                    } else {
+                                        $stmt = $pdo->prepare("INSERT INTO property_rooms (property_id, room_name, adults, children, price_lkr, price_usd, room_image, total_rooms, room_numbers) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                        $stmt->execute([
+                                            $property_id,
+                                            $room['name'],
+                                            $room['adults'] ?? 2,
+                                            $room['children'] ?? 0,
+                                            $room['price_lkr'] ?? 0,
+                                            $room['price_usd'] ?? 0,
+                                            $room['image'] ?? '',
+                                            $room['count'] ?? 1,
+                                            $room['room_numbers'] ?? ''
+                                        ]);
+                                        $current_room_ids[] = $pdo->lastInsertId();
+                                    }
                                 }
+                            }
+                            
+                            // Delete rooms that are no longer in the list (if they don't have bookings)
+                            if (!empty($current_room_ids)) {
+                                $placeholders = implode(',', array_fill(0, count($current_room_ids), '?'));
+                                $stmt = $pdo->prepare("DELETE FROM property_rooms WHERE property_id = ? AND id NOT IN ($placeholders)");
+                                $params = array_merge([$property_id], $current_room_ids);
+                                $stmt->execute($params);
                             }
                         }
                     }

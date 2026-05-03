@@ -1597,8 +1597,16 @@ if ($edit_id) {
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest text-blue-600">Total Number of ${typeLabel}s</label>
-                                <input type="number" name="rooms[${index}][count]" required value="${data.total_rooms || 1}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <input type="number" name="rooms[${index}][count]" required value="${data.total_rooms || 1}" min="1" oninput="updateRoomNumberInputs(${index}, this.value)" class="room-count-input w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                                 <input type="hidden" name="rooms[${index}][is_hall]" value="${data.is_hall || 0}">
+                                
+                                <div class="mt-4">
+                                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Room Numbers</label>
+                                    <div id="room-numbers-container-${index}" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                                        <!-- Dynamic inputs will be here -->
+                                    </div>
+                                    <input type="hidden" name="rooms[${index}][room_numbers]" id="room-numbers-hidden-${index}" value="${data.room_numbers || ''}">
+                                </div>
                             </div>
                         </div>
 
@@ -1690,6 +1698,51 @@ if ($edit_id) {
                 card.querySelector('.room-image-path').value = '';
                 saveFormData();
             };
+
+            // Initialize room number inputs
+            updateRoomNumberInputs(index, data.total_rooms || 1, data.room_numbers || '');
+        }
+
+        function updateRoomNumberInputs(index, count, existingNumbers = '') {
+            const container = document.getElementById(`room-numbers-container-${index}`);
+            const hiddenInput = document.getElementById(`room-numbers-hidden-${index}`);
+            if (!container) return;
+
+            const countInt = parseInt(count) || 0;
+            let numbers = [];
+            
+            // If existingNumbers is provided (initial load), split it
+            if (existingNumbers) {
+                numbers = existingNumbers.split(',').map(n => n.trim());
+            } else {
+                // Otherwise try to get current values from inputs
+                const currentInputs = container.querySelectorAll('input');
+                currentInputs.forEach(inp => numbers.push(inp.value.trim()));
+            }
+
+            container.innerHTML = '';
+            for (let i = 0; i < countInt; i++) {
+                const val = numbers[i] || '';
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <input type="text" value="${val}" placeholder="Room ${i+1}" 
+                        oninput="syncRoomNumbers(${index})"
+                        class="w-full px-3 py-2 border rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+                `;
+                container.appendChild(div);
+            }
+            syncRoomNumbers(index);
+        }
+
+        function syncRoomNumbers(index) {
+            const container = document.getElementById(`room-numbers-container-${index}`);
+            const hiddenInput = document.getElementById(`room-numbers-hidden-${index}`);
+            if (!container || !hiddenInput) return;
+
+            const inputs = container.querySelectorAll('input');
+            const numbers = Array.from(inputs).map(inp => inp.value.trim()).filter(n => n !== '');
+            hiddenInput.value = numbers.join(',');
+            saveFormData();
         }
 
         addRoomBtn.addEventListener('click', () => addRoomCard());
@@ -1883,6 +1936,8 @@ if ($edit_id) {
                     editData.rooms.forEach(room => {
                         addRoomCard({
                             room_name:  room.room_name,
+                            total_rooms: room.total_rooms || 1,
+                            room_numbers: room.room_numbers || '',
                             max_adults: room.adults,
                             max_children: room.children,
                             room_image: room.room_image,
@@ -1954,9 +2009,21 @@ if ($edit_id) {
                 }
 
                 // --- STEP 12: Logo / Cover / Manager Photo previews ---
-                if (editData.logo_image)    showPreview('logo-upload',          editData.logo_image);
-                if (editData.cover_image)   showPreview('cover-upload',         editData.cover_image);
-                if (editData.manager_photo) showPreview('manager-photo-upload', editData.manager_photo);
+                if (editData.logo_image) {
+                    showPreview('logo-upload', editData.logo_image);
+                    const inp = document.getElementById('logo-upload').querySelector('input[type="hidden"]');
+                    if (inp) inp.value = editData.logo_image;
+                }
+                if (editData.cover_image) {
+                    showPreview('cover-upload', editData.cover_image);
+                    const inp = document.getElementById('cover-upload').querySelector('input[type="hidden"]');
+                    if (inp) inp.value = editData.cover_image;
+                }
+                if (editData.manager_photo) {
+                    showPreview('manager-photo-upload', editData.manager_photo);
+                    const inp = document.getElementById('manager-photo-upload').querySelector('input[type="hidden"]');
+                    if (inp) inp.value = editData.manager_photo;
+                }
 
                 updatePreview();
                 return;   // skip localStorage restore

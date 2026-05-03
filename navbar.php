@@ -61,7 +61,7 @@
                                 <i class="far fa-user-circle text-neutral-400 w-5"></i>
                                 <span>Manage Account</span>
                             </a>
-                            <a href="bookings.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
+                            <a href="mybookings.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="fas fa-briefcase text-neutral-400 w-5"></i>
                                 <span>My Bookings</span>
                             </a>
@@ -155,7 +155,9 @@
             <!-- Auth Buttons -->
             <?php if (isset($_SESSION['user_id'])): ?>
                 <a href="property_wizard.php"
-                    class="text-white hover:bg-white/10 px-3 py-1.5 rounded-lg font-bold text-[13px]">List property</a>
+                    class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-1.5 rounded-lg font-black text-[13px] transition-all shadow-lg shadow-[#10b981]/20 flex items-center gap-2">
+                    <i class="fas fa-plus-circle"></i> List property
+                </a>
                 
                 <div class="relative group">
                     <div
@@ -184,7 +186,7 @@
                                 <i class="far fa-user-circle text-neutral-400"></i>
                                 <span>Manage Account</span>
                             </a>
-                            <a href="bookings.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors">
+                            <a href="mybookings.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors">
                                 <i class="fas fa-briefcase text-neutral-400"></i>
                                 <span>My Bookings</span>
                             </a>

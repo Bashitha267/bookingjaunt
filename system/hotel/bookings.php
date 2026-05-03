@@ -119,7 +119,7 @@ $bookings = $bookings_stmt->fetchAll();
                             </tr>
                         <?php endif; ?>
                         <?php foreach ($bookings as $b): ?>
-                        <tr class="hover:bg-slate-50/50 transition-colors">
+                        <tr class="hover:bg-slate-50/50 transition-colors cursor-pointer" onclick="if(!event.target.closest('select, button, a, form')) window.location='booking_details.php?id=<?php echo $b['id']; ?>'">
                             <td class="p-4">
                                 <div class="font-bold text-slate-800 text-sm"><?php echo htmlspecialchars($b['guest_name']); ?></div>
                                 <div class="text-[11px] text-slate-500 mt-1"><?php echo htmlspecialchars($b['guest_phone']); ?></div>
@@ -162,19 +162,21 @@ $bookings = $bookings_stmt->fetchAll();
                                 </span>
                             </td>
                             <td class="p-4 text-right">
-                                <form method="POST" class="inline-block">
-                                    <input type="hidden" name="booking_id" value="<?php echo $b['id']; ?>">
-                                    <select name="status" onchange="this.form.submit()" class="bg-white border border-slate-200 rounded-lg text-[11px] font-bold px-2 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20">
-                                        <option value="">Update Status</option>
-                                        <option value="pending" <?php echo $b['status'] == 'pending' ? 'selected' : ''; ?>>Pending</option>
-                                        <option value="confirmed" <?php echo $b['status'] == 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
-                                        <option value="checked_in" <?php echo $b['status'] == 'checked_in' ? 'selected' : ''; ?>>Checked In</option>
-                                        <option value="checked_out" <?php echo $b['status'] == 'checked_out' ? 'selected' : ''; ?>>Checked Out</option>
-                                        <option value="cancelled" <?php echo $b['status'] == 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                                    </select>
-                                    <input type="hidden" name="update_status" value="1">
-                                </form>
-                                <button class="ml-2 text-slate-400 hover:text-blue-600 transition-colors"><i class="fas fa-ellipsis-v"></i></button>
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="booking_details.php?id=<?php echo $b['id']; ?>" class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">View</a>
+                                    <form method="POST" class="inline-block">
+                                        <input type="hidden" name="booking_id" value="<?php echo $b['id']; ?>">
+                                        <select name="status" onchange="this.form.submit()" class="bg-white border border-slate-200 rounded-lg text-[11px] font-bold px-2 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/20">
+                                            <option value="">Update Status</option>
+                                            <option value="pending" <?php echo $b['status'] == 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                            <option value="confirmed" <?php echo $b['status'] == 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                                            <option value="checked_in" <?php echo $b['status'] == 'checked_in' ? 'selected' : ''; ?>>Checked In</option>
+                                            <option value="checked_out" <?php echo $b['status'] == 'checked_out' ? 'selected' : ''; ?>>Checked Out</option>
+                                            <option value="cancelled" <?php echo $b['status'] == 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                        </select>
+                                        <input type="hidden" name="update_status" value="1">
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>

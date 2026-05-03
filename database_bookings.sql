@@ -49,3 +49,19 @@ UPDATE `property_rooms` SET `total_rooms` = 1 WHERE room_name = 'Single Room';
 -- ALTER TABLE `bookings` ADD COLUMN `user_id` int(11) DEFAULT NULL AFTER `room_id`;
 -- ALTER TABLE `bookings` ADD INDEX (`user_id`);
 -- ALTER TABLE `bookings` ADD CONSTRAINT `bookings_ibfk_3` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+-- 5. Add room_numbers to track specific room IDs (e.g. 101, 102)
+ALTER TABLE `property_rooms` 
+ADD COLUMN `room_numbers` TEXT AFTER `total_rooms`;
+
+-- 6. Create booking_expenses table for tracking extra costs
+CREATE TABLE IF NOT EXISTS `booking_expenses` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `booking_id` int(11) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `booking_id` (`booking_id`),
+  CONSTRAINT `booking_expenses_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

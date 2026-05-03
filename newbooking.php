@@ -27,6 +27,14 @@ if (!$property || !$room) {
     die("Property or Room not found.");
 }
 
+// Fetch User Details if logged in for auto-fill
+$user_data = null;
+if (isset($_SESSION['user_id'])) {
+    $u_stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $u_stmt->execute([$_SESSION['user_id']]);
+    $user_data = $u_stmt->fetch();
+}
+
 $error = "";
 $success = "";
 
@@ -46,94 +54,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
         $error = "Please create a password for your account.";
     } else {
         $adults = $_POST['adults'] ?? 1;
-    $children = $_POST['children'];
-    $country = $_POST['country'];
-    $booking_type = $_POST['booking_type'] ?? 'online';
-    $amount_paid = $_POST['amount_paid'] ?? 0;
-    $payment_desc = $_POST['payment_description'] ?? '';
-    $user_id = $_SESSION['user_id'] ?? null;
-    $guest_email = $_POST['guest_email'] ?? '';
-    $password = $_POST['password'] ?? '';
+        $children = $_POST['children'] ?? 0;
+        $country = $_POST['country'] ?? 'Sri Lanka';
+        $booking_type = $_POST['booking_type'] ?? 'online';
+        $amount_paid = $_POST['amount_paid'] ?? 0;
+        $payment_desc = $_POST['payment_description'] ?? '';
+        $user_id = $_SESSION['user_id'] ?? null;
 
-    // If not logged in, try to register/login
-    if (!$user_id && !empty($guest_email)) {
-        // Check if user exists
-        $user_stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-        $user_stmt->execute([$guest_email]);
-        $existing_user = $user_stmt->fetch();
+        // If not logged in, try to register/login
+        if (!$user_id && !empty($guest_email)) {
+            // Check if user exists
+            $user_stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+            $user_stmt->execute([$guest_email]);
+            $existing_user = $user_stmt->fetch();
 
-        if ($existing_user) {
-            $user_id = $existing_user['id'];
-        } elseif (!empty($password)) {
-            // Register new user
-            $first_name = $_POST['first_name'] ?? '';
-            $last_name = $_POST['last_name'] ?? '';
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            
-            try {
-                $reg_stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, 'user')");
-                $reg_stmt->execute([$first_name, $last_name, $guest_email, $hashed_password]);
-                $user_id = $pdo->lastInsertId();
-                
-                // Auto-login
-                $_SESSION['user_id'] = $user_id;
-                $_SESSION['user_name'] = $first_name . ' ' . $last_name;
-                $_SESSION['role'] = 'user';
-            } catch (PDOException $e) {
-                // If registration fails (e.g. concurrent email check), just try to get the ID again
-                $user_stmt->execute([$guest_email]);
-                $existing_user = $user_stmt->fetch();
-                if ($existing_user) $user_id = $existing_user['id'];
+            if ($existing_user) {
+                $user_id = $existing_user['id'];
+            } elseif (!empty($password)) {
+                // Register new user
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                try {
+                    $reg_stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, 'user')");
+                    $reg_stmt->execute([$first_name, $last_name, $guest_email, $hashed_password]);
+                    $user_id = $pdo->lastInsertId();
+                    
+                    $_SESSION['user_id'] = $user_id;
+                    $_SESSION['user_name'] = $first_name . ' ' . $last_name;
+                    $_SESSION['role'] = 'user';
+                } catch (PDOException $e) {
+                    $user_stmt->execute([$guest_email]);
+                    $existing_user = $user_stmt->fetch();
+                    if ($existing_user) $user_id = $existing_user['id'];
+                }
             }
         }
-    }
-    
-    // Calculate Prices
-    $days = (strtotime($check_out) - strtotime($check_in)) / (60 * 60 * 24);
-    if ($days <= 0) $days = 1;
-    
-    $price_per_room = $room['price_lkr']; // Default to LKR
-    $total_price = $price_per_room * $room_qty * $days;
-    
-    // Check if paying now
-    $paying_now = ($_POST['pay_now'] ?? 'yes') == 'yes';
-    if ($paying_now) {
-        $payment_status = ($amount_paid >= $total_price) ? 'complete' : 'pending';
-    } else {
-        $amount_paid = 0;
-        $payment_status = 'pending';
-    }
+        
+        $days = (strtotime($check_out) - strtotime($check_in)) / (60 * 60 * 24);
+        if ($days <= 0) $days = 1;
+        $price_per_room = $room['price_lkr'];
+        $total_price = $price_per_room * $room_qty * $days;
+        
+        $paying_now = ($_POST['pay_now'] ?? 'yes') == 'yes';
+        $payment_status = $paying_now ? (($amount_paid >= $total_price) ? 'complete' : 'pending') : 'pending';
+        if (!$paying_now) $amount_paid = 0;
 
-    // Double check availability one last time
-    $avail_stmt = $pdo->prepare("
-        SELECT (total_rooms - (
-            SELECT COUNT(*) FROM bookings 
-            WHERE room_id = ? 
-            AND status NOT IN ('cancelled', 'checked_out')
-            AND (check_in_date < ? AND check_out_date > ?)
-        )) as current_avail
-        FROM property_rooms WHERE id = ?
-    ");
-    $avail_stmt->execute([$room_id, $check_out, $check_in, $room_id]);
-    $avail = $avail_stmt->fetch();
-
-    if ($avail['current_avail'] < $room_qty) {
-        $error = "Sorry, this room is no longer available for the selected dates.";
-    } else {
         try {
             $stmt = $pdo->prepare("INSERT INTO bookings 
-                (property_id, room_id, user_id, booking_type, guest_name, guest_phone, check_in_date, check_out_date, adults, children, country, status, price_per_room, total_price, amount_paid, payment_description, payment_status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)");
+                (property_id, room_id, user_id, booking_type, guest_name, guest_phone, guest_email, check_in_date, check_out_date, adults, children, country, status, price_per_room, total_price, amount_paid, payment_description, payment_status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)");
             $stmt->execute([
-                $property_id, $room_id, $user_id, $booking_type, $guest_name, $guest_phone, 
+                $property_id, $room_id, $user_id, $booking_type, $guest_name, $guest_phone, $guest_email,
                 $check_in, $check_out, $adults, $children, $country,
                 $price_per_room, $total_price, $amount_paid, $payment_desc, $payment_status
             ]);
-            
             $success = "Booking confirmed successfully! Your booking ID is #" . $pdo->lastInsertId();
         } catch (PDOException $e) {
             $error = "Error: " . $e->getMessage();
-        }
         }
     }
 }
@@ -212,12 +188,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">First Name</label>
-                                    <input type="text" name="first_name" required placeholder="e.g. John" 
+                                    <input type="text" name="first_name" value="<?php echo htmlspecialchars($user_data['first_name'] ?? ''); ?>" required placeholder="e.g. John" 
                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium">
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Last Name</label>
-                                    <input type="text" name="last_name" required placeholder="e.g. Doe" 
+                                    <input type="text" name="last_name" value="<?php echo htmlspecialchars($user_data['last_name'] ?? ''); ?>" required placeholder="e.g. Doe" 
                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium">
                                 </div>
                             </div>
@@ -225,13 +201,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
-                                    <input type="email" name="guest_email" required placeholder="john.doe@example.com" 
+                                    <input type="email" name="guest_email" value="<?php echo htmlspecialchars($user_data['email'] ?? ''); ?>" required placeholder="john.doe@example.com" 
                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium">
                                     <p class="text-[10px] text-gray-400 mt-2 font-medium">Confirmation email will be sent here.</p>
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Phone Number</label>
-                                    <input type="tel" name="guest_phone" required placeholder="e.g. +94 77 123 4567" 
+                                    <input type="tel" name="guest_phone" value="<?php echo htmlspecialchars($user_data['phone_number'] ?? ''); ?>" required placeholder="e.g. +94 77 123 4567" 
                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium">
                                 </div>
                             </div>

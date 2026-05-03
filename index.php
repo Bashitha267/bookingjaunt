@@ -12,26 +12,92 @@ if (!isset($_SESSION['currency'])) {
 $currency = $_SESSION['currency'];
 $exchange_rate = 300; // Standard approximation: 1 USD = 300 LKR
 
-// Initialize properties as empty array to avoid errors
-$properties = [];
-
 try {
-    // Fetch properties and their cheapest room using a fully compatible query (avoids ONLY_FULL_GROUP_BY errors)
-    $query = "SELECT p.*, r.room_name, r.adults, r.children, r.price_lkr, r.room_image as first_room_image 
-              FROM properties p 
-              LEFT JOIN property_rooms r ON r.id = (
-                  SELECT id FROM property_rooms 
-                  WHERE property_id = p.id 
-                  ORDER BY price_lkr ASC 
-                  LIMIT 1
-              )
-              ORDER BY p.created_at DESC";
+    $q = $_GET['q'] ?? '';
+    $checkin = $_GET['checkin'] ?? '';
+    $checkout = $_GET['checkout'] ?? '';
+    $adults = (int)($_GET['adults'] ?? 1);
+    $children = (int)($_GET['children'] ?? 0);
+    $type = $_GET['type'] ?? 'hotel';
 
-    $stmt = $pdo->query($query);
+    $params = [];
+    $where = ["p.business_type = ?"];
+    $params[] = $type;
+
+    if (!empty($q)) {
+        $where[] = "(p.property_name LIKE ? OR p.city LIKE ? OR p.district LIKE ? OR p.closest_main_town LIKE ?)";
+        $params[] = "%$q%";
+        $params[] = "%$q%";
+        $params[] = "%$q%";
+        $params[] = "%$q%";
+    }
+
+    // Capacity filter
+    $where[] = "(r.adults >= ? AND (r.adults + r.children) >= ?)";
+    $params[] = $adults;
+    $params[] = ($adults + $children);
+
+    // Availability Filter (If dates provided)
+    if (!empty($checkin) && !empty($checkout)) {
+        $where[] = "r.total_rooms > (
+            SELECT COUNT(*) FROM bookings b 
+            WHERE b.room_id = r.id 
+            AND b.status NOT IN ('cancelled')
+            AND (b.check_in_date < ? AND b.check_out_date > ?)
+        )";
+        $params[] = $checkout;
+        $params[] = $checkin;
+    }
+
+    $where_sql = implode(" AND ", $where);
+
+    // Fetch properties and their cheapest matching room
+    $query = "SELECT p.*, r.room_name, r.adults, r.children, r.price_lkr, r.room_image as first_room_image, r.id as room_id,
+              AVG(rev.rating) as avg_rating, COUNT(rev.id) as review_count
+              FROM properties p 
+              JOIN property_rooms r ON r.property_id = p.id
+              LEFT JOIN reviews rev ON rev.property_id = p.id
+              WHERE $where_sql
+              AND r.price_lkr = (
+                  SELECT MIN(price_lkr) FROM property_rooms r2 
+                  WHERE r2.property_id = p.id 
+                  -- Re-apply filters for the cheapest room subquery to ensure it matches search criteria
+                  AND r2.adults >= ? AND (r2.adults + r2.children) >= ?
+                  " . (!empty($checkin) && !empty($checkout) ? "AND r2.total_rooms > (
+                      SELECT COUNT(*) FROM bookings b2 
+                      WHERE b2.room_id = r2.id 
+                      AND b2.status NOT IN ('cancelled')
+                      AND (b2.check_in_date < ? AND b2.check_out_date > ?)
+                  )" : "") . "
+              )
+              GROUP BY p.id
+              ORDER BY p.created_at DESC";
+    
+    // Add subquery params
+    $params[] = $adults;
+    $params[] = ($adults + $children);
+    if (!empty($checkin) && !empty($checkout)) {
+        $params[] = $checkout;
+        $params[] = $checkin;
+    }
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
     $properties = $stmt->fetchAll();
+
+    // Fetch Ads
+    $ads_stmt = $pdo->query("SELECT * FROM advertisements WHERE status = 'active' ORDER BY RAND() LIMIT 2");
+    $ads = $ads_stmt->fetchAll();
+
+    // Check if logged-in user has properties
+    $user_has_properties = false;
+    if (isset($_SESSION['user_id'])) {
+        $check_stmt = $pdo->prepare("SELECT id FROM properties WHERE owner_id = ? LIMIT 1");
+        $check_stmt->execute([$_SESSION['user_id']]);
+        $user_has_properties = (bool)$check_stmt->fetch();
+    }
 } catch (PDOException $e) {
     error_log("Query failed: " . $e->getMessage());
-    // $properties remains an empty array
 }
 ?>
 <!DOCTYPE html>
@@ -92,67 +158,82 @@ try {
         </div>
 
         <!-- Search Bar -->
-        <div
-            class="absolute -bottom-[190px] md:-bottom-[40px] left-1/2 -translate-x-1/2 w-[94%] md:w-[80%] max-w-[1100px] bg-gold p-1 md:p-1.5 rounded-xl md:rounded-2xl flex flex-col md:flex-row shadow-[0_10px_30px_rgba(0,0,0,0.2)] md:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 z-20">
+        <form action="index.php" method="GET"
+            class="absolute -bottom-[190px] md:-bottom-[40px] left-1/2 -translate-x-1/2 w-[94%] md:w-[80%] max-w-[1100px] bg-[#10b981] p-1 md:p-1.5 rounded-xl md:rounded-2xl flex flex-col md:flex-row shadow-[0_10px_30px_rgba(0,0,0,0.2)] md:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 z-20">
+            
+            <input type="hidden" name="type" value="<?php echo htmlspecialchars($type); ?>">
 
             <!-- Row 1: Location -->
             <div
                 class="flex-[1.5] bg-white m-0.5 p-3 md:p-4 rounded-t-lg md:rounded-xl flex items-center gap-3 text-neutral-800">
-                <i class="fas fa-search text-neutral-600 md:text-primary md:text-xl"></i>
-                <input type="text" placeholder="Around current location"
+                <i class="fas fa-search text-neutral-600 md:text-[#10b981] md:text-xl"></i>
+                <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" placeholder="Around current location"
                     class="border-none outline-none w-full text-[15px] font-bold md:font-medium placeholder:text-neutral-800 md:placeholder:text-neutral-400">
             </div>
 
             <!-- Row 2: Dates -->
             <div class="flex-1 flex m-0.5 gap-1 md:gap-0 bg-transparent md:bg-white md:rounded-xl">
-                <!-- Check-in -->
-                <div
-                    class="flex-1 bg-white p-2 px-3 md:p-4 md:rounded-xl flex flex-col md:flex-row md:items-center md:gap-3 cursor-pointer hover:bg-neutral-50 transition-colors">
-                    <div class="text-[12px] text-neutral-600 mb-0.5 md:hidden">Check-in date</div>
-                    <div class="text-[15px] font-bold md:font-medium text-neutral-800 flex items-center gap-2">
-                        <i class="far fa-calendar-alt text-primary hidden md:inline-block text-xl"></i>
-                        <span class="md:hidden">Sat, Apr 25, 2026</span>
-                        <span class="hidden md:inline-block">Dates</span>
+                <!-- Dates Container (Combined for Desktop) -->
+                <div class="flex-1 bg-white p-2 px-3 md:p-0 md:rounded-xl flex flex-row items-center gap-2 md:gap-0 overflow-hidden">
+                    <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center relative">
+                        <i class="far fa-calendar-alt text-[#10b981] hidden md:inline-block text-xl ml-4 mr-2"></i>
+                        <div class="flex flex-col flex-1">
+                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Check-in</span>
+                            <input type="date" name="checkin" value="<?php echo htmlspecialchars($checkin); ?>"
+                                class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
+                        </div>
                     </div>
-                </div>
-                <!-- Check-out -->
-                <div
-                    class="flex-1 bg-white p-2 px-3 md:hidden flex flex-col cursor-pointer hover:bg-neutral-50 transition-colors">
-                    <div class="text-[12px] text-neutral-600 mb-0.5">Check-out date</div>
-                    <div class="text-[15px] font-bold text-neutral-800">Sun, Apr 26, 2026</div>
+                    <div class="hidden md:block w-[1px] h-8 bg-neutral-100"></div>
+                    <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center">
+                        <div class="flex flex-col flex-1 md:pl-3">
+                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Check-out</span>
+                            <input type="date" name="checkout" value="<?php echo htmlspecialchars($checkout); ?>"
+                                class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Row 3: Guests -->
-            <div class="flex-1 flex m-0.5 gap-1 md:block bg-transparent md:bg-white md:rounded-xl">
-                <!-- Adults -->
-                <div
-                    class="flex-1 bg-white p-2 px-3 md:p-4 md:rounded-xl flex flex-col md:flex-row md:items-center md:gap-3 cursor-pointer hover:bg-neutral-50 transition-colors">
-                    <div class="text-[12px] text-neutral-600 mb-0.5 md:hidden">Adults</div>
-                    <div class="text-[15px] font-bold md:font-medium text-neutral-800 flex items-center gap-2">
-                        <i class="fas fa-user-friends text-primary hidden md:inline-block text-xl"></i>
-                        <span class="md:hidden">2</span>
-                        <span class="hidden md:inline-block">Guests</span>
+            <div class="flex-1 flex m-0.5 gap-1 md:gap-0 bg-transparent md:bg-white md:rounded-xl">
+                <div class="flex-1 bg-white p-2 px-3 md:p-0 md:rounded-xl flex flex-row items-center gap-2 md:gap-0 overflow-hidden">
+                    <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center relative">
+                        <i class="fas fa-user-friends text-[#10b981] hidden md:inline-block text-xl ml-4 mr-2"></i>
+                        <div class="flex flex-col flex-1">
+                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Adults</span>
+                            <div class="flex items-center gap-1">
+                                <span class="hidden md:inline text-[13px] text-neutral-400 font-bold">A:</span>
+                                <input type="number" name="adults" min="1" value="<?php echo $adults; ?>"
+                                    class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <!-- Children -->
-                <div
-                    class="flex-1 bg-white p-2 px-3 flex flex-col md:hidden cursor-pointer hover:bg-neutral-50 transition-colors">
-                    <div class="text-[12px] text-neutral-600 mb-0.5">Children</div>
-                    <div class="text-[15px] font-bold text-neutral-800">0</div>
-                </div>
-                <!-- Rooms -->
-                <div
-                    class="flex-1 bg-white p-2 px-3 flex flex-col md:hidden cursor-pointer hover:bg-neutral-50 transition-colors">
-                    <div class="text-[12px] text-neutral-600 mb-0.5">Rooms</div>
-                    <div class="text-[15px] font-bold text-neutral-800">1</div>
+                    <div class="hidden md:block w-[1px] h-8 bg-neutral-100"></div>
+                    <div class="md:flex-1 h-full flex flex-col md:flex-row md:items-center">
+                        <div class="flex flex-col flex-1 md:pl-3">
+                            <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter md:hidden">Children</span>
+                            <div class="flex items-center gap-1">
+                                <span class="hidden md:inline text-[13px] text-neutral-400 font-bold">C:</span>
+                                <input type="number" name="children" min="0" value="<?php echo $children; ?>"
+                                    class="border-none outline-none text-[13px] md:text-[14px] font-bold md:font-medium text-neutral-800 bg-transparent w-full">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Search Button -->
-            <button
-                class="bg-[#006CE4] hover:bg-[#0057b8] text-white px-10 py-3.5 md:py-4 rounded-b-lg md:rounded-xl font-bold text-[18px] md:text-[16px] m-0.5 mt-1 md:mt-0.5 transition-all shadow-md active:scale-95">Search</button>
-        </div>
+            <div class="flex flex-col md:flex-row gap-1 m-0.5 mt-1 md:mt-0">
+                <button type="submit"
+                    class="bg-[#003580] hover:bg-[#002b66] text-white px-8 py-3.5 md:py-4 rounded-b-lg md:rounded-xl font-bold text-[18px] md:text-[16px] transition-all shadow-md active:scale-95">Search</button>
+                <?php if (!empty($q) || !empty($checkin) || !empty($checkout)): ?>
+                    <a href="index.php" 
+                        class="bg-white/20 hover:bg-white/30 text-white px-4 py-3.5 md:py-4 rounded-xl flex items-center justify-center transition-all">
+                        <i class="fas fa-times"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </form>
     </section>
 
     <!-- Main Content -->
@@ -237,10 +318,74 @@ try {
                     <label class="filter-option"><input type="checkbox"> 5 stars</label>
                 </div>
             </div>
+
+            <!-- Ads Box (Desktop Sidebar) -->
+            <?php if (!empty($ads)): 
+                $ad_display_count = 1;
+            ?>
+                <div class="mt-6 space-y-4">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 pl-1">Sponsored</h4>
+                    <?php foreach ($ads as $ad): ?>
+                        <div class="bg-gray-100 p-2 rounded-2xl border border-gray-200">
+                            <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block group relative overflow-hidden rounded-xl">
+                                <div class="w-full h-40 bg-neutral-200 border border-neutral-300 flex flex-col items-center justify-center text-neutral-400 rounded-xl transition-all group-hover:bg-neutral-300">
+                                    <i class="fas fa-ad text-3xl mb-1 opacity-20"></i>
+                                    <span class="text-[10px] font-black uppercase tracking-widest">Advertisement <?php echo $ad_display_count++; ?></span>
+                                </div>
+                                <div class="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+                                    <div class="flex justify-between items-end">
+                                        <p class="text-[9px] text-white/80 font-bold"><?php echo htmlspecialchars($ad['owner_name']); ?></p>
+                                        <p class="text-[10px] text-white font-black">LKR <?php echo number_format($ad['price']); ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </aside>
 
         <!-- Results -->
         <section class="results">
+
+            <!-- Horizontal Ads (Desktop Strip) -->
+            <?php if (!empty($ads)): ?>
+                <div class="hidden md:block mb-8">
+                    <div class="grid grid-cols-2 gap-6">
+                        <?php foreach ($ads as $ad): ?>
+                            <div class="bg-gray-100 p-2 rounded-[2rem] border border-gray-200 overflow-hidden">
+                                <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block w-full h-[120px] group overflow-hidden rounded-[1.8rem]">
+                                    <div class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-hover:bg-neutral-300">
+                                        <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
+                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement <?php echo $ad_display_count++; ?></span>
+                                    </div>
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Mobile Ads (Horizontal Scroll) -->
+            <?php if (!empty($ads)): 
+                $ad_mobile_count = 1;
+            ?>
+                <div class="md:hidden px-4 mb-6">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Promotions</h4>
+                    <div class="flex gap-4 overflow-x-auto no-scrollbar">
+                        <?php foreach ($ads as $ad): ?>
+                            <div class="min-w-[300px] bg-gray-100 p-2 rounded-2xl border border-gray-200 shrink-0">
+                                <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block relative h-32 overflow-hidden rounded-xl group">
+                                    <div class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-active:bg-neutral-300">
+                                        <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
+                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement <?php echo $ad_mobile_count++; ?></span>
+                                    </div>
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <?php
             if (empty($properties)): ?>
@@ -272,7 +417,7 @@ try {
                         ?>
                         <!-- Property Listing Card -->
                         <div class="bg-white border border-border rounded-lg md:rounded-xl overflow-hidden flex flex-col md:flex-row mb-0 md:mb-4 transition-all hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] group w-[72vw] min-w-[240px] max-w-[280px] md:max-w-none md:w-full snap-start shrink-0 md:shrink cursor-pointer"
-                            onclick="window.location.href='hotel_info.php?id=<?php echo $property['id']; ?>'">
+                            onclick="window.location.href='hotel_info.php?id=<?php echo $property['id']; ?>&checkin=<?php echo $checkin; ?>&checkout=<?php echo $checkout; ?>&adults=<?php echo $adults; ?>&children=<?php echo $children; ?>'">
                             <!-- Image Wrapper -->
                             <div class="relative w-full md:w-[240px] md:h-auto h-[150px] p-0 md:p-4 flex-shrink-0">
                                 <?php if ($image): ?>
@@ -399,6 +544,7 @@ try {
                                             class="text-[8px] md:text-[10px] text-text-secondary uppercase font-bold tracking-wider mb-2">
                                             taxes & fees included</div>
                                         <button
+                                            onclick="event.stopPropagation(); window.location.href='hotel_info.php?id=<?php echo $property['id']; ?>&checkin=<?php echo $checkin; ?>&checkout=<?php echo $checkout; ?>&adults=<?php echo $adults; ?>&children=<?php echo $children; ?>'"
                                             class="hidden md:block bg-secondary hover:bg-primary text-white px-4 py-1.5 md:py-2 rounded font-bold text-[13px] md:text-[14px] w-full md:w-auto transition-colors">Check
                                             Availability <i
                                                 class="fas fa-chevron-right ml-1 text-[9px] md:text-[10px]"></i></button>
@@ -449,6 +595,45 @@ try {
             <?php endif; ?>
         </section>
     </main>
+
+    <?php if (isset($_SESSION['user_id']) && !$user_has_properties): ?>
+    <!-- Property Listing CTA for New/Propertyless Owners -->
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16">
+        <div class="relative overflow-hidden bg-primary rounded-[2.5rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 group">
+            <!-- Background Decoration -->
+            <div class="absolute -right-20 -top-20 w-96 h-96 bg-white/5 rounded-full blur-3xl transition-all group-hover:scale-110"></div>
+            <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-[#10b981]/10 rounded-full blur-3xl"></div>
+            
+            <div class="relative z-10 flex-1">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981]/20 text-[#10b981] rounded-full text-xs font-black uppercase tracking-[0.2em] mb-6">
+                    <i class="fas fa-gift"></i> Limited Offer
+                </div>
+                <h2 class="text-3xl md:text-5xl font-black text-white leading-tight mb-6">List your property & get a <span class="text-[#10b981]">Free Management System</span></h2>
+                <p class="text-lg text-white/70 max-w-xl mb-8 leading-relaxed font-medium">Join thousands of property owners in Sri Lanka. Manage bookings, tracks expenses, and grow your business with our all-in-one platform.</p>
+                
+                <div class="flex flex-wrap gap-4">
+                    <a href="property_wizard.php" class="bg-[#10b981] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#059669] transition-all shadow-xl shadow-[#10b981]/20 flex items-center gap-3">
+                        <i class="fas fa-plus-circle"></i> Start Listing Now
+                    </a>
+                    <div class="flex items-center gap-3 px-6 py-4 bg-white/5 rounded-2xl border border-white/10 text-white/80 font-bold text-sm">
+                        <i class="fas fa-check text-[#10b981]"></i> No hidden fees
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative z-10 w-full md:w-1/3 flex justify-center">
+                <div class="relative">
+                    <div class="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center animate-pulse">
+                        <i class="fas fa-hotel text-8xl text-white/20"></i>
+                    </div>
+                    <div class="absolute -bottom-4 -right-4 bg-[#febb02] p-6 rounded-3xl shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                        <i class="fas fa-chart-line text-4xl text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <section
         class="bg-[#00224f] text-white py-12 px-4 md:px-[10%] mt-12 flex flex-col md:flex-row justify-center md:justify-between items-center text-center md:text-left gap-6">
