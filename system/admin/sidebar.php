@@ -24,6 +24,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-hotel w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Properties
         </a>
+        <a href="boosts.php" class="sidebar-link <?php echo $current_page == 'boosts.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+            <i class="fas fa-rocket w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Manage Boosts
+        </a>
         <a href="users.php" class="sidebar-link <?php echo $current_page == 'users.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
             <i class="fas fa-users w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             User Management
@@ -32,9 +36,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-calendar-check w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Bookings
         </a>
+        <a href="reports.php" class="sidebar-link <?php echo $current_page == 'reports.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+            <i class="fas fa-chart-line w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Reports
+        </a>
         <a href="payouts.php" class="sidebar-link <?php echo $current_page == 'payouts.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
             <i class="fas fa-wallet w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Payouts
+        </a>
+        <a href="manage_add.php" class="sidebar-link <?php echo $current_page == 'manage_add.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+            <i class="fas fa-bullhorn w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Manage Advertisements
         </a>
         <a href="amenities.php" class="sidebar-link <?php echo $current_page == 'amenities.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
             <i class="fas fa-list-ul w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>

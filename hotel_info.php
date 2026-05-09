@@ -25,6 +25,7 @@ $amenities_stmt->execute([$property_id]);
 $amenities = $amenities_stmt->fetchAll();
 
 // Handle Availability Dates
+$dates_specified = isset($_GET['checkin']) && isset($_GET['checkout']);
 $check_in = $_GET['checkin'] ?? date('Y-m-d');
 $check_out = $_GET['checkout'] ?? date('Y-m-d', strtotime('+1 day'));
 
@@ -137,6 +138,23 @@ $review_count = $rating_stats['review_count'];
         function closeLightbox() { document.getElementById("myLightbox").style.display = "none"; document.body.style.overflow = "auto"; }
         function openGallery() { document.getElementById("galleryModal").classList.remove("hidden"); document.body.style.overflow = "hidden"; }
         function closeGallery() { document.getElementById("galleryModal").classList.add("hidden"); document.body.style.overflow = "auto"; }
+
+        function validateBooking(event, checkin, checkout, specified) {
+            if (!specified) {
+                if (!confirm("You haven't explicitly selected dates. We've set them to the earliest available: \n\nCheck-in: " + checkin + "\nCheck-out: " + checkout + "\n\nWould you like to proceed with these dates?")) {
+                    event.preventDefault();
+                    document.getElementById('availability').scrollIntoView({ behavior: 'smooth' });
+                    // Highlight the date inputs
+                    const inputs = document.querySelectorAll('#availability input[type="date"]');
+                    inputs.forEach(i => {
+                        i.classList.add('ring-4', 'ring-brand-600/30');
+                        setTimeout(() => i.classList.remove('ring-4', 'ring-brand-600/30'), 3000);
+                    });
+                    return false;
+                }
+            }
+            return true;
+        }
     </script>
 </head>
 <body>
@@ -158,7 +176,7 @@ $review_count = $rating_stats['review_count'];
                 </div>
             </div>
             <div class="hidden md:flex items-center gap-3">
-                <button class="bg-brand-600 text-white px-8 py-2.5 rounded-lg font-bold">Reserve</button>
+                <button onclick="document.getElementById('availability').scrollIntoView({ behavior: 'smooth' })" class="bg-brand-600 text-white px-8 py-2.5 rounded-lg font-bold">Reserve</button>
             </div>
         </div>
 
@@ -233,7 +251,7 @@ $review_count = $rating_stats['review_count'];
             <div class="hidden lg:block">
                 <div class="bg-brand-50 p-6 rounded-xl border border-brand-100 sticky top-6">
                     <h4 class="font-bold mb-4">Property highlights</h4>
-                    <button class="w-full bg-brand-600 text-white py-3 rounded-lg font-bold">Reserve your stay</button>
+                    <button onclick="document.getElementById('availability').scrollIntoView({ behavior: 'smooth' })" class="w-full bg-brand-600 text-white py-3 rounded-lg font-bold">Reserve your stay</button>
                 </div>
             </div>
         </div>
@@ -269,7 +287,7 @@ $review_count = $rating_stats['review_count'];
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-brand-900 text-white text-[11px] uppercase">
                         <tr>
-                            <th class="p-4 w-[35%]">Room Type</th>
+                            <th class="p-4 w-[35%]"><?php echo $property['business_type'] == 'dayouts' ? 'Package Details' : 'Room Type'; ?></th>
                             <th class="p-4 text-center">Sleeps</th>
                             <th class="p-4">Price</th>
                             <th class="p-4">Choices</th>
@@ -289,13 +307,25 @@ $review_count = $rating_stats['review_count'];
                                         <?php endif; ?>
                                         <div>
                                             <div class="font-bold text-brand-600 text-[16px] mb-1 hover:underline cursor-pointer"><?php echo htmlspecialchars($room['room_name']); ?></div>
-                                            <div class="text-neutral-500 text-[12px] flex items-center gap-2">
-                                                <i class="fas fa-bed text-neutral-400"></i>
-                                                <span>1 extra-large double bed</span>
-                                            </div>
-                                            <div class="text-neutral-400 text-[11px] mt-2 flex items-center gap-3">
-                                                <span><i class="fas fa-expand mr-1"></i> 35 m²</span>
-                                            </div>
+                                            <?php if ($property['business_type'] == 'dayouts'): ?>
+                                                <div class="text-neutral-500 text-[12px] mt-2 mb-1">
+                                                    <?php echo nl2br(htmlspecialchars($room['description'] ?? '')); ?>
+                                                </div>
+                                                <?php if (!empty($room['things_included'])): ?>
+                                                <div class="text-neutral-600 font-medium text-[11px] mt-2 bg-neutral-50 p-2 border border-neutral-100 rounded">
+                                                    <div class="font-bold mb-1 text-[10px] uppercase tracking-wider text-neutral-800">Includes:</div>
+                                                    <?php echo nl2br(htmlspecialchars($room['things_included'])); ?>
+                                                </div>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <div class="text-neutral-500 text-[12px] flex items-center gap-2 mt-1">
+                                                    <i class="fas fa-bed text-neutral-400"></i>
+                                                    <span>1 extra-large double bed</span>
+                                                </div>
+                                                <div class="text-neutral-400 text-[11px] mt-2 flex items-center gap-3">
+                                                    <span><i class="fas fa-expand mr-1"></i> 35 m²</span>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </td>
@@ -342,11 +372,13 @@ $review_count = $rating_stats['review_count'];
                                         
                                         <select name="qty" class="w-full p-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 bg-white text-sm font-medium mb-3">
                                             <?php for($i = 1; $i <= $room['available_count']; $i++): ?>
-                                                <option value="<?php echo $i; ?>"><?php echo $i; ?> room<?php echo $i > 1 ? 's' : ''; ?> (<?php echo $currency; ?> <?php echo number_format($total_display_price * $i, ($currency == 'USD' ? 2 : 0)); ?>)</option>
+                                                <option value="<?php echo $i; ?>"><?php echo $i; ?> <?php echo $property['business_type'] == 'dayouts' ? 'package' : 'room'; ?><?php echo $i > 1 ? 's' : ''; ?> (<?php echo $currency; ?> <?php echo number_format($total_display_price * $i, ($currency == 'USD' ? 2 : 0)); ?>)</option>
                                             <?php endfor; ?>
                                         </select>
                                         
-                                        <button type="submit" class="w-full bg-brand-600 text-white py-2.5 rounded-lg font-bold hover:bg-brand-700 transition-all shadow-md shadow-brand-600/10 mb-2">
+                                        <button type="submit" 
+                                                onclick="return validateBooking(event, '<?php echo $check_in; ?>', '<?php echo $check_out; ?>', <?php echo $dates_specified ? 'true' : 'false'; ?>)"
+                                                class="w-full bg-brand-600 text-white py-2.5 rounded-lg font-bold hover:bg-brand-700 transition-all shadow-md shadow-brand-600/10 mb-2">
                                             Reserve
                                         </button>
                                         <p class="text-[10px] text-neutral-500 font-medium text-center">Confirmation is instant</p>
@@ -374,7 +406,17 @@ $review_count = $rating_stats['review_count'];
                                     <?php for($i=0;$i<$room['adults'];$i++): ?><i class="fas fa-user text-[11px]"></i><?php endfor; ?>
                                 </div>
                             </div>
-                            <p class="text-[13px] text-neutral-500 mb-4 font-medium">1 extra-large double bed • 35 m²</p>
+                            <?php if ($property['business_type'] == 'dayouts'): ?>
+                                <p class="text-[13px] text-neutral-500 mb-2 font-medium"><?php echo nl2br(htmlspecialchars($room['description'] ?? '')); ?></p>
+                                <?php if (!empty($room['things_included'])): ?>
+                                    <div class="text-[12px] text-neutral-600 mb-4 bg-neutral-50 p-2 border border-neutral-100 rounded">
+                                        <strong class="block text-[10px] uppercase tracking-wider text-neutral-800 mb-1">Includes:</strong>
+                                        <?php echo nl2br(htmlspecialchars($room['things_included'])); ?>
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <p class="text-[13px] text-neutral-500 mb-4 font-medium">1 extra-large double bed • 35 m²</p>
+                            <?php endif; ?>
                             <div class="bg-brand-50 p-4 rounded-xl mb-5 space-y-2">
                                 <div class="text-[12px] text-palm font-bold flex items-center gap-2">
                                     <i class="fas fa-check text-[10px]"></i> Free cancellation
@@ -393,6 +435,7 @@ $review_count = $rating_stats['review_count'];
                                     <div class="text-[10px] text-neutral-400 font-medium italic"><?php echo $currency; ?> <?php echo number_format($display_price, ($currency == 'USD' ? 2 : 0)); ?> per night</div>
                                 </div>
                                 <a href="newbooking.php?property_id=<?php echo $property_id; ?>&room_id=<?php echo $room['id']; ?>&checkin=<?php echo $check_in; ?>&checkout=<?php echo $check_out; ?>&qty=1" 
+                                   onclick="return validateBooking(event, '<?php echo $check_in; ?>', '<?php echo $check_out; ?>', <?php echo $dates_specified ? 'true' : 'false'; ?>)"
                                    class="bg-brand-600 text-white px-6 py-2.5 rounded-xl font-bold text-[14px] no-underline">
                                     Select
                                 </a>

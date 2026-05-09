@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Playball&display=swap');
 
 :root {
     /* Booking.com Theme - Core */
@@ -127,29 +127,203 @@ a {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* Hero Section */
-.hero {
-    height: 500px;
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('assets/hero_bg.png');
+/* Background Slideshow */
+.slideshow-container {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
     background-size: cover;
     background-position: center;
+    opacity: 0;
+    animation: slideShow 15s linear infinite;
+}
+
+.slide:nth-child(1) { animation-delay: 0s; }
+.slide:nth-child(2) { animation-delay: 5s; }
+.slide:nth-child(3) { animation-delay: 10s; }
+
+@keyframes slideShow {
+    0% { opacity: 0; transform: scale(1.1); }
+    10% { opacity: 1; }
+    33% { opacity: 1; }
+    43% { opacity: 0; transform: scale(1); }
+    100% { opacity: 0; }
+}
+
+/* Hero Section */
+.hero {
+    height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: flex-start;
-    padding: 0 10%;
+    align-items: center;
+    text-align: center;
     position: relative;
     color: var(--white);
+    overflow: hidden;
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%);
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 900px;
+}
+
+.hero-content .subtitle {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
 }
 
 .hero-content h1 {
-    font-size: 48px;
-    margin-bottom: 10px;
+    font-size: 90px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 20px;
+    letter-spacing: -2px;
+    text-transform: none;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
-.hero-content p {
+.hero-content .hero-logo {
+    width: 320px;
+    margin: 0 auto 10px;
+}
+
+.hero-content .tagline {
     font-size: 24px;
-    font-weight: 300;
+    font-weight: 500;
+    opacity: 0.95;
+    margin-bottom: 40px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.decorative-line {
+    width: 60px;
+    height: 3px;
+    background: var(--white);
+    margin: 20px auto;
+}
+
+/* Search Bar Redesign V2 */
+.search-container-v2 {
+    position: relative;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 2px solid #febb02; /* Gold border from user theme */
+    padding: 6px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 94%;
+    max-width: 1150px;
+    margin: 40px auto 0;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+}
+
+.search-field-v2 {
+    flex: 1;
+    background: var(--white);
+    height: 60px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    gap: 12px;
+    position: relative;
+}
+
+.search-field-v2.wide {
+    flex: 1.5;
+}
+
+.search-field-v2 i {
+    color: #4a4a4a; /* Neutral icon color like image */
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+.search-field-v2 input, 
+.search-field-v2 select,
+.search-field-v2 .display-text {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: transparent;
+    cursor: pointer;
+}
+
+.search-field-v2 .display-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vertical-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.search-btn-v2 {
+    background: #006ce4; /* Bright blue from image 2 */
+    color: var(--white);
+    height: 60px;
+    padding: 0 35px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.search-btn-v2:hover {
+    background: #002b66;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* New Section Headings */
+.visit-sl-heading {
+    text-align: center;
+    margin: 80px 0 40px;
+}
+
+.visit-sl-heading h2 {
+    font-family: 'Playball', cursive;
+    font-size: 72px;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.visit-sl-heading p {
+    font-size: 18px;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .contact-floating {
@@ -776,4 +950,130 @@ a {
 
 .animate-in {
     animation: fadeInSlideDown 0.3s ease-out forwards;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .hero-content h1 {
+        font-size: 80px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        height: auto;
+        min-height: 100vh;
+        padding-top: 100px;
+        padding-bottom: 50px;
+    }
+
+    .hero-content h1 {
+        font-size: 60px;
+    }
+
+    .hero-content .subtitle {
+        font-size: 18px;
+    }
+
+    .hero-content .tagline {
+        font-size: 16px;
+        padding: 0 20px;
+    }
+
+    .search-container-v2 {
+        flex-direction: column;
+        width: 90%;
+        gap: 8px;
+        padding: 8px;
+        margin-top: 30px;
+    }
+
+    .search-field-v2 {
+        width: 100%;
+        flex: none !important;
+    }
+
+    .search-btn-v2 {
+        width: 100%;
+        height: 55px;
+    }
+
+    .visit-sl-heading h2 {
+        font-size: 48px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content h1 {
+        font-size: 45px;
+    }
+
+    .search-field-v2 {
+        padding: 0 10px;
+        gap: 8px;
+    }
+
+    .search-field-v2 input {
+        font-size: 13px;
+    }
+}
+
+/* Discover Sri Lanka Section */
+.discover-section {
+    position: relative;
+    height: 500px;
+    background-image: linear-gradient(rgba(0, 53, 128, 0.6), rgba(0, 53, 128, 0.6)), url('assets/slideshow/tea.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 10%;
+    color: var(--white);
+    margin: 80px 0;
+}
+
+.discover-section .logo-img {
+    width: 180px;
+    margin-bottom: 20px;
+}
+
+.discover-section h2 {
+    font-size: 80px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 20px;
+    letter-spacing: -2px;
+}
+
+.discover-section p {
+    font-size: 28px;
+    font-weight: 500;
+    max-width: 800px;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .discover-section {
+        height: 400px;
+        padding: 0 5%;
+        text-align: center;
+        align-items: center;
+    }
+
+    .discover-section h2 {
+        font-size: 50px;
+    }
+
+    .discover-section p {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-content .hero-logo {
+        width: 240px;
+        margin-bottom: 5px;
+    }
 }

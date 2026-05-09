@@ -40,6 +40,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit();
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'request_boost') {
+    $package_id = $_POST['package_id'];
+    
+    // Fetch package details
+    $pkg_stmt = $pdo->prepare("SELECT duration_days, price_lkr FROM boost_packages WHERE id = ?");
+    $pkg_stmt->execute([$package_id]);
+    $pkg = $pkg_stmt->fetch();
+    
+    if ($pkg) {
+        $start_date = date('Y-m-d');
+        $duration = $pkg['duration_days'];
+        $amount = $pkg['price_lkr'];
+        
+        $ins = $pdo->prepare("INSERT INTO property_boosts (property_id, package_id, start_date, duration_days, amount, status, payment_status) VALUES (?, ?, ?, ?, ?, 'pending', 'pending')");
+        $ins->execute([$property_id, $package_id, $start_date, $duration, $amount]);
+        
+        header("Location: dashboard.php?msg=boost_requested");
+        exit();
+    }
+}
+
+
 // Fetch all room types for this property
 $rooms_stmt = $pdo->prepare("SELECT id, room_name FROM property_rooms WHERE property_id = ?");
 $rooms_stmt->execute([$property_id]);
@@ -111,6 +133,15 @@ $rooms_availability_stmt = $pdo->prepare("
 ");
 $rooms_availability_stmt->execute([$property_id, $today, $today, $property_id]);
 $rooms_availability = $rooms_availability_stmt->fetchAll();
+
+// Fetch Boost Packages
+$boost_packages_stmt = $pdo->query("SELECT * FROM boost_packages WHERE is_active = 1");
+$boost_packages = $boost_packages_stmt->fetchAll();
+
+// Fetch Current Boost Status
+$active_boost_stmt = $pdo->prepare("SELECT * FROM property_boosts WHERE property_id = ? AND status IN ('pending', 'active') AND (status = 'pending' OR DATE_ADD(start_date, INTERVAL duration_days DAY) >= CURDATE()) ORDER BY created_at DESC LIMIT 1");
+$active_boost_stmt->execute([$property_id]);
+$current_boost = $active_boost_stmt->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -235,6 +266,32 @@ $rooms_availability = $rooms_availability_stmt->fetchAll();
         <div class="p-8">
             
             <?php if ($view === 'dashboard'): ?>
+                <!-- Boost Banner -->
+                <?php if ($current_boost): ?>
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-[2rem] p-8 mb-8 text-white flex justify-between items-center shadow-lg shadow-indigo-500/20">
+                        <div>
+                            <h2 class="text-2xl font-black mb-2">Your property boost is <?php echo htmlspecialchars($current_boost['status']); ?>!</h2>
+                            <p class="opacity-90 font-medium">
+                                <?php if ($current_boost['status'] === 'active'): ?>
+                                    Valid until <?php echo date('M d, Y', strtotime($current_boost['start_date'] . ' + ' . $current_boost['duration_days'] . ' days')); ?>.
+                                <?php else: ?>
+                                    Your request is currently under review by the admin team.
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-[2rem] p-8 mb-8 text-white flex justify-between items-center shadow-lg shadow-orange-500/20">
+                        <div>
+                            <h2 class="text-2xl font-black mb-2">Need more reservations? Make your property featured!</h2>
+                            <p class="opacity-90 font-medium">Boost your property to the top of our listings and reach thousands of daily visitors.</p>
+                        </div>
+                        <button onclick="openBoostModal()" class="bg-white text-orange-600 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-orange-50 transition-all shadow-sm shrink-0">
+                            Click here to see more details
+                        </button>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Stats Grid (from image) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
@@ -592,6 +649,50 @@ $rooms_availability = $rooms_availability_stmt->fetchAll();
         </div>
     </div>
 
+    <!-- Boost Modal -->
+    <div id="boostModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-black/40 backdrop-blur-sm" onclick="closeBoostModal()"></div>
+            <div class="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-[2.5rem] border border-gray-100">
+                <div class="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                    <div>
+                        <h3 class="text-xl font-black text-[#003580]">Select a Boosting Package</h3>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Get more visibility</p>
+                    </div>
+                    <button onclick="closeBoostModal()" class="text-gray-400 hover:text-red-500 transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form action="dashboard.php" method="POST" class="p-8">
+                    <input type="hidden" name="action" value="request_boost">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <?php foreach($boost_packages as $pkg): ?>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="package_id" value="<?php echo $pkg['id']; ?>" required class="peer hidden">
+                            <div class="border-2 border-gray-100 rounded-2xl p-6 hover:border-orange-200 peer-checked:border-orange-500 peer-checked:bg-orange-50 transition-all text-center">
+                                <h4 class="font-black text-lg text-[#003580] mb-2"><?php echo htmlspecialchars($pkg['name']); ?></h4>
+                                <div class="text-3xl font-black text-orange-500 mb-1">LKR <?php echo number_format($pkg['price_lkr']); ?></div>
+                                <p class="text-xs text-gray-500 font-bold uppercase tracking-widest"><?php echo $pkg['duration_days']; ?> Days Duration</p>
+                            </div>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <div class="mt-8 bg-blue-50 p-4 rounded-xl text-xs text-blue-800 flex items-start gap-3">
+                        <i class="fas fa-info-circle mt-0.5"></i>
+                        <p>Once you request a boost, our team will review it. You will be notified once the payment process is initiated and the boost becomes active.</p>
+                    </div>
+                    
+                    <div class="mt-8 flex gap-4">
+                        <button type="button" onclick="closeBoostModal()" class="flex-1 px-6 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">Cancel</button>
+                        <button type="submit" class="flex-[2] px-6 py-4 bg-orange-500 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20">Request Boost</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         const roomData = <?php echo json_encode($property_rooms); ?>;
 
@@ -660,6 +761,16 @@ $rooms_availability = $rooms_availability_stmt->fetchAll();
 
         function closeBookingModal() {
             document.getElementById('bookingModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openBoostModal() {
+            document.getElementById('boostModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBoostModal() {
+            document.getElementById('boostModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
 

@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
             // 4. Insert Rooms
             if (isset($data['rooms']) && is_array($data['rooms'])) {
-                $stmt = $pdo->prepare("INSERT INTO property_rooms (property_id, room_name, total_rooms, room_numbers, adults, children, room_image, price_lkr, price_usd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt = $pdo->prepare("INSERT INTO property_rooms (property_id, room_name, total_rooms, room_numbers, adults, children, room_image, price_lkr, price_usd, description, things_included) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 foreach ($data['rooms'] as $room) {
                     $stmt->execute([
                         $property_id,
@@ -142,7 +142,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         $room['children'] ?? 0,
                         $room['image'] ?? '',
                         $room['price_lkr'] ?? 0,
-                        $room['price_usd'] ?? 0
+                        $room['price_usd'] ?? 0,
+                        $room['description'] ?? null,
+                        $room['things_included'] ?? null
                     ]);
                 }
             }

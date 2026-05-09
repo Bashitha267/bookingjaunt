@@ -1,13 +1,17 @@
+<?php
+$nav_current_page = basename($_SERVER['PHP_SELF']);
+$nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
+?>
 <!-- Header Wrapper -->
-<header class="bg-[#003580] sticky top-0 z-50 shadow-md">
+<header class="navbar-v2 <?php echo $nav_bg_class; ?> sticky top-0 z-50 transition-all duration-500">
     <nav
-        class="max-w-[1400px] mx-auto px-4 xl:px-6 flex flex-col xl:flex-row xl:items-center justify-between gap-y-4 xl:gap-4 py-3 xl:py-0 xl:h-16">
+        class="max-w-[1400px] mx-auto px-4 xl:px-8 flex flex-col xl:flex-row xl:items-center justify-between gap-y-4 xl:gap-4 py-3 xl:py-0 h-16 xl:h-20">
 
         <!-- Mobile Top Row / Desktop Left -->
         <div class="flex items-center justify-between w-full xl:w-auto">
             <!-- 1. Logo -->
             <a href="index.php" class="flex-shrink-0 group no-underline">
-                <span class="text-white text-xl xl:text-2xl font-black tracking-tighter font-['Outfit'] transition-transform group-hover:scale-105 block">
+                <span class="navbar-logo-text text-white text-xl xl:text-2xl font-black tracking-tighter font-['Outfit'] transition-transform group-hover:scale-105 block">
                     Booking<span class="text-[#febb02]">Jaunt</span>
                 </span>
             </a>
@@ -15,13 +19,11 @@
             <?php
             // Global Nav Items definition
             $nav_items = [
-                ['id' => 'hotel', 'label' => 'Hotels', 'icon' => 'fa-hotel'],
-                ['id' => 'reception_hall', 'label' => 'Reception Halls', 'icon' => 'fa-glass-cheers'],
-                ['id' => 'hostel', 'label' => 'Hostels', 'icon' => 'fa-bed'],
-                ['id' => 'rest_hall', 'label' => 'Rest Halls', 'icon' => 'fa-building'],
-                ['id' => 'dayouts', 'label' => 'Dayouts', 'icon' => 'fa-sun'],
-                ['id' => 'safari', 'label' => 'Safari', 'icon' => 'fa-hippo'],
-                ['id' => 'about_contact', 'label' => 'About & Contact', 'icon' => 'fa-address-card'],
+                ['id' => 'home', 'label' => 'Home', 'icon' => 'fa-home', 'url' => 'index.php'],
+                ['id' => 'hotel', 'label' => 'Hotels & Pilgrims', 'icon' => 'fa-hotel', 'url' => 'hotels.php'],
+                ['id' => 'dayouts', 'label' => 'Dayouts', 'icon' => 'fa-sun', 'url' => 'srilanka_dayouts.php'],
+                ['id' => 'safari', 'label' => 'Safari', 'icon' => 'fa-hippo', 'url' => 'hotels.php?type=safari'],
+                ['id' => 'about_contact', 'label' => 'About & Contact', 'icon' => 'fa-address-card', 'url' => 'aboutus.php'],
             ];
             $current_currency = $_SESSION['currency'] ?? 'LKR';
             ?>
@@ -96,19 +98,36 @@
                 <a href="?currency=<?php echo $toggle_currency; ?>" class="text-white text-[13px] font-black bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 transition-all hover:bg-white/20 no-underline">
                     <?php echo $current_currency; ?>
                 </a>
+
+                <!-- Hamburger Menu Icon (Mobile) -->
+                <button id="mobileMenuBtn" class="text-white text-2xl focus:outline-none ml-1">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
         </div>
 
         <!-- 2. Navbar Items (Stays, Safari, etc.) -->
         <div
-            class="flex items-center justify-start xl:justify-center gap-1.5 xl:gap-1 flex-shrink-0 xl:flex-1 overflow-x-auto no-scrollbar w-full xl:w-auto pb-1 xl:pb-0">
+            class="hidden xl:flex items-center justify-center gap-1 flex-shrink-0 xl:flex-1 w-auto pb-0">
             <?php
             $current_type = isset($_GET['type']) ? $_GET['type'] : 'hotel';
+            $current_page = basename($_SERVER['PHP_SELF']);
 
             foreach ($nav_items as $item):
-                $active = ($current_type == $item['id']);
+                if ($item['id'] === 'safari') {
+                    $active = ($current_type == 'safari');
+                } else if ($item['id'] === 'home') {
+                    $active = ($current_page == 'index.php' && $current_type != 'safari');
+                } else if ($item['id'] === 'hotel') {
+                    $active = ($current_page == 'hotels.php' && $current_type != 'safari');
+                } else if ($item['id'] === 'dayouts') {
+                    $active = ($current_page == 'srilanka_dayouts.php');
+                } else {
+                    $active = false; // About contact active state is optional/static for now
+                }
+                $href = $item['url'];
                 ?>
-                <a href="index.php?type=<?php echo $item['id']; ?>"
+                <a href="<?php echo $href; ?>"
                     class="flex items-center gap-1.5 px-3 py-1.5 xl:px-3 xl:py-1.5 text-[13px] xl:text-[13px] font-bold transition-all rounded-full no-underline whitespace-nowrap <?php echo $active ? 'bg-white text-[#003580] shadow-sm border border-white' : 'text-white/80 hover:bg-white/10 hover:text-white border border-transparent'; ?>">
                     <i
                         class="fas <?php echo $item['icon']; ?> <?php echo $active ? 'text-[#003580]' : 'text-white/60'; ?>"></i>
@@ -206,9 +225,90 @@
             <?php endif; ?>
         </div>
     </nav>
+
+    <!-- Mobile Menu Drawer (Hidden by default) -->
+    <div id="mobileMenuDrawer" class="fixed inset-0 z-[100] translate-x-full transition-transform duration-300 xl:hidden">
+        <!-- Backdrop -->
+        <div id="mobileMenuOverlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        
+        <!-- Drawer Content -->
+        <div class="absolute top-0 right-0 h-full w-[80%] max-w-[320px] bg-white shadow-2xl flex flex-col">
+            <!-- Header -->
+            <div class="p-6 border-b border-neutral-100 flex items-center justify-between bg-[#003580]">
+                <span class="text-white font-black text-xl">Menu</span>
+                <button id="closeMobileMenu" class="text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Nav Items -->
+            <div class="flex-1 overflow-y-auto py-4">
+                <div class="px-6 py-2 text-[11px] font-bold text-neutral-400 uppercase tracking-widest">Navigation</div>
+                <div class="flex flex-col mb-6">
+                    <?php foreach ($nav_items as $item): ?>
+                        <a href="<?php echo $item['url']; ?>" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-[#003580] hover:bg-neutral-50 transition-colors no-underline border-l-4 border-transparent hover:border-[#003580]">
+                            <i class="fas <?php echo $item['icon']; ?> text-[#003580]/50 w-6"></i>
+                            <span><?php echo $item['label']; ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="border-t border-neutral-100 mt-2 pt-4">
+                    <div class="px-6 py-2 text-[11px] font-bold text-neutral-400 uppercase tracking-widest">Account</div>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <a href="<?php echo $dash_link; ?>" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-neutral-700 hover:bg-neutral-50 no-underline">
+                            <i class="fas fa-columns text-neutral-400 w-6"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="mybookings.php" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-neutral-700 hover:bg-neutral-50 no-underline">
+                            <i class="fas fa-briefcase text-neutral-400 w-6"></i>
+                            <span>My Bookings</span>
+                        </a>
+                        <a href="logout.php" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-red-600 hover:bg-red-50 no-underline">
+                            <i class="fas fa-sign-out-alt w-6"></i>
+                            <span>Logout</span>
+                        </a>
+                    <?php else: ?>
+                        <div class="px-6 py-4 flex flex-col gap-3">
+                            <a href="login.php" class="w-full bg-[#003580] text-white text-center py-3 rounded-xl font-bold no-underline shadow-lg shadow-[#003580]/20">Sign in</a>
+                            <a href="register.php" class="w-full bg-white border-2 border-[#003580] text-[#003580] text-center py-3 rounded-xl font-bold no-underline">Register</a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="p-6 mt-4">
+                    <a href="property_wizard.php" class="flex items-center justify-center gap-2 w-full bg-[#febb02] text-[#003580] py-4 rounded-2xl font-black text-[14px] no-underline shadow-lg shadow-[#febb02]/20">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>List your property</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-6 bg-neutral-50 border-t border-neutral-100">
+                <p class="text-[11px] text-neutral-400 text-center font-medium">© 2024 Bookingjaunt. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
 </header>
 
 <style>
+    .navbar-v2 {
+        background: transparent;
+    }
+
+    .navbar-logo-text {
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .navbar-v2.scrolled, .navbar-v2.always-solid {
+        background: rgba(0, 53, 128, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        height: 70px;
+    }
+
     .no-scrollbar::-webkit-scrollbar {
         display: none;
     }
@@ -230,8 +330,44 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const navbar = document.querySelector('.navbar-v2');
+        
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
         const mobileUserBtn = document.getElementById('mobileUserBtn');
         const mobileUserDropdown = document.getElementById('mobileUserDropdown');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenuDrawer = document.getElementById('mobileMenuDrawer');
+        const closeMobileMenu = document.getElementById('closeMobileMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+
+        function toggleMobileMenu(show) {
+            if (show) {
+                mobileMenuDrawer.classList.remove('translate-x-full');
+                document.body.style.overflow = 'hidden';
+            } else {
+                mobileMenuDrawer.classList.add('translate-x-full');
+                document.body.style.overflow = '';
+            }
+        }
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => toggleMobileMenu(true));
+        }
+
+        if (closeMobileMenu) {
+            closeMobileMenu.addEventListener('click', () => toggleMobileMenu(false));
+        }
+
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', () => toggleMobileMenu(false));
+        }
 
         if (mobileUserBtn) {
             mobileUserBtn.addEventListener('click', function(e) {

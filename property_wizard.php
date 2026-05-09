@@ -240,7 +240,7 @@ if ($edit_id) {
                     <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 01</span>
                     <h2 class="text-2xl font-bold text-gray-900">Add New Property</h2>
                 </div>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
                     <label
                         class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
                         <input type="radio" name="business_type" value="hotel" required class="hidden" <?= $type == 'hotel' ? 'checked' : '' ?>>
@@ -251,6 +251,15 @@ if ($edit_id) {
                         <div class="font-bold text-sm md:text-lg mb-1">Hotel</div>
                         <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Full service accommodation &
                             resorts.</p>
+                    <label
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        <input type="radio" name="business_type" value="villa" class="hidden" <?= $type == 'villa' ? 'checked' : '' ?>>
+                        <div
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-house-user text-xl md:text-2xl"></i>
+                        </div>
+                        <div class="font-bold text-sm md:text-lg mb-1">Villa</div>
+                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Private luxury holiday homes.</p>
                     </label>
                     <label
                         class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
@@ -284,6 +293,16 @@ if ($edit_id) {
                         </div>
                         <div class="font-bold text-sm md:text-lg mb-1">Pilgrim</div>
                         <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Rest Halls for pilgrims.</p>
+                    </label>
+                    <label
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        <input type="radio" name="business_type" value="dayouts" class="hidden" <?= $type == 'dayouts' ? 'checked' : '' ?>>
+                        <div
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-sun text-xl md:text-2xl"></i>
+                        </div>
+                        <div class="font-bold text-sm md:text-lg mb-1">Dayouts</div>
+                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Package based day outings.</p>
                     </label>
                 </div>
             </div>
@@ -789,6 +808,11 @@ if ($edit_id) {
                                 ['name' => 'Couple Room', 'icon' => 'fa-heart', 'adults' => 2, 'children' => 0],
                                 ['name' => 'Family Room', 'icon' => 'fa-users', 'adults' => 2, 'children' => 2],
                                 ['name' => 'Large Hall', 'icon' => 'fa-vihara', 'adults' => 100, 'children' => 50, 'is_hall' => 1],
+                            ],
+                            'dayouts' => [
+                                ['name' => 'Standard Package', 'icon' => 'fa-box', 'adults' => 10, 'children' => 0],
+                                ['name' => 'Premium Package', 'icon' => 'fa-star', 'adults' => 20, 'children' => 0],
+                                ['name' => 'Corporate Package', 'icon' => 'fa-briefcase', 'adults' => 50, 'children' => 0],
                             ]
                         ];
 
@@ -1557,6 +1581,9 @@ if ($edit_id) {
             if (propertyType === 'reception_hall' || propertyType === 'rest_hall') {
                 typeLabel = "Hall / Space";
                 namePlaceholder = "e.g. Grand Ballroom or Main Hall";
+            } else if (propertyType === 'dayouts') {
+                typeLabel = "Package";
+                namePlaceholder = "e.g. Standard Dayout Package";
             }
 
             const card = document.createElement('div');
@@ -1591,17 +1618,17 @@ if ($edit_id) {
                     <!-- Room Details -->
                     <div class="lg:col-span-3">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div class="md:col-span-2">
-                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">${typeLabel} Type Name</label>
+                            <div class="${propertyType === 'dayouts' ? 'md:col-span-2' : 'md:col-span-2'}">
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">${typeLabel} Name</label>
                                 <input type="text" name="rooms[${index}][name]" required value="${data.room_name || ''}" placeholder="${namePlaceholder}" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
                             </div>
-                            <div>
+                            <div class="${propertyType === 'dayouts' ? 'hidden' : ''}">
                                 <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest text-blue-600">Total Number of ${typeLabel}s</label>
-                                <input type="number" name="rooms[${index}][count]" required value="${data.total_rooms || 1}" min="1" oninput="updateRoomNumberInputs(${index}, this.value)" class="room-count-input w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <input type="number" name="rooms[${index}][count]" ${propertyType === 'dayouts' ? '' : 'required'} value="${data.total_rooms || 1}" min="1" oninput="updateRoomNumberInputs(${index}, this.value)" class="room-count-input w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                                 <input type="hidden" name="rooms[${index}][is_hall]" value="${data.is_hall || 0}">
                                 
                                 <div class="mt-4">
-                                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Room Numbers</label>
+                                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">${typeLabel} Numbers</label>
                                     <div id="room-numbers-container-${index}" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
                                         <!-- Dynamic inputs will be here -->
                                     </div>
@@ -1610,18 +1637,29 @@ if ($edit_id) {
                             </div>
                         </div>
 
+                        <div class="${propertyType === 'dayouts' ? '' : 'hidden'} grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Description</label>
+                                <textarea name="rooms[${index}][description]" rows="3" placeholder="Package description" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">${data.description || ''}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Things Included</label>
+                                <textarea name="rooms[${index}][things_included]" rows="3" placeholder="e.g. Welcome drink, Lunch, Pool access" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">${data.things_included || ''}</textarea>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-2 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Adult Capacity</label>
+                                <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">${propertyType === 'dayouts' ? 'Count of People' : 'Adult Capacity'}</label>
                                 <div class="relative">
                                     <input type="number" name="rooms[${index}][adults]" required value="${data.max_adults || 2}" min="1" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                                     <i class="fas fa-user absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
                                 </div>
                             </div>
-                            <div>
+                            <div class="${propertyType === 'dayouts' ? 'hidden' : ''}">
                                 <label class="block text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-widest">Child Capacity</label>
                                 <div class="relative">
-                                    <input type="number" name="rooms[${index}][children]" required value="${data.max_children || 0}" min="0" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                    <input type="number" name="rooms[${index}][children]" ${propertyType === 'dayouts' ? '' : 'required'} value="${data.max_children || 0}" min="0" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
                                     <i class="fas fa-child absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
                                 </div>
                             </div>
@@ -1943,6 +1981,8 @@ if ($edit_id) {
                             room_image: room.room_image,
                             price_lkr:  room.price_lkr,
                             price_usd:  room.price_usd,
+                            description: room.description,
+                            things_included: room.things_included,
                             is_hall: 0
                         });
                     });
@@ -2125,7 +2165,9 @@ if ($edit_id) {
                             room_image: roomsData[idx].image,
                             is_hall: roomsData[idx].is_hall,
                             price_lkr: roomsData[idx].price_lkr,
-                            price_usd: roomsData[idx].price_usd
+                            price_usd: roomsData[idx].price_usd,
+                            description: roomsData[idx].description,
+                            things_included: roomsData[idx].things_included
                         });
                     });
                 }
