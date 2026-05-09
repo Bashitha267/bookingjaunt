@@ -251,76 +251,7 @@ try {
     <?php include 'navbar.php'; ?>
 
 
-    <!-- Featured Properties -->
-    <?php if (!empty($featured_properties)): ?>
-        <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16 relative">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-bold text-[#006064] tracking-tight">Featured Properties</h2>
-                    <p class="text-neutral-600 font-medium">Explore the featured properties listed on Hotels in Sri Lanka
-                    </p>
-                </div>
-                <!-- Left/Right controls -->
-                <div class="hidden md:flex gap-2">
-                    <button id="feat-prev"
-                        class="w-10 h-10 rounded-full border border-neutral-200 bg-white flex items-center justify-center hover:bg-neutral-50 shadow-sm transition-colors z-10"><i
-                            class="fas fa-chevron-left text-neutral-600"></i></button>
-                    <button id="feat-next"
-                        class="w-10 h-10 rounded-full border border-neutral-200 bg-white flex items-center justify-center hover:bg-neutral-50 shadow-sm transition-colors z-10"><i
-                            class="fas fa-chevron-right text-neutral-600"></i></button>
-                </div>
-            </div>
 
-            <div class="relative group">
-                <div id="feat-slider" class="flex overflow-x-auto no-scrollbar gap-6 pb-4 snap-x auto-slider">
-                    <?php foreach ($featured_properties as $feat):
-                        $img = !empty($feat['cover_image']) ? $feat['cover_image'] : (!empty($feat['first_room_image']) ? $feat['first_room_image'] : 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=400&q=80');
-                        $min_price = $feat['price_lkr'];
-                        $max_price = $feat['max_price'];
-                        $price_text = "LKR " . number_format($min_price);
-                        if ($max_price && $max_price > $min_price) {
-                            $price_text .= " - " . number_format($max_price);
-                        }
-                        $desc = !empty($feat['description']) ? $feat['description'] : "Enjoy a wonderful stay at " . htmlspecialchars($feat['property_name']) . " with amazing amenities and comfort. Conveniently situated in " . htmlspecialchars($feat['city']) . ".";
-                        ?>
-                        <div class="min-w-[280px] md:min-w-[340px] snap-start bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group cursor-pointer"
-                            onclick="window.location.href='hotel_info.php?id=<?php echo $feat['id']; ?>'">
-                            <div class="h-[220px] relative overflow-hidden">
-                                <img src="<?php echo htmlspecialchars($img); ?>"
-                                    alt="<?php echo htmlspecialchars($feat['property_name']); ?>"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-                            </div>
-                            <div class="p-5 flex-1 flex flex-col">
-                                <h3 class="font-bold text-[#006064] text-xl line-clamp-1 mb-1">
-                                    <?php echo htmlspecialchars($feat['property_name']); ?></h3>
-                                <p class="text-[13px] text-neutral-600 mb-4 flex items-center"><i
-                                        class="fas fa-map-marker-alt mr-2 text-neutral-800"></i>
-                                    <?php echo htmlspecialchars($feat['city']); ?>, Sri Lanka</p>
-
-                                <div class="w-full h-px bg-neutral-200 mb-4"></div>
-
-                                <p class="text-[13px] leading-relaxed text-neutral-600 line-clamp-3 mb-4 flex-1">
-                                    <?php echo htmlspecialchars($desc); ?>
-                                </p>
-
-                                <div class="w-full h-px bg-neutral-200 mb-4"></div>
-
-                                <div class="flex justify-between items-center mt-auto">
-                                    <div class="text-[13px] font-medium text-neutral-800"><?php echo $price_text; ?></div>
-                                    <div class="flex items-center gap-1.5 text-neutral-800 text-[11px]">
-                                        <i class="fas fa-car border border-neutral-200 p-1 rounded"></i>
-                                        <i class="fas fa-utensils border border-neutral-200 p-1 rounded"></i>
-                                        <i class="fas fa-wifi border border-neutral-200 p-1 rounded"></i>
-                                        <div class="bg-[#006064] text-white px-1.5 py-1 rounded font-bold">+1</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </section>
-    <?php endif; ?>
 
     <!-- Property Type Discovery -->
     <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mb-4 md:mb-8 mt-10 md:mt-16">
@@ -377,6 +308,61 @@ try {
         </div>
     </section>
 
+
+    <!-- Featured Properties (Now after Browse by Category) -->
+    <?php if (!empty($featured_properties)): ?>
+        <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-12 relative">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-black text-neutral-800 tracking-tight">Featured Properties</h2>
+                    <p class="text-neutral-500 font-medium">Hand-picked premium stays for your next journey</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <?php foreach ($featured_properties as $feat):
+                    $img = !empty($feat['cover_image']) ? $feat['cover_image'] : (!empty($feat['first_room_image']) ? $feat['first_room_image'] : 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=400&q=80');
+                    $min_price = $feat['price_lkr'];
+                    $max_price = $feat['max_price'];
+                    $price_text = "LKR " . number_format($min_price);
+                    if ($max_price && $max_price > $min_price) {
+                        $price_text .= " - " . number_format($max_price);
+                    }
+                    $desc = !empty($feat['description']) ? $feat['description'] : "Enjoy a wonderful stay at " . htmlspecialchars($feat['property_name']) . " with amazing amenities and comfort.";
+                    ?>
+                    <div class="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group cursor-pointer"
+                        onclick="window.location.href='hotel_info.php?id=<?php echo $feat['id']; ?>'">
+                        <div class="h-[180px] relative overflow-hidden">
+                            <img src="<?php echo htmlspecialchars($img); ?>"
+                                alt="<?php echo htmlspecialchars($feat['property_name']); ?>"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                            <div class="absolute top-3 left-3 bg-gold text-primary font-black text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-lg shadow-sm">Featured</div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col">
+                            <h3 class="font-bold text-neutral-800 text-lg line-clamp-1 mb-1">
+                                <?php echo htmlspecialchars($feat['property_name']); ?></h3>
+                            <p class="text-[12px] text-neutral-500 mb-3 flex items-center"><i
+                                    class="fas fa-map-marker-alt mr-2 text-primary"></i>
+                                <?php echo htmlspecialchars($feat['city']); ?></p>
+
+                            <p class="text-[12px] leading-relaxed text-neutral-500 line-clamp-2 mb-4 flex-1">
+                                <?php echo htmlspecialchars($desc); ?>
+                            </p>
+
+                            <div class="flex justify-between items-center mt-auto pt-3 border-t border-neutral-50">
+                                <div class="text-[13px] font-black text-neutral-800"><?php echo $price_text; ?></div>
+                                <div class="flex items-center gap-1.5 text-neutral-400 text-[11px]">
+                                    <i class="fas fa-wifi"></i>
+                                    <i class="fas fa-utensils"></i>
+                                    <i class="fas fa-snowflake"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <!-- Main Content -->
     <main
