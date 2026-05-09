@@ -64,9 +64,12 @@ try {
 
     $where_sql = implode(" AND ", $where);
 
-    $dayout_query = "SELECT p.*, r.room_name as pkg_name, r.price_lkr, r.room_image as pkg_image, r.adults
+    $dayout_query = "SELECT p.*, r.room_name as pkg_name, r.price_lkr, r.room_image as pkg_image, r.adults,
+              (pb.id IS NOT NULL) as is_featured
               FROM properties p 
               JOIN property_rooms r ON r.property_id = p.id
+              LEFT JOIN property_boosts pb ON pb.property_id = p.id AND pb.status = 'active' 
+                   AND pb.start_date <= CURDATE() AND DATE_ADD(pb.start_date, INTERVAL pb.duration_days DAY) >= CURDATE()
               WHERE $where_sql
               AND r.price_lkr = (
                   SELECT MIN(price_lkr) FROM property_rooms r2 
@@ -74,7 +77,7 @@ try {
                   AND r2.adults >= ?
               )
               GROUP BY p.id
-              ORDER BY p.created_at DESC";
+              ORDER BY is_featured DESC, p.created_at DESC";
     $params[] = $adults; // For subquery
 
     $stmt_dayouts = $pdo->prepare($dayout_query);
@@ -250,19 +253,20 @@ try {
                     <?php foreach ($sidebar_ads as $ad): ?>
                         <div class="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden group hover:shadow-md transition-all duration-300">
                             <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block relative h-44">
-                                <div class="w-full h-full bg-gradient-to-br from-neutral-50 to-neutral-100 flex flex-col items-center justify-center text-neutral-400 transition-all group-hover:from-neutral-100 group-hover:to-neutral-200">
-                                    <i class="fas fa-ad text-4xl mb-2 opacity-10"></i>
-                                    <span class="text-[11px] font-black uppercase tracking-widest opacity-40">Advertisement <?php echo $ad_display_count++; ?></span>
-                                </div>
+                                <?php if (!empty($ad['image_path'])): ?>
+                                    <img src="<?php echo htmlspecialchars($ad['image_path']); ?>" alt="Advertisement" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <?php else: ?>
+                                    <div class="w-full h-full bg-gradient-to-br from-neutral-50 to-neutral-100 flex flex-col items-center justify-center text-neutral-400 transition-all group-hover:from-neutral-100 group-hover:to-neutral-200">
+                                        <i class="fas fa-ad text-4xl mb-2 opacity-10"></i>
+                                        <span class="text-[11px] font-black uppercase tracking-widest opacity-40">Advertisement <?php echo $ad_display_count++; ?></span>
+                                    </div>
+                                <?php endif; ?>
                                 
                                 <!-- Glassy Bottom Overlay -->
-                                <div class="absolute bottom-0 left-0 right-0 p-4 bg-white/10 backdrop-blur-md border-t border-white/20">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 bg-white/60 backdrop-blur-md border-t border-white/40">
                                     <div class="flex justify-between items-center">
-                                        <p class="text-[13px] text-primary font-black truncate max-w-[120px]">
-                                            <?php echo htmlspecialchars($ad['owner_name'] ?? 'Sponsored'); ?>
-                                        </p>
-                                        <p class="text-[14px] text-primary font-black">
-                                            LKR <?php echo number_format($ad['price'] ?? 0); ?>
+                                        <p class="text-[13px] text-primary font-black truncate w-full">
+                                            <?php echo htmlspecialchars(!empty($ad['ad_title']) ? $ad['ad_title'] : $ad['owner_name']); ?>
                                         </p>
                                     </div>
                                 </div>
@@ -309,6 +313,11 @@ try {
                         <div class="bg-white/95 backdrop-blur-md text-[#003580] px-4 py-2 rounded-2xl text-[13px] font-black shadow-lg">
                             <?php echo $currency; ?> <?php echo number_format($display_price); ?>
                         </div>
+                        <?php if (!empty($dayout['is_featured'])): ?>
+                        <div class="bg-secondary text-white px-3 py-1 rounded-2xl text-[10px] font-bold uppercase shadow-lg w-max tracking-widest">
+                            Featured
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 

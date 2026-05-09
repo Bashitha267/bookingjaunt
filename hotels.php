@@ -113,12 +113,15 @@ try {
     $core_types = ['hotel', 'villa', 'hostel', 'reception_hall'];
     $display_types = array_unique(array_merge($core_types, $db_property_types));
 
-    // Fetch properties and their cheapest matching room
+    // Fetch properties and their cheapest matching room, ordering featured first
     $query = "SELECT p.*, r.room_name, r.adults, r.children, r.price_lkr, r.room_image as first_room_image, r.id as room_id,
-              AVG(rev.rating) as avg_rating, COUNT(rev.id) as review_count
+              AVG(rev.rating) as avg_rating, COUNT(rev.id) as review_count,
+              (pb.id IS NOT NULL) as is_featured
               FROM properties p 
               JOIN property_rooms r ON r.property_id = p.id
               LEFT JOIN reviews rev ON rev.property_id = p.id
+              LEFT JOIN property_boosts pb ON pb.property_id = p.id AND pb.status = 'active' 
+                   AND pb.start_date <= CURDATE() AND DATE_ADD(pb.start_date, INTERVAL pb.duration_days DAY) >= CURDATE()
               WHERE $where_sql
               AND r.price_lkr = (
                   SELECT MIN(price_lkr) FROM property_rooms r2 
@@ -133,7 +136,7 @@ try {
                   )" : "") . "
               )
               GROUP BY p.id
-              ORDER BY p.created_at DESC";
+              ORDER BY is_featured DESC, p.created_at DESC";
 
     // Add subquery params
     $params[] = $adults;
@@ -443,19 +446,20 @@ try {
                     <?php foreach ($sidebar_ads as $ad): ?>
                         <div class="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden group hover:shadow-md transition-all duration-300">
                             <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank" class="block relative h-44">
-                                <div class="w-full h-full bg-gradient-to-br from-neutral-50 to-neutral-100 flex flex-col items-center justify-center text-neutral-400 transition-all group-hover:from-neutral-100 group-hover:to-neutral-200">
-                                    <i class="fas fa-ad text-4xl mb-2 opacity-10"></i>
-                                    <span class="text-[11px] font-black uppercase tracking-widest opacity-40">Advertisement <?php echo $ad_display_count++; ?></span>
-                                </div>
+                                <?php if (!empty($ad['image_path'])): ?>
+                                    <img src="<?php echo htmlspecialchars($ad['image_path']); ?>" alt="Advertisement" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <?php else: ?>
+                                    <div class="w-full h-full bg-gradient-to-br from-neutral-50 to-neutral-100 flex flex-col items-center justify-center text-neutral-400 transition-all group-hover:from-neutral-100 group-hover:to-neutral-200">
+                                        <i class="fas fa-ad text-4xl mb-2 opacity-10"></i>
+                                        <span class="text-[11px] font-black uppercase tracking-widest opacity-40">Advertisement <?php echo $ad_display_count++; ?></span>
+                                    </div>
+                                <?php endif; ?>
                                 
                                 <!-- Glassy Bottom Overlay -->
-                                <div class="absolute bottom-0 left-0 right-0 p-4 bg-white/10 backdrop-blur-md border-t border-white/20">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 bg-white/60 backdrop-blur-md border-t border-white/40">
                                     <div class="flex justify-between items-center">
-                                        <p class="text-[13px] text-primary font-black truncate max-w-[120px]">
-                                            <?php echo htmlspecialchars($ad['owner_name']); ?>
-                                        </p>
-                                        <p class="text-[14px] text-primary font-black">
-                                            LKR <?php echo number_format($ad['price']); ?>
+                                        <p class="text-[13px] text-primary font-black truncate w-full">
+                                            <?php echo htmlspecialchars(!empty($ad['ad_title']) ? $ad['ad_title'] : $ad['owner_name']); ?>
                                         </p>
                                     </div>
                                 </div>
@@ -477,16 +481,23 @@ try {
                 <div class="hidden md:block mb-8">
                     <div class="grid grid-cols-2 gap-6">
                         <?php foreach ($strip_ads as $ad): ?>
-                            <div class="bg-gray-100 p-2 rounded-[2rem] border border-gray-200 overflow-hidden">
+                            <div class="bg-gray-100 p-2 rounded-[2rem] border border-gray-200 overflow-hidden relative">
                                 <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank"
-                                    class="block w-full h-[120px] group overflow-hidden rounded-[1.8rem]">
-                                    <div
-                                        class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-hover:bg-neutral-300">
-                                        <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
-                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement
-                                            <?php echo $ad_display_count++; ?></span>
-                                    </div>
+                                    class="block w-full h-[160px] group overflow-hidden rounded-[1.8rem] relative">
+                                    <?php if (!empty($ad['image_path'])): ?>
+                                        <img src="<?php echo htmlspecialchars($ad['image_path']); ?>" alt="Advertisement" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                    <?php else: ?>
+                                        <div class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-hover:bg-neutral-300">
+                                            <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
+                                            <span class="text-[11px] font-black uppercase tracking-widest">Advertisement
+                                                <?php echo $ad_display_count++; ?></span>
+                                        </div>
+                                    <?php endif; ?>
                                 </a>
+                                <!-- Overlay Title -->
+                                <div class="absolute bottom-4 left-6 bg-white/80 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-sm pointer-events-none">
+                                    <span class="text-[12px] font-bold text-primary"><?php echo htmlspecialchars(!empty($ad['ad_title']) ? $ad['ad_title'] : $ad['owner_name']); ?></span>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -501,16 +512,23 @@ try {
                     <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Promotions</h4>
                     <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 snap-x">
                         <?php foreach ($mobile_ads as $ad): ?>
-                            <div class="min-w-[300px] bg-gray-100 p-2 rounded-2xl border border-gray-200 shrink-0">
+                            <div class="min-w-[300px] bg-gray-100 p-2 rounded-2xl border border-gray-200 shrink-0 relative">
                                 <a href="<?php echo htmlspecialchars($ad['link_url'] ?: '#'); ?>" target="_blank"
-                                    class="block relative h-32 overflow-hidden rounded-xl group">
-                                    <div
-                                        class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-active:bg-neutral-300">
-                                        <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
-                                        <span class="text-[11px] font-black uppercase tracking-widest">Advertisement
-                                            <?php echo $ad_mobile_count++; ?></span>
-                                    </div>
+                                    class="block relative h-40 overflow-hidden rounded-xl group">
+                                    <?php if (!empty($ad['image_path'])): ?>
+                                        <img src="<?php echo htmlspecialchars($ad['image_path']); ?>" alt="Advertisement" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                    <?php else: ?>
+                                        <div class="w-full h-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400 transition-all group-active:bg-neutral-300">
+                                            <i class="fas fa-ad text-2xl mr-3 opacity-20"></i>
+                                            <span class="text-[11px] font-black uppercase tracking-widest">Advertisement
+                                                <?php echo $ad_mobile_count++; ?></span>
+                                        </div>
+                                    <?php endif; ?>
                                 </a>
+                                <!-- Overlay Title -->
+                                <div class="absolute bottom-4 left-4 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm pointer-events-none">
+                                    <span class="text-[11px] font-bold text-primary"><?php echo htmlspecialchars(!empty($ad['ad_title']) ? $ad['ad_title'] : $ad['owner_name']); ?></span>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -559,7 +577,7 @@ try {
                                         <i class="fas fa-image text-3xl text-gray-300"></i>
                                     </div>
                                 <?php endif; ?>
-                                <?php if ($property['hotel_category'] == 'super_luxury'): ?>
+                                <?php if (!empty($property['is_featured'])): ?>
                                     <div
                                         class="absolute top-6 left-6 bg-secondary text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest shadow-md">
                                         Featured</div>

@@ -459,28 +459,7 @@ try {
     </section>
     <?php endif; ?>
 
-    <!-- Advertisement CTA Section -->
-    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-12 mb-20">
-        <div class="bg-gradient-to-r from-primary to-secondary rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center gap-8">
-            <div class="relative z-10 w-full md:w-1/2">
-                <h2 class="text-3xl md:text-4xl font-black text-white mb-4 leading-tight">Publish your advertisements with us</h2>
-                <p class="text-white/80 text-lg mb-8 leading-relaxed max-w-lg">Reach thousands of travelers across Sri Lanka. Boost your visibility and grow your tourism business with our premium advertising spots.</p>
-                <div class="flex flex-wrap gap-4">
-                    <a href="#" class="bg-gold hover:bg-white text-primary px-8 py-3.5 rounded-xl font-black transition-all shadow-lg hover:scale-105">Get Started Now</a>
-                    <a href="#" class="bg-white/10 hover:bg-white/20 text-white px-8 py-3.5 rounded-xl font-black backdrop-blur-sm transition-all border border-white/20">Learn More</a>
-                </div>
-            </div>
-            <div class="w-full md:w-1/2 relative">
-                <div class="relative h-64 md:h-80 w-full rounded-2xl overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
-                    <img src="assets/promo1.png" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                </div>
-            </div>
-            <!-- Decorative circle -->
-            <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-            <div class="absolute -left-10 -top-10 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
-        </div>
-    </section>
+   
 
     <script>
         function scrollSlider(id, direction) {
@@ -510,41 +489,80 @@ try {
         autoScrollSlider('dayout-slider');
     </script>
 
+    <!-- Visit Sri Lanka Section -->
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16">
+        <div class="w-full bg-blue-700 rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl">
+            <div class="flex-1 p-8 md:p-12 lg:p-16 flex flex-col justify-center text-white">
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-['Outfit'] mb-2 tracking-tight">Visit Sri Lanka</h2>
+                <h3 class="text-lg md:text-xl font-bold mb-8 text-white/90">Experience the Glory of this beautiful Island</h3>
+                
+                <p class="text-[14px] md:text-[15px] leading-relaxed text-white/90 mb-6 font-medium">
+                    Visit Sri Lanka to witness the outstanding beauty and hospitality. Sri Lanka is known to be the "Paradise" of the Indian Ocean for its amazing beauty and incomparable richness in natural resources. The country is extremely famous for beautiful soothing tourist destinations and great hospitality of the Sri Lankans. Checkout our Sri Lankan Map which is completed with all known tourist destinations.
+                </p>
+                
+                <p class="text-[14px] md:text-[15px] leading-relaxed text-white/90 mb-10 font-medium">
+                    Tourist destinations in Sri Lanka provide a great and unforgettable holiday experience to all the people who visit Sri Lanka.
+                </p>
+                
+             
+            </div>
+            <div class="flex-1 min-h-[400px] md:min-h-auto relative" id="sl-slideshow">
+                <img src="https://images.unsplash.com/photo-1586500036706-41963de24d8b?auto=format&fit=crop&w=800&q=80" alt="Sri Lanka Palm Trees" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-100">
+                <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80" alt="Sri Lanka Temples" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-0">
+                <img src="https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=800&q=80" alt="Sri Lanka Wildlife" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-0">
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slSlides = document.querySelectorAll('#sl-slideshow img');
+            if(slSlides.length > 0) {
+                let currentSlSlide = 0;
+                setInterval(() => {
+                    slSlides[currentSlSlide].classList.remove('opacity-100');
+                    slSlides[currentSlSlide].classList.add('opacity-0');
+                    currentSlSlide = (currentSlSlide + 1) % slSlides.length;
+                    slSlides[currentSlSlide].classList.remove('opacity-0');
+                    slSlides[currentSlSlide].classList.add('opacity-100');
+                }, 4000);
+            }
+        });
+    </script>
+
     <!-- Why Choose Us -->
-    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-20 mb-10">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="flex gap-4 items-start">
-                <div
-                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
-                    <i class="fas fa-shield-alt text-xl"></i>
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-28 mb-16">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-black font-['Outfit'] text-neutral-800 tracking-tight">Why Book With Us?</h2>
+            <p class="text-neutral-500 font-medium mt-3 max-w-xl mx-auto">Experience the best of Sri Lanka with our trusted and reliable travel platform.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <!-- Feature 1 -->
+            <div class="bg-white rounded-3xl p-8 border border-neutral-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 group">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#003580]/10 to-[#006ce4]/10 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-shield-alt text-2xl"></i>
                 </div>
-                <div>
-                    <h3 class="font-bold text-neutral-800 mb-1">Secure Bookings</h3>
-                    <p class="text-sm text-text-secondary">Your data is safe with our 256-bit SSL encrypted payment
-                        gateway.</p>
-                </div>
+                <h3 class="text-xl font-bold text-neutral-800 mb-3">Secure Bookings</h3>
+                <p class="text-[15px] text-neutral-500 leading-relaxed font-medium">Your data is safe with our robust 256-bit SSL encrypted payment gateway, ensuring total peace of mind.</p>
             </div>
-            <div class="flex gap-4 items-start">
-                <div
-                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
-                    <i class="fas fa-headset text-xl"></i>
+            
+            <!-- Feature 2 -->
+            <div class="bg-white rounded-3xl p-8 border border-neutral-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 group">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#10b981]/10 to-[#059669]/10 flex items-center justify-center text-[#10b981] mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-headset text-2xl"></i>
                 </div>
-                <div>
-                    <h3 class="font-bold text-neutral-800 mb-1">24/7 Support</h3>
-                    <p class="text-sm text-text-secondary">Our dedicated team is here to help you anytime, anywhere in
-                        Sri Lanka.</p>
-                </div>
+                <h3 class="text-xl font-bold text-neutral-800 mb-3">24/7 Support</h3>
+                <p class="text-[15px] text-neutral-500 leading-relaxed font-medium">Our dedicated local team is here to assist you anytime, anywhere during your stay in Sri Lanka.</p>
             </div>
-            <div class="flex gap-4 items-start">
-                <div
-                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
-                    <i class="fas fa-thumbs-up text-xl"></i>
+            
+            <!-- Feature 3 -->
+            <div class="bg-white rounded-3xl p-8 border border-neutral-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 group">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#febb02]/10 to-[#e0a800]/10 flex items-center justify-center text-[#e0a800] mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-thumbs-up text-2xl"></i>
                 </div>
-                <div>
-                    <h3 class="font-bold text-neutral-800 mb-1">Best Price Guarantee</h3>
-                    <p class="text-sm text-text-secondary">Find a lower price? We'll match it and give you an extra 5%
-                        off.</p>
-                </div>
+                <h3 class="text-xl font-bold text-neutral-800 mb-3">Best Price Guarantee</h3>
+                <p class="text-[15px] text-neutral-500 leading-relaxed font-medium">Found a lower price? We'll match it and give you an extra 5% off to guarantee the best value.</p>
             </div>
         </div>
     </section>
@@ -601,20 +619,27 @@ try {
 
     <!-- Publish Advertisements CTA -->
     <section class="max-w-[1400px] mx-auto px-4 lg:px-6 my-24">
-        <div class="bg-gradient-to-br from-primary to-[#002255] rounded-[2.5rem] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-2xl">
-            <!-- decorative circles -->
-            <div class="absolute -top-24 -right-24 w-96 h-96 bg-secondary/30 rounded-full blur-3xl"></div>
+        <div class="bg-[#0b5cce] rounded-[1.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-10 shadow-xl border border-blue-600/30">
             
-            <div class="relative z-10 max-w-xl text-white mb-8 md:mb-0">
-                <div class="inline-block px-4 py-1.5 bg-white/10 rounded-full text-[11px] font-black uppercase tracking-[0.2em] mb-6 backdrop-blur-md border border-white/20">Grow Your Business</div>
-                <h2 class="text-3xl md:text-5xl font-black font-outfit leading-tight mb-4">Publish your advertisements with us.</h2>
-                <p class="text-white/80 text-lg font-medium">Reach thousands of daily travelers looking for exactly what you offer. Premium placements available.</p>
+            <div class="flex-1 max-w-xl text-white">
+                <h2 class="text-3xl md:text-4xl font-black font-['Outfit'] leading-tight mb-4 tracking-tight">Publish your advertisements with us</h2>
+                <p class="text-white/90 text-[15px] md:text-[17px] font-medium leading-relaxed mb-8 max-w-[480px]">
+                    Reach thousands of travelers across Sri Lanka. Boost your visibility and grow your tourism business with our premium advertising spots.
+                </p>
+                <div class="flex flex-wrap items-center gap-4">
+                    <a href="addnewadd.php" class="inline-flex items-center justify-center bg-[#ffc107] text-[#1a1a1a] px-6 py-3 rounded-xl font-bold text-[15px] hover:bg-[#e0a800] transition-colors shadow-sm no-underline">
+                        Get Started Now
+                    </a>
+                    
+                </div>
             </div>
             
-            <div class="relative z-10 shrink-0">
-                <a href="addnewadd.php" class="inline-flex items-center gap-3 bg-[#febb02] text-primary px-8 py-5 rounded-2xl font-black text-lg hover:bg-white hover:text-primary transition-colors shadow-xl hover:scale-105 transform duration-300 no-underline">
-                    <i class="fas fa-bullhorn text-xl"></i> Create Ad Campaign
-                </a>
+            <div class="flex-1 w-full max-w-[600px] relative">
+                <div class="aspect-[16/9] md:aspect-[5/3] w-full rounded-2xl overflow-hidden shadow-2xl relative border border-white/10 bg-white/5">
+                    <img src="assets/ads_marketing_illustration.png" alt="Digital Marketing and Advertising" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition-all duration-500">
+                    <!-- Subtle overlay to ensure it matches the vibe -->
+                    <div class="absolute inset-0 bg-blue-900/20 mix-blend-overlay"></div>
+                </div>
             </div>
         </div>
     </section>
