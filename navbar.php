@@ -18,13 +18,15 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
 
             <?php
             // Global Nav Items definition
-            $nav_items = [
-                ['id' => 'home', 'label' => 'Home', 'icon' => 'fa-home', 'url' => 'index.php'],
-                ['id' => 'hotel', 'label' => 'Hotels & Pilgrims', 'icon' => 'fa-hotel', 'url' => 'hotels.php'],
-                ['id' => 'dayouts', 'label' => 'Dayouts', 'icon' => 'fa-sun', 'url' => 'srilanka_dayouts.php'],
-                ['id' => 'safari', 'label' => 'Safari', 'icon' => 'fa-hippo', 'url' => 'hotels.php?type=safari'],
-                ['id' => 'about_contact', 'label' => 'About & Contact', 'icon' => 'fa-address-card', 'url' => 'aboutus.php'],
-            ];
+            if (!isset($nav_items)) {
+                $nav_items = [
+                    ['id' => 'home', 'label' => 'Home', 'icon' => 'fa-home', 'url' => 'index.php'],
+                    ['id' => 'hotel', 'label' => 'Stays', 'icon' => 'fa-bed', 'url' => 'hotels.php'],
+                    ['id' => 'dayouts', 'label' => 'Dayouts', 'icon' => 'fa-sun', 'url' => 'srilanka_dayouts.php'],
+                    ['id' => 'safari', 'label' => 'Safari', 'icon' => 'fa-hippo', 'url' => 'hotels.php?type=safari'],
+                    ['id' => 'reception', 'label' => 'Reception', 'icon' => 'fa-synagogue', 'url' => 'hotels.php?type=reception_hall'],
+                ];
+            }
             $current_currency = $_SESSION['currency'] ?? 'LKR';
             ?>
 
@@ -227,12 +229,12 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
     </nav>
 
     <!-- Mobile Menu Drawer (Hidden by default) -->
-    <div id="mobileMenuDrawer" class="fixed inset-0 z-[100] translate-x-full transition-transform duration-300 xl:hidden">
+    <div id="mobileMenuDrawer" class="fixed inset-0 z-[9999] translate-x-full transition-transform duration-300 xl:hidden" style="height: 100vh; height: 100dvh;">
         <!-- Backdrop -->
-        <div id="mobileMenuOverlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div id="mobileMenuOverlay" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
         
         <!-- Drawer Content -->
-        <div class="absolute top-0 right-0 h-full w-[80%] max-w-[320px] bg-white shadow-2xl flex flex-col">
+        <div class="absolute top-0 right-0 h-full w-[85%] max-w-[320px] bg-white shadow-2xl flex flex-col" style="background-color: #ffffff; height: 100%;">
             <!-- Header -->
             <div class="p-6 border-b border-neutral-100 flex items-center justify-between bg-[#003580]">
                 <span class="text-white font-black text-xl">Menu</span>

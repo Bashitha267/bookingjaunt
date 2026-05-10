@@ -236,69 +236,79 @@ if ($edit_id) {
 
             <!-- Step 1: Business Type -->
             <div class="wizard-step active" data-step="1">
-                <div class="mb-8">
+                <div class="mb-10">
                     <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 01</span>
-                    <h2 class="text-2xl font-bold text-gray-900">Add New Property</h2>
+                    <h2 class="text-3xl font-extrabold text-gray-900">What type of property do you have?</h2>
+                    <p class="text-gray-500 mt-2 text-sm">Select the most relevant category to get tailored registration steps.</p>
                 </div>
-                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
+                    <!-- Hotel -->
                     <label
-                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
                         <input type="radio" name="business_type" value="hotel" required class="hidden" <?= $type == 'hotel' ? 'checked' : '' ?>>
                         <div
-                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform group-has-[:checked]:bg-white shadow-sm">
                             <i class="fas fa-hotel text-xl md:text-2xl"></i>
                         </div>
                         <div class="font-bold text-sm md:text-lg mb-1">Hotel</div>
-                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Full service accommodation &
-                            resorts.</p>
+                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Full service accommodation & resorts.</p>
+                    </label>
+
+                    <!-- Villa -->
                     <label
-                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
                         <input type="radio" name="business_type" value="villa" class="hidden" <?= $type == 'villa' ? 'checked' : '' ?>>
                         <div
-                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform group-has-[:checked]:bg-white shadow-sm">
                             <i class="fas fa-house-user text-xl md:text-2xl"></i>
                         </div>
                         <div class="font-bold text-sm md:text-lg mb-1">Villa</div>
                         <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Private luxury holiday homes.</p>
                     </label>
+
+                    <!-- Hall -->
                     <label
-                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
                         <input type="radio" name="business_type" value="reception_hall" class="hidden"
                             <?= $type == 'reception_hall' ? 'checked' : '' ?>>
                         <div
-                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform group-has-[:checked]:bg-white shadow-sm">
                             <i class="fas fa-glass-cheers text-xl md:text-2xl"></i>
                         </div>
                         <div class="font-bold text-sm md:text-lg mb-1">Hall</div>
-                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Host weddings, parties & events.
-                        </p>
+                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Host weddings, parties & events.</p>
                     </label>
+
+                    <!-- Hostel -->
                     <label
-                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
                         <input type="radio" name="business_type" value="hostel" class="hidden" <?= $type == 'hostel' ? 'checked' : '' ?>>
                         <div
-                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform group-has-[:checked]:bg-white shadow-sm">
                             <i class="fas fa-bed text-xl md:text-2xl"></i>
                         </div>
                         <div class="font-bold text-sm md:text-lg mb-1">Hostel</div>
-                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Shared dormitory style stays.
-                        </p>
+                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Shared dormitory style stays.</p>
                     </label>
+
+                    <!-- Pilgrim -->
                     <label
-                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
                         <input type="radio" name="business_type" value="rest_hall" class="hidden" <?= $type == 'rest_hall' ? 'checked' : '' ?>>
                         <div
-                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform group-has-[:checked]:bg-white shadow-sm">
                             <i class="fas fa-vihara text-xl md:text-2xl"></i>
                         </div>
                         <div class="font-bold text-sm md:text-lg mb-1">Pilgrim</div>
                         <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Rest Halls for pilgrims.</p>
                     </label>
+
+                    <!-- Dayouts -->
                     <label
-                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4]">
+                        class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
                         <input type="radio" name="business_type" value="dayouts" class="hidden" <?= $type == 'dayouts' ? 'checked' : '' ?>>
                         <div
-                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform">
+                            class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform group-has-[:checked]:bg-white shadow-sm">
                             <i class="fas fa-sun text-xl md:text-2xl"></i>
                         </div>
                         <div class="font-bold text-sm md:text-lg mb-1">Dayouts</div>

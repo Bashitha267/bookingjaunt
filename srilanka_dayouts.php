@@ -152,60 +152,155 @@ try {
             }
         }
     </script>
+    <style>
+        body {
+            background-color: #eef6ff !important;
+        }
+        .filter-box {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #e7e7e7;
+            position: sticky;
+            top: 20px;
+        }
+        .filter-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .filter-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .filter-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .filter-category-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #4a4a4a;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4a4a4a;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-option:hover {
+            color: #006ce4;
+        }
+        .filter-option input {
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body>
     <?php include 'navbar.php'; ?>
 
-        <form action="srilanka_dayouts.php" method="GET" class="search-container-v2">
-            <input type="hidden" name="type" value="dayouts">
+    <!-- Hero Section -->
+    <section style="background: linear-gradient(135deg, #003580 0%, #006ce4 100%); padding: 120px 16px 60px; text-align: center; color: white; position: relative;">
+        <div style="max-width: 1000px; margin: 0 auto;">
+            <h1 style="font-size: clamp(24px, 5vw, 42px); font-weight: 800; margin-bottom: 12px; font-family: 'Outfit', sans-serif;">Find Your Perfect Dayout</h1>
+            <p style="font-size: clamp(14px, 2vw, 17px); opacity: 0.9; margin-bottom: 40px; font-weight: 500;">Handpicked one-day experiences across Sri Lanka</p>
 
-            <div class="search-field-v2 wide">
-                <i class="fas fa-map-marker-alt"></i>
-                <input type="text" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" placeholder="Where do you want to go?">
-            </div>
+            <style>
+                .bj-search { width: 100%; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #fff; border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.3); text-align: left; box-sizing: border-box; }
+                .bj-field { display: flex; align-items: center; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 10px 16px; min-height: 58px; box-sizing: border-box; }
+                .bj-field input { border: none; outline: none; background: transparent; width: 100%; min-width: 0; font-size: 13px; font-weight: 600; color: #1a1a1a; cursor: pointer; font-family: inherit; padding: 0; box-sizing: border-box; }
+                .bj-field-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 2px; }
+                .bj-guests-field { cursor: pointer; position: relative; user-select: none; }
+                .bj-search-btn { width: 100%; height: 56px; background: #006ce4; color: #fff; border: none; border-radius: 14px; font-weight: 800; font-size: 16px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; font-family: inherit; flex-shrink: 0; }
 
-            <div class="search-field-v2 wide">
-                <i class="far fa-calendar-alt"></i>
-                <input type="date" name="date" value="<?php echo htmlspecialchars($_GET['date'] ?? ''); ?>" class="w-full bg-transparent outline-none text-[13px] font-bold" placeholder="Select Date">
-            </div>
+                @media (min-width: 768px) {
+                    .bj-search { flex-direction: row; align-items: center; padding: 10px; border-radius: 20px; gap: 6px; }
+                    .bj-field-location { flex: 2 1 200px; min-width: 0; }
+                    .bj-field-date { flex: 1 1 150px; min-width: 0; }
+                    .bj-guests-field { flex: 1 1 180px; min-width: 0; }
+                    .bj-search-btn { width: auto; padding: 0 32px; flex: 0 0 auto; border-radius: 14px; height: 56px; }
+                }
+            </style>
 
-            <div class="search-field-v2 relative" id="guestDropdownContainer" onclick="toggleGuestDropdown()">
-                <i class="far fa-user"></i>
-                <div class="display-text" id="guestInputDisplay">
-                    <?php echo (int)($_GET['adults'] ?? 1); ?> adults · <?php echo (int)($_GET['children'] ?? 0); ?> children
+            <form action="srilanka_dayouts.php" method="GET" class="bj-search">
+                <input type="hidden" name="type" value="dayouts">
+
+                <!-- Location -->
+                <div class="bj-field bj-field-location">
+                    <i class="fas fa-map-marker-alt" style="color: #006ce4; font-size: 16px; flex-shrink: 0;"></i>
+                    <input type="text" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" placeholder="Where do you want to go?">
                 </div>
-                <i class="fas fa-chevron-down text-[10px] ml-auto"></i>
 
-                <div id="guestPopup" class="absolute top-[calc(100%+12px)] left-0 w-[300px] bg-white rounded-xl shadow-2xl border border-neutral-100 p-5 z-[100] hidden animate-in text-left">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="font-bold text-neutral-800">Adults</span>
-                        <div class="flex items-center border border-neutral-200 rounded-lg overflow-hidden h-9 w-28">
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', -1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-minus text-xs"></i></button>
-                            <div class="w-8 h-full flex items-center justify-center font-bold text-neutral-800 text-sm border-x border-neutral-100">
-                                <span id="adultsCount"><?php echo (int)($_GET['adults'] ?? 1); ?></span>
+                <!-- Date Selection -->
+                <div class="bj-field bj-field-date">
+                    <i class="far fa-calendar-alt" style="color: #006ce4; font-size: 16px; flex-shrink: 0;"></i>
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="bj-field-label">Preferred Date</div>
+                        <input type="date" name="date" value="<?php echo htmlspecialchars($_GET['date'] ?? ''); ?>">
+                    </div>
+                </div>
+
+                <!-- Guests -->
+                <div class="bj-field bj-guests-field" id="guestDropdownContainer" onclick="toggleGuestDropdown()">
+                    <i class="far fa-user" style="color: #006ce4; font-size: 16px; flex-shrink: 0;"></i>
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="bj-field-label">People</div>
+                        <div id="guestInputDisplay" style="font-size: 13px; font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <?php echo (int)($_GET['adults'] ?? 1); ?> adults · <?php echo (int)($_GET['children'] ?? 0); ?> children
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down" id="guestChevron" style="color: #9ca3af; font-size: 10px; transition: transform 0.3s; flex-shrink: 0;"></i>
+
+                    <!-- Guest Dropdown Panel -->
+                    <div id="guestPopup" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; min-width: 280px; background: #fff; border-radius: 20px; border: 1px solid #e5e7eb; box-shadow: 0 20px 60px rgba(0,0,0,0.2); padding: 24px; z-index: 9999; text-align: left; color: #1a1a1a;">
+                        <p style="font-size: 11px; font-weight: 800; color: #006ce4; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 20px;">Guest Selection</p>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; margin: 0;">Adults</p>
+                                <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ages 13+</p>
+                            </div>
+                            <div style="display: flex; align-items: center; background: #f3f4f6; border-radius: 12px; padding: 4px;">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', -1)" style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4;"><i class="fas fa-minus text-[10px]"></i></button>
+                                <span id="adultsCount" style="width: 30px; text-align: center; font-weight: 800;"><?php echo (int)($_GET['adults'] ?? 1); ?></span>
                                 <input type="hidden" name="adults" id="adultsHidden" value="<?php echo (int)($_GET['adults'] ?? 1); ?>">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', 1)" style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4;"><i class="fas fa-plus text-[10px]"></i></button>
                             </div>
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', 1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-plus text-xs"></i></button>
                         </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-5">
-                        <span class="font-bold text-neutral-800">Children</span>
-                        <div class="flex items-center border border-neutral-200 rounded-lg overflow-hidden h-9 w-28">
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', -1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-minus text-xs"></i></button>
-                            <div class="w-8 h-full flex items-center justify-center font-bold text-neutral-800 text-sm border-x border-neutral-100">
-                                <span id="childrenCount"><?php echo (int)($_GET['children'] ?? 0); ?></span>
-                                <input type="hidden" name="children" id="childrenHidden" value="<?php echo (int)($_GET['children'] ?? 0); ?>">
-                            </div>
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', 1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-plus text-xs"></i></button>
-                        </div>
-                    </div>
-                    <button type="button" onclick="event.stopPropagation(); toggleGuestDropdown()" class="w-full py-2 bg-secondary text-white rounded-lg font-bold hover:bg-primary transition-colors text-sm">Done</button>
-                </div>
-            </div>
 
-            <button type="submit" class="search-btn-v2">Search</button>
-        </form>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; margin: 0;">Children</p>
+                                <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ages 0-12</p>
+                            </div>
+                            <div style="display: flex; align-items: center; background: #f3f4f6; border-radius: 12px; padding: 4px;">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', -1)" style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4;"><i class="fas fa-minus text-[10px]"></i></button>
+                                <span id="childrenCount" style="width: 30px; text-align: center; font-weight: 800;"><?php echo (int)($_GET['children'] ?? 0); ?></span>
+                                <input type="hidden" name="children" id="childrenHidden" value="<?php echo (int)($_GET['children'] ?? 0); ?>">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', 1)" style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4;"><i class="fas fa-plus text-[10px]"></i></button>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="event.stopPropagation(); toggleGuestDropdown()" style="width: 100%; padding: 12px; background: #006ce4; color: #fff; border: none; border-radius: 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; cursor: pointer;">Done</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="bj-search-btn" onmouseover="this.style.background='#003580'" onmouseout="this.style.background='#006ce4'">Search</button>
+            </form>
+        </div>
     </section>
 
 
@@ -285,8 +380,8 @@ try {
         <div>
             <div class="flex items-center justify-between mb-8">
                 <div>
-                    <h2 class="text-2xl md:text-3xl font-black text-neutral-800 tracking-tight">Available Dayouts</h2>
-                    <p class="text-neutral-500 font-bold mt-1 uppercase text-[10px] tracking-widest">Discover the best one-day escapes</p>
+                    <h2 class="text-xl md:text-2xl font-black text-neutral-800 tracking-tight">Available Dayouts</h2>
+                    <p class="text-neutral-500 font-bold mt-1 uppercase text-[9px] tracking-widest">Discover the best one-day escapes</p>
                 </div>
             </div>
 
@@ -296,25 +391,25 @@ try {
                 <h3 class="text-xl font-bold text-neutral-400">No dayout packages available right now.</h3>
             </div>
         <?php else: ?>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
             <?php foreach($dayouts as $dayout): 
                 $img = !empty($dayout['cover_image']) ? $dayout['cover_image'] : (!empty($dayout['pkg_image']) ? $dayout['pkg_image'] : 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=400&q=80');
                 $display_price = ($currency == 'USD') ? ceil($dayout['price_lkr'] / $exchange_rate) : $dayout['price_lkr'];
             ?>
-            <div class="group bg-white rounded-[2.5rem] border border-neutral-100 overflow-hidden hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-500 flex flex-col h-full cursor-pointer" onclick="window.location.href='hotel_info.php?id=<?php echo $dayout['id']; ?>'">
+            <div class="group bg-white rounded-3xl border border-neutral-100 overflow-hidden hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 flex flex-col h-full cursor-pointer" onclick="window.location.href='hotel_info.php?id=<?php echo $dayout['id']; ?>'">
                 <!-- Image Section -->
-                <div class="relative h-[280px] md:h-[320px] overflow-hidden">
+                <div class="relative h-[180px] md:h-[220px] overflow-hidden">
                     <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($dayout['property_name']); ?>"
                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     
                     <!-- Top Badges -->
-                    <div class="absolute top-6 left-6 flex flex-col gap-2">
-                        <div class="bg-white/95 backdrop-blur-md text-[#003580] px-4 py-2 rounded-2xl text-[13px] font-black shadow-lg">
+                    <div class="absolute top-4 left-4 flex flex-col gap-2">
+                        <div class="bg-white/95 backdrop-blur-md text-[#003580] px-3 py-1.5 rounded-xl text-[11px] font-black shadow-md">
                             <?php echo $currency; ?> <?php echo number_format($display_price); ?>
                         </div>
                         <?php if (!empty($dayout['is_featured'])): ?>
-                        <div class="bg-secondary text-white px-3 py-1 rounded-2xl text-[10px] font-bold uppercase shadow-lg w-max tracking-widest">
+                        <div class="bg-secondary text-white px-2.5 py-1 rounded-xl text-[9px] font-bold uppercase shadow-md w-max tracking-widest">
                             Featured
                         </div>
                         <?php endif; ?>
@@ -322,43 +417,43 @@ try {
                 </div>
 
                 <!-- Content Section -->
-                <div class="p-8 md:p-10 flex flex-col flex-1">
-                    <div class="flex justify-between items-start mb-4">
+                <div class="p-5 md:p-6 flex flex-col flex-1">
+                    <div class="flex justify-between items-start mb-3">
                         <div class="flex-1">
-                            <h3 class="font-black text-2xl md:text-3xl text-neutral-800 leading-tight mb-2 group-hover:text-[#003580] transition-colors">
+                            <h3 class="font-black text-lg md:text-xl text-neutral-800 leading-tight mb-1 group-hover:text-[#003580] transition-colors">
                                 <?php echo htmlspecialchars($dayout['property_name']); ?>
                             </h3>
-                            <p class="text-neutral-400 font-bold text-sm flex items-center">
-                                <i class="fas fa-map-marker-alt mr-2 text-[#003580]"></i>
+                            <p class="text-neutral-400 font-bold text-[11px] flex items-center">
+                                <i class="fas fa-map-marker-alt mr-1.5 text-[#003580]"></i>
                                 <?php echo htmlspecialchars($dayout['city']); ?>, Sri Lanka
                             </p>
                         </div>
                     </div>
 
                     <!-- Amenities (Simplified 3) -->
-                    <div class="flex gap-4 mb-8">
-                        <div class="flex items-center gap-2 bg-neutral-50 px-3 py-2 rounded-xl border border-neutral-100">
-                            <i class="fas fa-swimming-pool text-[#003580] text-sm"></i>
-                            <span class="text-[11px] font-bold text-neutral-600 uppercase">Pool</span>
+                    <div class="flex gap-2.5 mb-6">
+                        <div class="flex items-center gap-1.5 bg-neutral-50 px-2.5 py-1.5 rounded-lg border border-neutral-100">
+                            <i class="fas fa-swimming-pool text-[#003580] text-[10px]"></i>
+                            <span class="text-[9px] font-bold text-neutral-600 uppercase">Pool</span>
                         </div>
-                        <div class="flex items-center gap-2 bg-neutral-50 px-3 py-2 rounded-xl border border-neutral-100">
-                            <i class="fas fa-utensils text-[#003580] text-sm"></i>
-                            <span class="text-[11px] font-bold text-neutral-600 uppercase">Meal</span>
+                        <div class="flex items-center gap-1.5 bg-neutral-50 px-2.5 py-1.5 rounded-lg border border-neutral-100">
+                            <i class="fas fa-utensils text-[#003580] text-[10px]"></i>
+                            <span class="text-[9px] font-bold text-neutral-600 uppercase">Meal</span>
                         </div>
-                        <div class="flex items-center gap-2 bg-neutral-50 px-3 py-2 rounded-xl border border-neutral-100">
-                            <i class="fas fa-wifi text-[#003580] text-sm"></i>
-                            <span class="text-[11px] font-bold text-neutral-600 uppercase">Wifi</span>
+                        <div class="flex items-center gap-1.5 bg-neutral-50 px-2.5 py-1.5 rounded-lg border border-neutral-100">
+                            <i class="fas fa-wifi text-[#003580] text-[10px]"></i>
+                            <span class="text-[9px] font-bold text-neutral-600 uppercase">Wifi</span>
                         </div>
                     </div>
 
                     <!-- Footer Section -->
-                    <div class="mt-auto pt-8 border-t border-neutral-50 flex items-center justify-between">
+                    <div class="mt-auto pt-5 border-t border-neutral-50 flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mb-1">Starting from</p>
-                            <p class="text-2xl font-black text-[#003580]"><?php echo $currency; ?> <?php echo number_format($display_price); ?></p>
+                            <p class="text-[9px] text-neutral-400 font-bold uppercase tracking-widest mb-0.5">Starting from</p>
+                            <p class="text-lg font-black text-[#003580]"><?php echo $currency; ?> <?php echo number_format($display_price); ?></p>
                         </div>
-                        <button class="bg-[#003580] hover:bg-[#006ce4] text-white px-8 py-4 rounded-2xl font-black text-[15px] transition-all shadow-lg shadow-[#003580]/20 hover:scale-[1.02] active:scale-95">
-                            Book Now
+                        <button class="bg-[#003580] hover:bg-[#006ce4] text-white px-5 py-2.5 rounded-xl font-black text-[13px] transition-all shadow-md shadow-[#003580]/10 hover:scale-[1.02] active:scale-95">
+                            Book
                         </button>
                     </div>
                 </div>
@@ -402,21 +497,18 @@ try {
     <script>
         function toggleGuestDropdown() {
             const popup = document.getElementById('guestPopup');
-            const overlay = document.getElementById('guestOverlay');
             const chevron = document.getElementById('guestChevron');
-            const isHidden = popup.classList.contains('hidden');
+            const isHidden = popup.style.display === 'none';
 
             if (isHidden) {
-                popup.classList.remove('hidden');
-                if (overlay) overlay.classList.remove('hidden');
-                if (chevron) chevron.classList.add('rotate-180');
+                popup.style.display = 'block';
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
                 if (window.innerWidth < 768) {
                     document.body.style.overflow = 'hidden';
                 }
             } else {
-                popup.classList.add('hidden');
-                if (overlay) overlay.classList.add('hidden');
-                if (chevron) chevron.classList.remove('rotate-180');
+                popup.style.display = 'none';
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
                 document.body.style.overflow = '';
             }
         }
@@ -433,11 +525,13 @@ try {
             if (type === 'children' && newCount < 0) newCount = 0;
 
             countSpan.innerText = newCount;
-            hiddenInput.value = newCount;
+            if (hiddenInput) hiddenInput.value = newCount;
 
             const adults = document.getElementById('adultsCount').innerText;
             const children = document.getElementById('childrenCount').innerText;
-            displaySpan.innerText = `${adults} adults · ${children} children`;
+            if (displaySpan) {
+                displaySpan.innerText = `${adults} adults · ${children} children`;
+            }
         }
 
         document.addEventListener('click', function (event) {
@@ -446,16 +540,21 @@ try {
             const chevron = document.getElementById('guestChevron');
 
             if (container && !container.contains(event.target)) {
-                popup.classList.add('hidden');
-                if (chevron) chevron.classList.remove('rotate-180');
+                popup.style.display = 'none';
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+                document.body.style.overflow = '';
             }
         });
 
         window.addEventListener('DOMContentLoaded', () => {
-            const adults = document.getElementById('adultsHidden').value;
-            const children = document.getElementById('childrenHidden').value;
-            document.getElementById('adultsCount').innerText = adults;
-            document.getElementById('childrenCount').innerText = children;
+            const adultsInput = document.getElementById('adultsHidden');
+            const childrenInput = document.getElementById('childrenHidden');
+            if (adultsInput) {
+                document.getElementById('adultsCount').innerText = adultsInput.value;
+            }
+            if (childrenInput) {
+                document.getElementById('childrenCount').innerText = childrenInput.value;
+            }
         });
     </script>
 

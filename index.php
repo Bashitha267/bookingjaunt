@@ -141,6 +141,11 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bookingjaunt - Find your next stay</title>
+    <style>
+        body {
+            background-color: #eef6ff !important;
+        }
+    </style>
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -172,8 +177,12 @@ try {
 
     <?php include 'navbar.php'; ?>
 
-    <!-- Hero Section with Slideshow -->
-    <section class="hero -mt-20">
+    <!-- ============================================================
+         HERO — Full-screen slideshow with search box centered over it
+    ============================================================ -->
+    <section class="hero -mt-20" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; color: #fff; padding: 100px 16px 80px; isolation: isolate;">
+
+        <!-- Slideshow Background -->
         <div class="slideshow-container">
             <div class="slide" style="background-image: url('assets/slideshow/beach.png');"></div>
             <div class="slide" style="background-image: url('assets/slideshow/tea.png');"></div>
@@ -181,75 +190,148 @@ try {
         </div>
         <div class="hero-overlay"></div>
 
-        <div class="hero-content">
-            <img src="assets/white_logo.png" alt="BookingJaunt" class="hero-logo">
-            <h1>Discover Sri Lanka</h1>
-            <p class="tagline">Find your next paradise stay from luxury hotels to tropical villas.</p>
-        </div>
+        <!-- Centered Overlay Content -->
+        <div style="position: relative; z-index: 10; width: 100%; max-width: 900px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 24px; margin-top: -30px;">
 
-        <!-- Redesigned Search Bar V2 -->
-        <form action="hotels.php" method="GET" class="search-container-v2">
-            <input type="hidden" name="type" value="<?php echo htmlspecialchars($type); ?>">
-
-            <!-- Location -->
-            <div class="search-field-v2 wide">
-                <i class="fas fa-bed"></i>
-                <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" placeholder="Where are you going?">
+            <!-- Logo + Title block -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                <img src="assets/white_logo.png" alt="BookingJaunt"
+                    style="width: clamp(180px, 24vw, 320px); filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));">
+                <h1 style="color: #ffffff; font-size: clamp(28px, 6vw, 56px); font-weight: 800; text-shadow: 0 2px 20px rgba(0,0,0,0.6); margin: 0; font-family: 'Outfit', sans-serif; letter-spacing: -0.5px; line-height: 1.1;">
+                    Discover Sri Lanka
+                </h1>
+                <p style="color: rgba(255,255,255,0.95); font-size: clamp(14px, 2.2vw, 18px); font-weight: 500; margin: 0; text-shadow: 0 1px 10px rgba(0,0,0,0.4);">
+                    Family Travel. Securely Enjoyed.
+                </p>
             </div>
 
-            <!-- Dates -->
-            <div class="search-field-v2 wide">
-                <i class="far fa-calendar-alt"></i>
-                <div class="flex flex-1 gap-2">
-                    <input type="date" name="checkin" value="<?php echo htmlspecialchars($checkin); ?>" class="w-full" placeholder="Check-in">
-                    <span class="text-gray-300">—</span>
-                    <input type="date" name="checkout" value="<?php echo htmlspecialchars($checkout); ?>" class="w-full" placeholder="Check-out">
-                </div>
-            </div>
+            <!-- ── SEARCH BOX ── Responsive: single row desktop, stacked mobile -->
+            <style>
+                /* Scoped search form styles */
+                .bj-search { width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #fff; border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,0.5); text-align: left; box-sizing: border-box; }
+                .bj-field { display: flex; align-items: center; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 10px 16px; min-height: 58px; box-sizing: border-box; }
+                .bj-field input { border: none; outline: none; background: transparent; width: 100%; min-width: 0; font-size: 13px; font-weight: 600; color: #1a1a1a; cursor: pointer; font-family: inherit; padding: 0; box-sizing: border-box; }
+                .bj-field-label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 2px; }
+                .bj-dates { display: flex; gap: 8px; }
+                .bj-dates .bj-field { flex: 1; min-width: 0; }
+                .bj-guests-field { cursor: pointer; position: relative; user-select: none; }
+                .bj-search-btn { width: 100%; height: 56px; background: #006ce4; color: #fff; border: none; border-radius: 14px; font-weight: 800; font-size: 16px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; font-family: inherit; flex-shrink: 0; }
 
-            <!-- Guests -->
-            <div class="search-field-v2 relative" id="guestDropdownContainer" onclick="toggleGuestDropdown()">
-                <i class="far fa-user"></i>
-                <div class="display-text" id="guestInputDisplay">
-                    <?php echo $adults; ?> adults · <?php echo $children; ?> children
-                </div>
-                <i class="fas fa-chevron-down text-[10px] ml-auto"></i>
+                @media (min-width: 768px) {
+                    .bj-search { flex-direction: row; align-items: center; padding: 10px; border-radius: 20px; gap: 6px; }
+                    .bj-field-location { flex: 2 1 180px; min-width: 0; }
+                    .bj-dates { display: contents; } /* children become direct flex items */
+                    .bj-dates .bj-field { flex: 1 1 120px; min-width: 0; }
+                    .bj-guests-field { flex: 1 1 140px; min-width: 0; }
+                    .bj-search-btn { width: auto; padding: 0 28px; flex: 0 0 auto; border-radius: 14px; height: 56px; }
+                    .bj-search-btn-wrap { display: contents; }
+                }
+            </style>
 
-                <!-- Guest Popup (Same logic as before but styled for V2) -->
-                <div id="guestPopup" class="absolute top-[calc(100%+12px)] left-0 w-[300px] bg-white rounded-xl shadow-2xl border border-neutral-100 p-5 z-[100] hidden animate-in text-left">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="font-bold text-neutral-800">Adults</span>
-                        <div class="flex items-center border border-neutral-200 rounded-lg overflow-hidden h-9 w-28">
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', -1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-minus text-xs"></i></button>
-                            <div class="w-8 h-full flex items-center justify-center font-bold text-neutral-800 text-sm border-x border-neutral-100">
-                                <span id="adultsCount"><?php echo $adults; ?></span>
+            <form action="hotels.php" method="GET" class="bj-search">
+                <input type="hidden" name="type" value="<?php echo htmlspecialchars($type); ?>">
+
+                <!-- Location -->
+                <div class="bj-field bj-field-location">
+                    <i class="fas fa-bed" style="color: #006ce4; font-size: 18px; flex-shrink: 0;"></i>
+                    <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>"
+                        placeholder="Where are you going?"
+                        style="font-size: 14px;">
+                </div>
+
+                <!-- Check-in + Check-out -->
+                <div class="bj-dates">
+                    <div class="bj-field">
+                        <i class="far fa-calendar-alt" style="color: #006ce4; font-size: 16px; flex-shrink: 0;"></i>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="bj-field-label">Check-in</div>
+                            <input type="date" name="checkin" value="<?php echo htmlspecialchars($checkin); ?>">
+                        </div>
+                    </div>
+                    <div class="bj-field">
+                        <i class="far fa-calendar-check" style="color: #006ce4; font-size: 16px; flex-shrink: 0;"></i>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="bj-field-label">Check-out</div>
+                            <input type="date" name="checkout" value="<?php echo htmlspecialchars($checkout); ?>">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guests -->
+                <div class="bj-field bj-guests-field" id="guestDropdownContainer" onclick="toggleGuestDropdown()">
+                    <i class="far fa-user" style="color: #006ce4; font-size: 16px; flex-shrink: 0;"></i>
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="bj-field-label">Guests</div>
+                        <div id="guestInputDisplay" style="font-size: 13px; font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <?php echo $adults; ?> adults · <?php echo $children; ?> children
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down" id="guestChevron" style="color: #9ca3af; font-size: 10px; transition: transform 0.3s; flex-shrink: 0;"></i>
+
+                    <!-- Guest Dropdown Panel -->
+                    <div id="guestPopup" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; min-width: 300px; background: #fff; border-radius: 20px; border: 1px solid #e5e7eb; box-shadow: 0 20px 60px rgba(0,0,0,0.25); padding: 24px; z-index: 9999; text-align: left;">
+                        <p style="font-size: 11px; font-weight: 800; color: #006ce4; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 20px;">Guest Selection</p>
+
+                        <!-- Adults row -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 0 0 2px;">Adults</p>
+                                <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ages 13 or above</p>
+                            </div>
+                            <div style="display: flex; align-items: center; background: #f3f4f6; border-radius: 12px; padding: 4px; gap: 0;">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', -1)"
+                                    style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                                <span id="adultsCount" style="width: 32px; text-align: center; font-size: 15px; font-weight: 800; color: #1a1a1a;"><?php echo $adults; ?></span>
                                 <input type="hidden" name="adults" id="adultsHidden" value="<?php echo $adults; ?>">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', 1)"
+                                    style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-plus" style="font-size: 10px;"></i></button>
                             </div>
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('adults', 1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-plus text-xs"></i></button>
                         </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-5">
-                        <span class="font-bold text-neutral-800">Children</span>
-                        <div class="flex items-center border border-neutral-200 rounded-lg overflow-hidden h-9 w-28">
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', -1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-minus text-xs"></i></button>
-                            <div class="w-8 h-full flex items-center justify-center font-bold text-neutral-800 text-sm border-x border-neutral-100">
-                                <span id="childrenCount"><?php echo $children; ?></span>
-                                <input type="hidden" name="children" id="childrenHidden" value="<?php echo $children; ?>">
-                            </div>
-                            <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', 1)" class="flex-1 h-full flex items-center justify-center text-secondary hover:bg-neutral-50"><i class="fas fa-plus text-xs"></i></button>
-                        </div>
-                    </div>
-                    <button type="button" onclick="event.stopPropagation(); toggleGuestDropdown()" class="w-full py-2 bg-secondary text-white rounded-lg font-bold hover:bg-primary transition-colors text-sm">Done</button>
-                </div>
-            </div>
 
-            <button type="submit" class="search-btn-v2">Search</button>
-        </form>
+                        <!-- Children row -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 0 0 2px;">Children</p>
+                                <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ages 0 – 12</p>
+                            </div>
+                            <div style="display: flex; align-items: center; background: #f3f4f6; border-radius: 12px; padding: 4px; gap: 0;">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', -1)"
+                                    style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                                <span id="childrenCount" style="width: 32px; text-align: center; font-size: 15px; font-weight: 800; color: #1a1a1a;"><?php echo $children; ?></span>
+                                <input type="hidden" name="children" id="childrenHidden" value="<?php echo $children; ?>">
+                                <button type="button" onclick="event.stopPropagation(); updateGuestCount('children', 1)"
+                                    style="width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; color: #006ce4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-plus" style="font-size: 10px;"></i></button>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="event.stopPropagation(); toggleGuestDropdown()"
+                            style="width: 100%; padding: 13px; background: #006ce4; color: #fff; border: none; border-radius: 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer;"
+                            onmouseover="this.style.background='#003580'" onmouseout="this.style.background='#006ce4'">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Button -->
+                <div class="bj-search-btn-wrap">
+                    <button type="submit" class="bj-search-btn"
+                        onmouseover="this.style.background='#003580'" onmouseout="this.style.background='#006ce4'">
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
     </section>
 
 
+
+
     <!-- Trending Destinations -->
-    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-52 md:mt-16">
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-10 lg:mt-24">
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h2 class="text-2xl md:text-3xl font-bold text-neutral-800 tracking-tight">Trending destinations in Sri Lanka</h2>
@@ -647,22 +729,19 @@ try {
     <script>
         function toggleGuestDropdown() {
             const popup = document.getElementById('guestPopup');
-            const overlay = document.getElementById('guestOverlay');
             const chevron = document.getElementById('guestChevron');
-            const isHidden = popup.classList.contains('hidden');
+            const isHidden = popup.style.display === 'none';
 
             if (isHidden) {
-                popup.classList.remove('hidden');
-                overlay.classList.remove('hidden');
-                chevron.classList.add('rotate-180');
+                popup.style.display = 'block';
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
                 // Prevent scrolling on mobile when dropdown is open
                 if (window.innerWidth < 768) {
                     document.body.style.overflow = 'hidden';
                 }
             } else {
-                popup.classList.add('hidden');
-                overlay.classList.add('hidden');
-                chevron.classList.remove('rotate-180');
+                popup.style.display = 'none';
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
                 document.body.style.overflow = '';
             }
         }
@@ -680,12 +759,14 @@ try {
             if (type === 'children' && newCount < 0) newCount = 0;
 
             countSpan.innerText = newCount;
-            hiddenInput.value = newCount;
+            if (hiddenInput) hiddenInput.value = newCount;
 
             // Update display text
             const adults = document.getElementById('adultsCount').innerText;
             const children = document.getElementById('childrenCount').innerText;
-            displaySpan.innerText = `${adults} adults · ${children} children`;
+            if (displaySpan) {
+                displaySpan.innerText = `${adults} adults · ${children} children`;
+            }
         }
 
         // Close dropdown when clicking outside
@@ -694,18 +775,24 @@ try {
             const popup = document.getElementById('guestPopup');
             const chevron = document.getElementById('guestChevron');
 
-            if (!container.contains(event.target)) {
-                popup.classList.add('hidden');
-                chevron.classList.remove('rotate-180');
+            if (container && !container.contains(event.target)) {
+                popup.style.display = 'none';
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+                document.body.style.overflow = '';
             }
         });
 
         // Initialize counts on load
         window.addEventListener('DOMContentLoaded', () => {
-            const adults = document.getElementById('adultsHidden').value;
-            const children = document.getElementById('childrenHidden').value;
-            document.getElementById('adultsCount').innerText = adults;
-            document.getElementById('childrenCount').innerText = children;
+            const adultsInput = document.getElementById('adultsHidden');
+            const childrenInput = document.getElementById('childrenHidden');
+            
+            if (adultsInput) {
+                document.getElementById('adultsCount').innerText = adultsInput.value;
+            }
+            if (childrenInput) {
+                document.getElementById('childrenCount').innerText = childrenInput.value;
+            }
         });
     </script>
     <?php include 'footer.php'; ?>
