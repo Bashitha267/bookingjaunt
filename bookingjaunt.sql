@@ -325,6 +325,7 @@ CREATE TABLE `users` (
   `address` text DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
   `role` enum('admin','owner','staff','user') DEFAULT 'user',
+  `is_disabled` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

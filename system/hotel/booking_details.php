@@ -26,6 +26,44 @@ if (!$booking || ($booking['owner_id'] != $user_id && $booking['user_id'] != $us
 
 $is_owner = ($booking['owner_id'] == $user_id || $_SESSION['role'] === 'admin');
 
+if ($is_owner && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_payment'])) {
+        $payment_amount = (float)($_POST['payment_amount'] ?? 0);
+        if ($payment_amount > 0) {
+            $pdo->prepare("INSERT INTO booking_payments (booking_id, amount) VALUES (?, ?)")
+                ->execute([$booking_id, $payment_amount]);
+
+            $pdo->prepare("UPDATE bookings SET amount_paid = amount_paid + ? WHERE id = ?")
+                ->execute([$payment_amount, $booking_id]);
+
+            $pdo->prepare("UPDATE bookings SET payment_status = CASE WHEN amount_paid >= total_price THEN 'complete' ELSE 'pending' END WHERE id = ?")
+                ->execute([$booking_id]);
+        }
+
+        header("Location: booking_details.php?id=" . $booking_id);
+        exit();
+    }
+
+    if (isset($_POST['add_expense'])) {
+        $expense_desc = trim($_POST['expense_desc'] ?? '');
+        $expense_amount = (float)($_POST['expense_amount'] ?? 0);
+
+        if ($expense_desc !== '' && $expense_amount > 0) {
+            $pdo->prepare("INSERT INTO booking_expenses (booking_id, description, amount) VALUES (?, ?, ?)")
+                ->execute([$booking_id, $expense_desc, $expense_amount]);
+
+            $pdo->prepare("UPDATE bookings SET total_price = total_price + ? WHERE id = ?")
+                ->execute([$expense_amount, $booking_id]);
+
+            $pdo->prepare("UPDATE bookings SET payment_status = CASE WHEN amount_paid >= total_price THEN 'complete' ELSE 'pending' END WHERE id = ?")
+                ->execute([$booking_id]);
+        }
+
+        header("Location: booking_details.php?id=" . $booking_id);
+        exit();
+    }
+}
+
 $exp_stmt = $pdo->prepare("SELECT * FROM booking_expenses WHERE booking_id = ? ORDER BY created_at DESC");
 $exp_stmt->execute([$booking_id]);
 $expenses = $exp_stmt->fetchAll();
@@ -43,7 +81,7 @@ if ($nights <= 0) $nights = 1;
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; color: #111827; }
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #111827; }
         @media print { .no-print { display: none !important; } .print-container { width: 100% !important; margin: 0 !important; border: none !important; } }
         .compact-table td, .compact-table th { padding: 6px 10px; }
         @media (max-width: 640px) { .compact-table td, .compact-table th { padding: 4px 6px; } }
@@ -56,9 +94,14 @@ if ($nights <= 0) $nights = 1;
             <a href="bookings.php" class="text-[10px] md:text-xs font-bold text-neutral-400 hover:text-neutral-600 uppercase tracking-widest flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i> <span class="hidden xs:inline">Back to List</span><span class="xs:hidden">Back</span>
             </a>
-            <button onclick="window.print()" class="text-[10px] md:text-xs font-bold text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-2">
-                <i class="fas fa-print"></i> <span class="hidden xs:inline">Print Invoice</span><span class="xs:hidden">Print</span>
-            </button>
+            <div class="flex items-center gap-3">
+                <button onclick="window.print()" class="text-[10px] md:text-xs font-bold text-neutral-700 uppercase tracking-widest hover:underline flex items-center gap-2">
+                    <i class="fas fa-download"></i> <span class="hidden xs:inline">Download PDF</span><span class="xs-hidden">Download</span>
+                </button>
+                <button onclick="window.print()" class="text-[10px] md:text-xs font-bold text-neutral-700 uppercase tracking-widest hover:underline flex items-center gap-2">
+                    <i class="fas fa-print"></i> <span class="hidden xs:inline">Print Invoice</span><span class="xs-hidden">Print</span>
+                </button>
+            </div>
         </div>
 
         <div class="bg-white border border-neutral-200 rounded-2xl md:rounded-3xl p-5 md:p-12 print-container shadow-sm">
@@ -110,7 +153,7 @@ if ($nights <= 0) $nights = 1;
                         <?php foreach ($expenses as $exp): ?>
                         <tr>
                             <td class="py-3 md:py-4 font-medium"><?php echo htmlspecialchars($exp['description']); ?></td>
-                            <td class="py-3 md:py-4 text-right font-black text-blue-600">+ <?php echo number_format($exp['amount']); ?></td>
+                            <td class="py-3 md:py-4 text-right font-black text-neutral-900">+ <?php echo number_format($exp['amount']); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -120,12 +163,12 @@ if ($nights <= 0) $nights = 1;
                             <td class="pt-4 md:pt-6 text-right text-xl md:text-3xl font-black text-neutral-900 leading-none">LKR <?php echo number_format($booking['total_price']); ?></td>
                         </tr>
                         <tr>
-                            <td class="pt-2 text-right text-[9px] md:text-[11px] font-black uppercase text-emerald-600 tracking-widest">Total Paid</td>
-                            <td class="pt-2 text-right text-sm md:text-base font-bold text-emerald-600">LKR <?php echo number_format($booking['amount_paid']); ?></td>
+                            <td class="pt-2 text-right text-[9px] md:text-[11px] font-black uppercase text-neutral-500 tracking-widest">Total Paid</td>
+                            <td class="pt-2 text-right text-sm md:text-base font-bold text-neutral-900">LKR <?php echo number_format($booking['amount_paid']); ?></td>
                         </tr>
                         <tr>
-                            <td class="pt-2 text-right text-[9px] md:text-[11px] font-black uppercase text-red-600 tracking-widest">Balance Due</td>
-                            <td class="pt-2 text-right text-sm md:text-base font-black text-red-600 underline underline-offset-4 decoration-2">LKR <?php echo number_format($booking['total_price'] - $booking['amount_paid']); ?></td>
+                            <td class="pt-2 text-right text-[9px] md:text-[11px] font-black uppercase text-neutral-500 tracking-widest">Balance Due</td>
+                            <td class="pt-2 text-right text-sm md:text-base font-black text-neutral-900 underline underline-offset-4 decoration-2">LKR <?php echo number_format($booking['total_price'] - $booking['amount_paid']); ?></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -149,7 +192,7 @@ if ($nights <= 0) $nights = 1;
                 <h4 class="text-[9px] md:text-[11px] font-black uppercase tracking-widest mb-3 md:mb-4">Add Payment</h4>
                 <form method="POST" class="flex gap-2 md:gap-3">
                     <input type="number" name="payment_amount" required class="flex-1 px-3 md:px-4 py-1.5 md:py-2 bg-neutral-50 border border-neutral-100 rounded-lg md:rounded-xl text-xs" placeholder="LKR 0.00">
-                    <button type="submit" name="add_payment" class="bg-emerald-600 text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest">Add</button>
+                    <button type="submit" name="add_payment" class="bg-neutral-900 text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest">Add</button>
                 </form>
             </div>
             <div class="bg-white border border-neutral-200 p-4 md:p-6 rounded-xl md:rounded-2xl shadow-sm">
@@ -158,7 +201,7 @@ if ($nights <= 0) $nights = 1;
                     <input type="text" name="expense_desc" required class="w-full px-3 md:px-4 py-1.5 md:py-2 bg-neutral-50 border border-neutral-100 rounded-lg md:rounded-xl text-xs" placeholder="Description">
                     <div class="flex gap-2 md:gap-3">
                         <input type="number" name="expense_amount" required class="flex-1 px-3 md:px-4 py-1.5 md:py-2 bg-neutral-50 border border-neutral-100 rounded-lg md:rounded-xl text-xs" placeholder="Amount">
-                        <button type="submit" name="add_expense" class="bg-blue-600 text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest">Add</button>
+                        <button type="submit" name="add_expense" class="bg-neutral-900 text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest">Add</button>
                     </div>
                 </form>
             </div>

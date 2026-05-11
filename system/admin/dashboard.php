@@ -81,19 +81,24 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-1 ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
+    <main class="flex-1 lg:ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
         
         <!-- Top Nav -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-4 flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold text-[#003580]">Overview</h1>
-                <p class="text-xs text-gray-500 font-medium">Welcome back, here's what's happening today.</p>
+        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+                    <i class="fas fa-bars-staggered"></i>
+                </button>
+                <div>
+                    <h1 class="text-xl font-bold text-[#003580]">Overview</h1>
+                    <p class="text-xs text-gray-500 font-medium hidden lg:block">Welcome back, here's what's happening today.</p>
+                </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <div class="relative">
+            <div class="flex items-center gap-3 lg:gap-4">
+                <div class="relative hidden md:block">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                    <input type="text" placeholder="Search anything..." class="pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-xs w-64 focus:ring-2 focus:ring-[#006ce4] outline-none transition-all">
+                    <input type="text" placeholder="Search anything..." class="pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-xs w-48 lg:w-64 focus:ring-2 focus:ring-[#006ce4] outline-none transition-all">
                 </div>
                 <button class="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center text-gray-500 hover:text-[#006ce4] hover:border-[#006ce4] transition-all relative">
                     <i class="far fa-bell"></i>
@@ -102,7 +107,7 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
             </div>
         </header>
 
-        <div class="p-8">
+        <div class="p-4 lg:p-8">
             <!-- Stats Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <!-- Hotels -->

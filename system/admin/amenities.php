@@ -64,13 +64,18 @@ foreach ($amenities as $amenity) {
 
 	<?php include 'sidebar.php'; ?>
 
-	<main class="flex-1 ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
-		<header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-6">
-			<h1 class="text-2xl font-black text-[#003580]">Amenities Master</h1>
-			<p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Manage available amenities</p>
+	<main class="flex-1 lg:ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
+		<header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-6 flex items-center gap-4">
+			<button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+				<i class="fas fa-bars-staggered"></i>
+			</button>
+			<div>
+				<h1 class="text-2xl font-black text-[#003580]">Amenities Master</h1>
+				<p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1 hidden sm:block">Manage available amenities</p>
+			</div>
 		</header>
 
-		<div class="p-8 space-y-8">
+		<div class="p-4 lg:p-8 space-y-8">
 			<?php if (!empty($errors)): ?>
 				<div class="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
 					<?php echo htmlspecialchars(implode(' ', $errors)); ?>

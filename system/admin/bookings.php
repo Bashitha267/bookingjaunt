@@ -106,15 +106,18 @@ $payment_status_styles = [
 
 	<?php include 'sidebar.php'; ?>
 
-	<main class="flex-1 ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
-		<header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-6">
+	<main class="flex-1 lg:ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
+		<header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-6 flex items-center gap-4">
+			<button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+				<i class="fas fa-bars-staggered"></i>
+			</button>
 			<div class="flex flex-col gap-1">
 				<h1 class="text-2xl font-black text-[#003580]">Booking History</h1>
-				<p class="text-xs text-gray-500 font-bold uppercase tracking-widest">All property bookings with payment status</p>
+				<p class="text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block">All property bookings with payment status</p>
 			</div>
 		</header>
 
-		<div class="p-8 space-y-8">
+		<div class="p-4 lg:p-8 space-y-8">
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 				<div class="bg-white p-6 rounded-2xl border border-gray-100">
 					<p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total Bookings</p>

@@ -55,23 +55,27 @@ $property = $properties[0] ?? null;
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-1 ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
+    <main class="flex-1 lg:ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
         
         <!-- Top Nav -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-4 flex justify-between items-center">
-            <div class="flex-1">
+        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+                    <i class="fas fa-bars-staggered"></i>
+                </button>
                 <h1 class="text-xl font-black text-[#003580]">My Properties</h1>
             </div>
             
             <div class="flex items-center gap-4">
-                <a href="../../property_wizard.php" class="bg-[#003580] text-white px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">
+                <a href="../../property_wizard.php" class="bg-[#003580] text-white px-4 lg:px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">
                     <i class="fas fa-plus"></i>
-                    Add Property
+                    <span class="hidden sm:inline">Add Property</span>
                 </a>
             </div>
         </header>
 
-        <div class="p-8">
+        <div class="p-4 lg:p-8">
+
             <div class="mb-8">
                 <p class="text-sm text-gray-400 font-medium">Manage and update your registered properties</p>
             </div>

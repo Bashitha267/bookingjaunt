@@ -68,15 +68,18 @@ $boosts = $pdo->query("
 </head>
 <body class="flex min-h-screen overflow-hidden">
     <?php include 'sidebar.php'; ?>
-    <main class="flex-1 ml-64 overflow-y-auto h-screen bg-[#f8fafc] custom-scrollbar">
-        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-4 flex justify-between items-center">
+    <main class="flex-1 lg:ml-64 overflow-y-auto h-screen bg-[#f8fafc] custom-scrollbar">
+        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-4 flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+                <i class="fas fa-bars-staggered"></i>
+            </button>
             <div>
                 <h1 class="text-xl font-bold text-[#003580]">Manage Boosts</h1>
-                <p class="text-xs text-gray-500 font-medium">Configure packages and approve property boosts.</p>
+                <p class="text-xs text-gray-500 font-medium hidden sm:block">Configure packages and approve property boosts.</p>
             </div>
         </header>
 
-        <div class="p-8">
+        <div class="p-4 lg:p-8">
             <?php if ($msg): ?>
                 <div class="bg-green-50 text-green-600 px-4 py-3 rounded-xl border border-green-100 mb-6 font-bold text-sm">
                     <?php echo $msg; ?>

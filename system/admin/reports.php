@@ -118,11 +118,16 @@ foreach ($chart_keys as $key) {
 
 	<?php include 'sidebar.php'; ?>
 
-	<main class="flex-1 ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
-		<header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-6 flex flex-col gap-3">
-			<div>
-				<h1 class="text-2xl font-black text-[#003580]">Reports</h1>
-				<p class="text-xs text-gray-500 font-bold uppercase tracking-widest">Booking, users, and property insights</p>
+	<main class="flex-1 lg:ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
+		<header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-6 flex flex-col gap-3">
+			<div class="flex items-center gap-4">
+				<button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+					<i class="fas fa-bars-staggered"></i>
+				</button>
+				<div>
+					<h1 class="text-2xl font-black text-[#003580]">Reports</h1>
+					<p class="text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block">Booking, users, and property insights</p>
+				</div>
 			</div>
 			<div class="no-print flex flex-wrap items-end gap-4">
 				<form method="GET" class="flex flex-wrap gap-3 items-end">
@@ -147,7 +152,7 @@ foreach ($chart_keys as $key) {
 			</div>
 		</header>
 
-		<div class="p-8 space-y-8">
+		<div class="p-4 lg:p-8 space-y-8">
 			<div class="bg-white rounded-2xl border border-gray-100 p-6">
 				<div class="flex items-center justify-between">
 					<h2 class="font-bold text-[#003580]">Summary</h2>

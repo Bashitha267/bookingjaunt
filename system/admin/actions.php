@@ -238,13 +238,18 @@ $requests = $stmt->fetchAll();
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-1 ml-64 bg-[#f8fafc] min-h-screen">
-        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-6">
-            <h1 class="text-2xl font-black text-[#003580]">Approval Actions</h1>
-            <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Review property edit and deletion requests</p>
+    <main class="flex-1 lg:ml-64 bg-[#f8fafc] min-h-screen">
+        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-6 flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+                <i class="fas fa-bars-staggered"></i>
+            </button>
+            <div>
+                <h1 class="text-2xl font-black text-[#003580]">Approval Actions</h1>
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1 hidden sm:block">Review property edit and deletion requests</p>
+            </div>
         </header>
 
-        <div class="p-8">
+        <div class="p-4 lg:p-8">
             <?php if (empty($requests)): ?>
                 <div class="bg-white rounded-3xl p-16 text-center border border-gray-100 shadow-xl shadow-blue-900/5">
                     <div class="w-20 h-20 bg-blue-50 text-[#006ce4] rounded-full flex items-center justify-center mx-auto mb-6">

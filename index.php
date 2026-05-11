@@ -130,6 +130,27 @@ try {
         $check_stmt->execute([$_SESSION['user_id']]);
         $user_has_properties = (bool) $check_stmt->fetch();
     }
+
+    // Fetch hero slides
+    $hero_slides = [];
+    try {
+        $hero_stmt = $pdo->query("SELECT media_path, media_type FROM hero_slides WHERE is_active = 1 ORDER BY sort_order, id");
+        $hero_slides = $hero_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $hero_slides = [];
+    }
+
+    // Fetch popular destinations
+    $popular_destinations = [];
+    try {
+        $dest_stmt = $pdo->query("SELECT destination_name, district_name, description, media_path, media_type
+                                  FROM popular_destinations
+                                  WHERE is_active = 1
+                                  ORDER BY sort_order, id");
+        $popular_destinations = $dest_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $popular_destinations = [];
+    }
 } catch (PDOException $e) {
     error_log("Query failed: " . $e->getMessage());
 }
@@ -143,10 +164,11 @@ try {
     <title>Bookingjaunt - Find your next stay</title>
     <style>
         body {
-            background-color: #eef6ff !important;
+            background-color: #dbeafe !important;
+            overflow-x: hidden;
         }
     </style>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="index.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -180,13 +202,34 @@ try {
     <!-- ============================================================
          HERO — Full-screen slideshow with search box centered over it
     ============================================================ -->
-    <section class="hero -mt-20" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; color: #fff; padding: 100px 16px 80px; isolation: isolate;">
+    <section class="hero -mt-20" style="min-height: 100vh; width: 100vw; max-width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; color: #fff; padding: 100px 16px 80px; isolation: isolate; overflow: hidden;">
 
         <!-- Slideshow Background -->
         <div class="slideshow-container">
-            <div class="slide" style="background-image: url('assets/slideshow/beach.png');"></div>
-            <div class="slide" style="background-image: url('assets/slideshow/tea.png');"></div>
-            <div class="slide" style="background-image: url('assets/slideshow/sigiriya.png');"></div>
+            <?php
+            $default_slides = [
+                ['media_path' => 'assets/slideshow/beach.png', 'media_type' => 'image'],
+                ['media_path' => 'assets/slideshow/tea.png', 'media_type' => 'image'],
+                ['media_path' => 'assets/slideshow/sigiriya.png', 'media_type' => 'image'],
+            ];
+            $slides = !empty($hero_slides) ? $hero_slides : $default_slides;
+            $slide_interval = 4;
+            $total_duration = max(1, count($slides)) * $slide_interval;
+            foreach ($slides as $index => $slide):
+                $delay = $index * $slide_interval;
+                $media_path = $slide['media_path'];
+                $media_type = $slide['media_type'] ?? 'image';
+            ?>
+                <div class="slide" style="animation-delay: <?php echo $delay; ?>s; animation-duration: <?php echo $total_duration; ?>s;">
+                    <?php if ($media_type === 'video'): ?>
+                        <video class="slide-media" autoplay muted loop playsinline>
+                            <source src="<?php echo htmlspecialchars($media_path); ?>">
+                        </video>
+                    <?php else: ?>
+                        <img class="slide-media" src="<?php echo htmlspecialchars($media_path); ?>" alt="Hero slide">
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
         </div>
         <div class="hero-overlay"></div>
 
@@ -339,74 +382,35 @@ try {
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <a href="hotels.php?q=Kandy" class="group cursor-pointer block">
-                <div class="relative h-[220px] rounded-xl overflow-hidden mb-3">
-                    <img src="assets/destinations/kandy.png" alt="Kandy"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="font-bold text-xl">Kandy</h3>
-                        <p class="text-sm opacity-90">Temple visits, botanical gardens & lake walks</p>
-                    </div>
-                </div>
-            </a>
-            <a href="hotels.php?q=Nuwara+Eliya" class="group cursor-pointer block">
-                <div class="relative h-[220px] rounded-xl overflow-hidden mb-3">
-                    <img src="assets/destinations/nuwara_eliya.png" alt="Nuwara Eliya"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="font-bold text-xl">Nuwara Eliya</h3>
-                        <p class="text-sm opacity-90">Tea plantations & cool hill-country breeze</p>
-                    </div>
-                </div>
-            </a>
-            <a href="hotels.php?q=Galle" class="group cursor-pointer block">
-                <div class="relative h-[220px] rounded-xl overflow-hidden mb-3">
-                    <img src="assets/destinations/galle.png" alt="Galle"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="font-bold text-xl">Galle</h3>
-                        <p class="text-sm opacity-90">Fort walks & coastal sunsets</p>
-                    </div>
-                </div>
-            </a>
-            <a href="hotels.php?q=Negombo" class="group cursor-pointer block">
-                <div class="relative h-[220px] rounded-xl overflow-hidden mb-3">
-                    <img src="assets/destinations/negombo.png" alt="Negombo"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="font-bold text-xl">Negombo</h3>
-                        <p class="text-sm opacity-90">Beachside relaxation & lagoon boating</p>
-                    </div>
-                </div>
-            </a>
-            <a href="hotels.php?q=Colombo" class="group cursor-pointer block">
-                <div class="relative h-[220px] rounded-xl overflow-hidden mb-3">
-                    <img src="assets/destinations/colombo.png" alt="Colombo"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="font-bold text-xl">Colombo</h3>
-                        <p class="text-sm opacity-90">City tours, parks & street food</p>
-                    </div>
-                </div>
-            </a>
-            <a href="hotels.php?q=Anuradhapura" class="group cursor-pointer block">
-                <div class="relative h-[220px] rounded-xl overflow-hidden mb-3">
-                    <img src="assets/destinations/anuradhapura.png" alt="Anuradhapura"
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 text-white">
-                        <h3 class="font-bold text-xl">Anuradhapura</h3>
-                        <p class="text-sm opacity-90">Ancient ruins & sacred temples</p>
-                    </div>
-                </div>
-            </a>
-        </div>
+        <?php if (empty($popular_destinations)): ?>
+            <div class="text-sm text-neutral-500">No destinations available right now.</div>
+        <?php else: ?>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php foreach ($popular_destinations as $destination): ?>
+                    <?php
+                    $query_name = $destination['destination_name'] ?: $destination['district_name'];
+                    $media_type = $destination['media_type'] ?? 'image';
+                    ?>
+                    <a href="hotels.php?q=<?php echo urlencode($query_name); ?>" class="group cursor-pointer block">
+                        <div class="relative h-[220px] rounded-xl overflow-hidden mb-3">
+                            <?php if ($media_type === 'video'): ?>
+                                <video class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" autoplay muted loop playsinline>
+                                    <source src="<?php echo htmlspecialchars($destination['media_path']); ?>">
+                                </video>
+                            <?php else: ?>
+                                <img src="<?php echo htmlspecialchars($destination['media_path']); ?>" alt="<?php echo htmlspecialchars($destination['destination_name']); ?>"
+                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <?php endif; ?>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                            <div class="absolute bottom-4 left-4 text-white">
+                                <h3 class="font-bold text-xl"><?php echo htmlspecialchars($destination['destination_name']); ?></h3>
+                                <p class="text-sm opacity-90"><?php echo htmlspecialchars($destination['description']); ?></p>
+                            </div>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </section>
 
 

@@ -10,11 +10,45 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $view = $_GET['view'] ?? 'dashboard';
+$selected_property_id = isset($_GET['property_id']) ? (int)$_GET['property_id'] : 0;
 
-// Fetch Property for this user
-$stmt = $pdo->prepare("SELECT * FROM properties WHERE owner_id = ? LIMIT 1");
-$stmt->execute([$user_id]);
-$property = $stmt->fetch();
+// Fetch properties for selector
+if ($_SESSION['role'] === 'admin') {
+    $properties_stmt = $pdo->query("SELECT id, property_name FROM properties ORDER BY property_name");
+    $properties = $properties_stmt->fetchAll();
+} else {
+    $properties_stmt = $pdo->prepare("SELECT id, property_name FROM properties WHERE owner_id = ? ORDER BY property_name");
+    $properties_stmt->execute([$user_id]);
+    $properties = $properties_stmt->fetchAll();
+}
+
+// Resolve selected property
+$property = null;
+$property_id = 0;
+if ($selected_property_id) {
+    if ($_SESSION['role'] === 'admin') {
+        $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ? LIMIT 1");
+        $stmt->execute([$selected_property_id]);
+        $property = $stmt->fetch();
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ? AND owner_id = ? LIMIT 1");
+        $stmt->execute([$selected_property_id, $user_id]);
+        $property = $stmt->fetch();
+    }
+}
+
+if (!$property && !empty($properties)) {
+    $first_property_id = (int)$properties[0]['id'];
+    if ($_SESSION['role'] === 'admin') {
+        $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ? LIMIT 1");
+        $stmt->execute([$first_property_id]);
+        $property = $stmt->fetch();
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ? AND owner_id = ? LIMIT 1");
+        $stmt->execute([$first_property_id, $user_id]);
+        $property = $stmt->fetch();
+    }
+}
 
 if (!$property && $_SESSION['role'] !== 'admin') {
     header("Location: ../../index.php");
@@ -27,10 +61,18 @@ $property_id = $property['id'] ?? 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'new_inplace_booking') {
     $room_id = $_POST['room_id'];
     $guest_name = $_POST['guest_name'];
+    $guest_phone = $_POST['guest_phone'];
     $guest_email = $_POST['guest_email'] ?? '';
     $guest_nic = $_POST['guest_nic'] ?? '';
     $guest_address = $_POST['guest_address'] ?? '';
     $country = $_POST['country'] ?? 'Sri Lanka';
+    $room_number = $_POST['room_number'] ?? '';
+    $check_in = $_POST['check_in'] ?? date('Y-m-d');
+    $check_out = $_POST['check_out'] ?? date('Y-m-d', strtotime('+1 day'));
+    $adults = $_POST['adults'] ?? 1;
+    $children = $_POST['children'] ?? 0;
+    $price = $_POST['price'] ?? 0;
+    $paid = $_POST['paid'] ?? 0;
     $status = 'confirmed'; 
     
     $ins = $pdo->prepare("INSERT INTO bookings (property_id, room_id, booking_type, guest_name, guest_phone, guest_email, guest_nic, guest_address, country, room_number, check_in_date, check_out_date, adults, children, price_per_room, total_price, amount_paid, status) VALUES (?, ?, 'inplace', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -79,6 +121,15 @@ $monthly_revenue = $monthly_revenue_stmt->fetchColumn() ?? 0;
 $pending_bookings_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE property_id = ? AND status = 'pending'");
 $pending_bookings_stmt->execute([$property_id]);
 $pending_bookings = $pending_bookings_stmt->fetchColumn();
+
+$service_fee_total_stmt = $pdo->prepare("SELECT COALESCE(SUM(total_price * 0.2), 0) FROM bookings WHERE property_id = ? AND booking_type = 'online'");
+$service_fee_total_stmt->execute([$property_id]);
+$service_fee_total = (float)$service_fee_total_stmt->fetchColumn();
+
+$service_fee_paid_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM hotel_service_payments WHERE property_id = ?");
+$service_fee_paid_stmt->execute([$property_id]);
+$service_fee_paid = (float)$service_fee_paid_stmt->fetchColumn();
+$service_fee_due = max(0, $service_fee_total - $service_fee_paid);
 
 // Fetch Recent Bookings for the table
 $recent_bookings_stmt = $pdo->prepare("
@@ -231,29 +282,47 @@ $current_boost = $active_boost_stmt->fetch();
     <?php include 'sidebar.php'; ?>
 
     <!-- Main Content -->
-    <main class="flex-1 ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
+    <main class="flex-1 lg:ml-64 overflow-y-auto h-screen bg-[#f8fafc]">
         
         <!-- Top Nav -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-8 py-4 flex justify-between items-center">
-            <div class="flex-1">
-                <div class="relative max-w-md">
+        <header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 px-4 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-[#003580] hover:bg-gray-100 transition-all">
+                    <i class="fas fa-bars-staggered"></i>
+                </button>
+                <form method="GET" class="hidden md:block">
+                    <input type="hidden" name="view" value="<?php echo htmlspecialchars($view); ?>">
+                    <label class="sr-only" for="propertySelect">Property</label>
+                    <select id="propertySelect" name="property_id" onchange="this.form.submit()" class="px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-600 uppercase tracking-widest focus:ring-2 focus:ring-[#003580] outline-none">
+                        <?php if (!empty($properties)): ?>
+                            <?php foreach ($properties as $prop): ?>
+                                <option value="<?php echo (int)$prop['id']; ?>" <?php echo (int)$prop['id'] === (int)$property_id ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($prop['property_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="">No properties</option>
+                        <?php endif; ?>
+                    </select>
+                </form>
+                <div class="relative max-w-md hidden md:block">
                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                     <input type="text" placeholder="Search bookings, guests, or rooms..." class="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none transition-all">
                 </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <a href="../../index.php" target="_blank" class="hidden md:flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-all">
+            <div class="flex items-center gap-2 lg:gap-4">
+                <a href="../../index.php" target="_blank" class="hidden xl:flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-all">
                     <i class="fas fa-external-link-alt"></i>
                     Visit Site
                 </a>
-                <button class="bg-[#003580] text-white px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">
+                <button class="bg-[#003580] text-white px-3 lg:px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">
                     <i class="fas fa-plus"></i>
-                    New Booking
+                    <span class="hidden sm:inline">New Booking</span>
                 </button>
-                <button onclick="toggleRoomAvailability()" class="bg-indigo-50 text-indigo-600 px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm">
+                <button onclick="toggleRoomAvailability()" class="bg-indigo-50 text-indigo-600 px-3 lg:px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm">
                     <i class="fas fa-door-open"></i>
-                    Room Status
+                    <span class="hidden sm:inline">Room Status</span>
                 </button>
                 <div class="w-[1px] h-8 bg-gray-100 mx-2"></div>
                 <button class="w-10 h-10 text-gray-400 hover:text-[#003580] transition-colors relative">
@@ -263,7 +332,8 @@ $current_boost = $active_boost_stmt->fetch();
             </div>
         </header>
 
-        <div class="p-8">
+        <div class="p-4 lg:p-8">
+
             
             <?php if ($view === 'dashboard'): ?>
                 <!-- Boost Banner -->
@@ -293,7 +363,7 @@ $current_boost = $active_boost_stmt->fetch();
                 <?php endif; ?>
 
                 <!-- Stats Grid (from image) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
                         <div class="flex justify-between items-start mb-6">
                             <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-xl">
@@ -338,6 +408,16 @@ $current_boost = $active_boost_stmt->fetch();
                                 echo $rooms_count_stmt->fetchColumn() ?: 0;
                             ?>
                         </h3>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center text-xl">
+                                <i class="fas fa-file-invoice"></i>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Service Fee Due</p>
+                        <h3 class="text-2xl font-black text-[#003580]">LKR <?php echo number_format($service_fee_due); ?></h3>
                     </div>
                 </div>
 
