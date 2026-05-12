@@ -161,6 +161,7 @@ $bookings = $bookings_stmt->fetchAll();
                             <th class="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Room</th>
                             <th class="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Dates</th>
                             <th class="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Payment</th>
+                            <th class="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Amount Paid</th>
                             <th class="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                             <th class="p-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
@@ -168,7 +169,7 @@ $bookings = $bookings_stmt->fetchAll();
                     <tbody class="divide-y divide-slate-100">
                         <?php if (empty($bookings)): ?>
                             <tr>
-                                <td colspan="6" class="p-10 text-center text-slate-400 font-medium">No bookings found yet.</td>
+                                <td colspan="7" class="p-10 text-center text-slate-400 font-medium">No bookings found yet.</td>
                             </tr>
                         <?php endif; ?>
                         <?php foreach ($bookings as $b): ?>
@@ -208,6 +209,9 @@ $bookings = $bookings_stmt->fetchAll();
                                         <?php echo $b['payment_status']; ?>
                                     </span>
                                 </div>
+                            </td>
+                            <td class="p-4 text-sm font-bold text-slate-800">
+                                LKR <?php echo number_format($b['amount_paid']); ?>
                             </td>
                             <td class="p-4">
                                 <span class="status-badge status-<?php echo $b['status']; ?>">

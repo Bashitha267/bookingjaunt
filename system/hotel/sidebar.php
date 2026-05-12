@@ -28,6 +28,10 @@ $view = $_GET['view'] ?? 'dashboard';
             <i class="fas fa-chart-line w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Reports
         </a>
+        <a href="feedbacks.php" class="sidebar-link <?php echo ($current_page == 'feedbacks.php') ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all hover:bg-white/10 hover:text-white group">
+            <i class="fas fa-comment-dots w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Feedbacks
+        </a>
         <a href="payments.php" class="sidebar-link <?php echo ($current_page == 'payments.php') ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all hover:bg-white/10 hover:text-white group">
             <i class="fas fa-credit-card w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Pay to System
@@ -64,6 +68,10 @@ $view = $_GET['view'] ?? 'dashboard';
     </div>
 </aside>
 
+<button id="sidebarOpenBtn" onclick="toggleSidebar()" class="lg:hidden fixed top-4 left-4 z-[60] bg-[#003580] text-white w-11 h-11 rounded-xl flex items-center justify-center shadow-lg" aria-label="Open menu">
+    <i class="fas fa-bars text-lg"></i>
+</button>
+
 <!-- Sidebar Overlay -->
 <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity duration-300"></div>
 
@@ -89,15 +97,20 @@ $view = $_GET['view'] ?? 'dashboard';
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
+        const openBtn = document.getElementById('sidebarOpenBtn');
         
         if (sidebar.classList.contains('-translate-x-full')) {
             sidebar.classList.remove('-translate-x-full');
             sidebar.classList.add('show');
             overlay.classList.remove('hidden');
+            if (openBtn) openBtn.classList.add('hidden');
+            document.body.style.overflow = 'hidden';
         } else {
             sidebar.classList.add('-translate-x-full');
             sidebar.classList.remove('show');
             overlay.classList.add('hidden');
+            if (openBtn) openBtn.classList.remove('hidden');
+            document.body.style.overflow = '';
         }
     }
 </script>

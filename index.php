@@ -161,13 +161,23 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="manifest" href="/assets/site.webmanifest">
     <title>Bookingjaunt - Find your next stay</title>
-    <style>
-        body {
-            background-color: #dbeafe !important;
-            overflow-x: hidden;
-        }
-    </style>
+    <meta name="description" content="Discover Sri Lanka hotels, resorts, villas, and day outs with Bookingjaunt. Browse trusted stays, compare prices, and book your next Sri Lankan getaway with ease.">
+    <meta name="keywords" content="Sri Lanka hotels, Sri Lanka resorts, Sri Lanka villas, Sri Lanka day outs, Sri Lanka accommodation, book hotels Sri Lanka, Colombo hotels, Kandy hotels, Galle hotels, Bookingjaunt">
+    <link rel="canonical" href="https://bookingjaunt.com/index.php">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Bookingjaunt - Sri Lanka Hotel & Stay Booking">
+    <meta property="og:description" content="Find Sri Lanka hotels, resorts, villas, and day outs. Book trusted stays and explore top destinations with Bookingjaunt.">
+    <meta property="og:url" content="https://bookingjaunt.com/index.php">
+    <meta property="og:image" content="https://bookingjaunt.com/assets/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Bookingjaunt - Sri Lanka Hotel & Stay Booking">
+    <meta name="twitter:description" content="Browse Sri Lanka hotels, resorts, villas, and day outs. Book your stay with Bookingjaunt.">
+    <meta name="twitter:image" content="https://bookingjaunt.com/assets/logo.png">
     <link rel="stylesheet" href="index.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>

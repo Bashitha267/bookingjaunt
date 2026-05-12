@@ -126,7 +126,23 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="manifest" href="/assets/site.webmanifest">
     <title>Sri Lanka Dayouts - Bookingjaunt</title>
+    <meta name="description" content="Explore Sri Lanka dayouts and one-day experiences. Compare packages, prices, and locations to plan the perfect day trip with Bookingjaunt.">
+    <meta name="keywords" content="Sri Lanka dayouts, day trips Sri Lanka, day packages Sri Lanka, one day tours Sri Lanka, book dayouts">
+    <link rel="canonical" href="https://bookingjaunt.com/srilanka_dayouts.php">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Sri Lanka Dayouts & Day Packages - Bookingjaunt">
+    <meta property="og:description" content="Find the best Sri Lanka dayouts and one-day packages with trusted listings and great prices.">
+    <meta property="og:url" content="https://bookingjaunt.com/srilanka_dayouts.php">
+    <meta property="og:image" content="https://bookingjaunt.com/assets/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sri Lanka Dayouts & Day Packages - Bookingjaunt">
+    <meta name="twitter:description" content="Browse Sri Lanka dayouts and one-day experiences. Plan your perfect day trip.">
+    <meta name="twitter:image" content="https://bookingjaunt.com/assets/logo.png">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>

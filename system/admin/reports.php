@@ -35,6 +35,23 @@ $total_properties = (int)$pdo->query("SELECT COUNT(*) FROM properties")->fetchCo
 $total_revenue = (float)$pdo->query("SELECT COALESCE(SUM(total_price), 0) FROM bookings")->fetchColumn();
 $total_paid = (float)$pdo->query("SELECT COALESCE(SUM(amount_paid), 0) FROM bookings")->fetchColumn();
 $total_due = max(0, $total_revenue - $total_paid);
+$total_active_boosts = (int)$pdo->query("SELECT COUNT(*) FROM property_boosts WHERE status = 'active' AND DATE_ADD(start_date, INTERVAL duration_days DAY) >= CURDATE()")->fetchColumn();
+$total_boost_revenue = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM property_boosts WHERE payment_status = 'success'")->fetchColumn();
+
+$commission_rate = 0.2;
+$commission_start = date('Y-m-01');
+$commission_end = date('Y-m-t');
+$commission_stmt = $pdo->prepare("SELECT
+						COALESCE(SUM(total_price), 0) AS total_price,
+						COALESCE(SUM(amount_paid), 0) AS total_paid
+					FROM bookings
+					WHERE booking_type = 'online'
+						AND DATE(created_at) BETWEEN ? AND ?");
+$commission_stmt->execute([$commission_start, $commission_end]);
+$commission_row = $commission_stmt->fetch();
+$commission_total = ($commission_row['total_price'] ?? 0) * $commission_rate;
+$commission_paid = ($commission_row['total_paid'] ?? 0) * $commission_rate;
+$commission_due = max(0, $commission_total - $commission_paid);
 
 $bookings_filtered_sql = "SELECT COUNT(*) FROM bookings" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
 $bookings_filtered_stmt = $pdo->prepare($bookings_filtered_sql);
@@ -55,6 +72,16 @@ $revenue_filtered_sql = "SELECT COALESCE(SUM(total_price), 0) FROM bookings" . (
 $revenue_filtered_stmt = $pdo->prepare($revenue_filtered_sql);
 $revenue_filtered_stmt->execute($date_params);
 $revenue_filtered = (float)$revenue_filtered_stmt->fetchColumn();
+
+$boosts_filtered_sql = "SELECT COUNT(*) FROM property_boosts" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
+$boosts_filtered_stmt = $pdo->prepare($boosts_filtered_sql);
+$boosts_filtered_stmt->execute($date_params);
+$boosts_filtered = (int)$boosts_filtered_stmt->fetchColumn();
+
+$boost_revenue_filtered_sql = "SELECT COALESCE(SUM(amount), 0) FROM property_boosts" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
+$boost_revenue_filtered_stmt = $pdo->prepare($boost_revenue_filtered_sql);
+$boost_revenue_filtered_stmt->execute($date_params);
+$boost_revenue_filtered = (float)$boost_revenue_filtered_stmt->fetchColumn();
 
 $chart_start = date('Y-m-01', strtotime('-11 months'));
 $chart_keys = [];
@@ -155,30 +182,19 @@ foreach ($chart_keys as $key) {
 		<div class="p-4 lg:p-8 space-y-8">
 			<div class="bg-white rounded-2xl border border-gray-100 p-6">
 				<div class="flex items-center justify-between">
-					<h2 class="font-bold text-[#003580]">Summary</h2>
-					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"><?php echo htmlspecialchars($date_label); ?></span>
+					<h2 class="font-bold text-[#003580]">Commission (This Month)</h2>
+					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"><?php echo date('F Y'); ?></span>
 				</div>
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 					<div class="p-5 rounded-2xl border border-gray-100">
-						<p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Bookings</p>
-						<h3 class="text-2xl font-black text-[#003580] mt-2"><?php echo number_format($total_bookings); ?></h3>
-						<p class="text-xs text-gray-500 mt-1">New: <?php echo number_format($bookings_filtered); ?></p>
+						<p class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Paid Commission</p>
+						<h3 class="text-xl font-black text-[#003580] mt-2">LKR <?php echo number_format($commission_paid, 2); ?></h3>
+						<p class="text-[10px] text-gray-500 mt-1">Total: LKR <?php echo number_format($commission_total, 2); ?></p>
 					</div>
 					<div class="p-5 rounded-2xl border border-gray-100">
-						<p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Users</p>
-						<h3 class="text-2xl font-black text-[#003580] mt-2"><?php echo number_format($total_users); ?></h3>
-						<p class="text-xs text-gray-500 mt-1">New: <?php echo number_format($users_filtered); ?></p>
-					</div>
-					<div class="p-5 rounded-2xl border border-gray-100">
-						<p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Properties</p>
-						<h3 class="text-2xl font-black text-[#003580] mt-2"><?php echo number_format($total_properties); ?></h3>
-						<p class="text-xs text-gray-500 mt-1">New: <?php echo number_format($properties_filtered); ?></p>
-					</div>
-					<div class="p-5 rounded-2xl border border-gray-100">
-						<p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Revenue</p>
-						<h3 class="text-2xl font-black text-[#003580] mt-2">$<?php echo number_format($total_revenue, 2); ?></h3>
-						<p class="text-xs text-gray-500 mt-1">Filtered: $<?php echo number_format($revenue_filtered, 2); ?></p>
-						<p class="text-xs text-gray-500">Due: $<?php echo number_format($total_due, 2); ?></p>
+						<p class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Commission Due</p>
+						<h3 class="text-xl font-black text-[#003580] mt-2">LKR <?php echo number_format($commission_due, 2); ?></h3>
+						<p class="text-[10px] text-gray-500 mt-1">Rate: 20% of online bookings</p>
 					</div>
 				</div>
 			</div>
@@ -191,9 +207,9 @@ foreach ($chart_keys as $key) {
 				<div class="bg-white rounded-2xl border border-gray-100 p-6">
 					<h3 class="font-bold text-[#003580] mb-4">Snapshot</h3>
 					<div class="space-y-4">
-						<div class="flex justify-between text-xs font-bold uppercase tracking-widest text-gray-500">
+						<div class="flex justify-between text-[11px] font-bold uppercase tracking-widest text-gray-500">
 							<span>Paid vs Due</span>
-							<span>$<?php echo number_format($total_paid, 2); ?> / $<?php echo number_format($total_due, 2); ?></span>
+							<span>LKR <?php echo number_format($total_paid, 2); ?> / LKR <?php echo number_format($total_due, 2); ?></span>
 						</div>
 						<div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
 							<?php $paid_percent = $total_revenue > 0 ? round(($total_paid / $total_revenue) * 100) : 0; ?>

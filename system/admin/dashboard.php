@@ -15,6 +15,8 @@ $total_pilgrim_rests = $pdo->query("SELECT COUNT(*) FROM properties WHERE busine
 $total_hostels = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'hostel'")->fetchColumn();
 $total_users = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
 $total_properties = $total_hotels + $total_reception_halls + $total_pilgrim_rests + $total_hostels;
+$total_boost_spent = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM property_boosts WHERE payment_status = 'success'")->fetchColumn();
+$active_boosts = $pdo->query("SELECT COUNT(*) FROM property_boosts WHERE status = 'active' AND DATE_ADD(start_date, INTERVAL duration_days DAY) >= CURDATE()")->fetchColumn();
 
 // Fetch Recent Properties
 $stmt = $pdo->query("SELECT p.*, u.first_name, u.last_name FROM properties p JOIN users u ON p.owner_id = u.id ORDER BY p.created_at DESC LIMIT 5");
@@ -109,7 +111,7 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
 
         <div class="p-4 lg:p-8">
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 mb-8">
                 <!-- Hotels -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
                     <div class="flex justify-between items-start mb-4">
@@ -168,6 +170,28 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
                     </div>
                     <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Users</p>
                     <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_users); ?></h3>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+8%</span>
+                    </div>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Boost Revenue</p>
+                    <h3 class="text-2xl font-black text-[#003580]">LKR <?php echo number_format($total_boost_spent); ?></h3>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">Active</span>
+                    </div>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Boosts</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($active_boosts); ?></h3>
                 </div>
             </div>
 

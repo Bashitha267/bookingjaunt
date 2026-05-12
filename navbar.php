@@ -23,7 +23,6 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                     ['id' => 'home', 'label' => 'Home', 'icon' => 'fa-home', 'url' => 'index.php'],
                     ['id' => 'hotel', 'label' => 'Stays', 'icon' => 'fa-bed', 'url' => 'hotels.php'],
                     ['id' => 'dayouts', 'label' => 'Dayouts', 'icon' => 'fa-sun', 'url' => 'srilanka_dayouts.php'],
-                    ['id' => 'safari', 'label' => 'Safari', 'icon' => 'fa-hippo', 'url' => 'hotels.php?type=safari'],
                     ['id' => 'reception', 'label' => 'Reception', 'icon' => 'fa-synagogue', 'url' => 'hotels.php?type=reception_hall'],
                 ];
             }

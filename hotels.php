@@ -218,7 +218,23 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="manifest" href="/assets/site.webmanifest">
     <title>Bookingjaunt - Find your next stay</title>
+    <meta name="description" content="Browse Sri Lanka hotels, resorts, villas, and apartments. Filter by budget, amenities, and ratings to find your perfect stay with Bookingjaunt.">
+    <meta name="keywords" content="Sri Lanka hotels, Sri Lanka resorts, villas in Sri Lanka, apartments Sri Lanka, book hotels Sri Lanka, Colombo hotels, Kandy hotels, Galle hotels">
+    <link rel="canonical" href="https://bookingjaunt.com/hotels.php">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Sri Lanka Hotels & Stays - Bookingjaunt">
+    <meta property="og:description" content="Discover Sri Lanka stays with trusted listings, real reviews, and great prices. Filter by amenities, budget, and location.">
+    <meta property="og:url" content="https://bookingjaunt.com/hotels.php">
+    <meta property="og:image" content="https://bookingjaunt.com/assets/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sri Lanka Hotels & Stays - Bookingjaunt">
+    <meta name="twitter:description" content="Find Sri Lanka hotels, resorts, villas, and apartments. Book your stay with Bookingjaunt.">
+    <meta name="twitter:image" content="https://bookingjaunt.com/assets/logo.png">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -854,84 +870,7 @@ try {
         </section>
     <?php endif; ?>
 
-    <section
-        class="bg-[#00224f] text-white py-12 px-4 md:px-[10%] mt-12 flex flex-col md:flex-row justify-center md:justify-between items-center text-center md:text-left gap-6">
-        <div>
-            <div class="text-[20px] md:text-[24px] font-bold leading-tight">Save time, save money!</div>
-            <div class="text-[13px] md:text-[14px] font-normal text-white/80 mt-1 md:mt-0">Sign up and we'll send the
-                best deals to you</div>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <input type="text" placeholder="Your email address"
-                class="p-3 rounded text-neutral-800 w-full sm:w-[300px] outline-none focus:ring-2 focus:ring-secondary">
-            <button
-                class="bg-secondary hover:bg-primary text-white font-bold px-6 py-3 rounded transition-colors w-full sm:w-auto">Subscribe</button>
-        </div>
-    </section>
-
-    <!-- Footer Main -->
-    <footer
-        class="bg-white py-10 px-4 md:px-[10%] grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-4 border-b border-border">
-        <div>
-            <h4 class="font-bold text-[14px] text-neutral-800 mb-3 md:mb-4">Support</h4>
-            <ul class="flex flex-col gap-2 text-[13px] text-primary font-medium">
-                <li class="cursor-pointer hover:underline">Help Center</li>
-                <li class="cursor-pointer hover:underline">Customer Service</li>
-                <li class="cursor-pointer hover:underline">Safety Resource Center</li>
-                <li class="cursor-pointer hover:underline">Terms & Conditions</li>
-            </ul>
-        </div>
-        <div>
-            <h4 class="font-bold text-[14px] text-neutral-800 mb-3 md:mb-4">Discover</h4>
-            <ul class="flex flex-col gap-2 text-[13px] text-primary font-medium">
-                <li class="cursor-pointer hover:underline">Genius Rewards</li>
-                <li class="cursor-pointer hover:underline">Seasonal Deals</li>
-                <li class="cursor-pointer hover:underline">Travel Articles</li>
-                <li class="cursor-pointer hover:underline">Car rentals</li>
-            </ul>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-            <h4 class="font-bold text-[14px] text-neutral-800 mb-3 md:mb-4">Partners</h4>
-            <ul class="flex flex-col gap-2 text-[13px] text-primary font-medium">
-                <li class="cursor-pointer hover:underline">List your property</li>
-                <li class="cursor-pointer hover:underline">Become an affiliate</li>
-                <li class="cursor-pointer hover:underline">Connectivity Partners</li>
-            </ul>
-            <div class="text-[28px] md:text-[32px] font-bold text-neutral-200 mt-6 md:mt-8 tracking-tighter">+94 1000000
-            </div>
-        </div>
-        <div>
-            <h4 class="font-bold text-[14px] text-neutral-800 mb-3 md:mb-4">About</h4>
-            <ul class="flex flex-col gap-2 text-[13px] text-primary font-medium">
-                <li class="cursor-pointer hover:underline">About Bookingjaunt</li>
-                <li class="cursor-pointer hover:underline">Careers</li>
-                <li class="cursor-pointer hover:underline">Sustainability</li>
-                <li class="cursor-pointer hover:underline">Press center</li>
-            </ul>
-        </div>
-        <div>
-            <h4 class="font-bold text-[14px] text-neutral-800 mb-3 md:mb-4">Follow us</h4>
-            <div class="flex gap-4 text-primary">
-                <i class="fab fa-facebook text-[20px] cursor-pointer hover:text-primary-dark transition-colors"></i>
-                <i class="fab fa-instagram text-[20px] cursor-pointer hover:text-primary-dark transition-colors"></i>
-                <i class="fab fa-twitter text-[20px] cursor-pointer hover:text-primary-dark transition-colors"></i>
-            </div>
-        </div>
-    </footer>
-
-    <div
-        class="bg-white pt-8 pb-12 px-4 md:px-[10%] flex flex-col items-center gap-6 text-[12px] text-text-secondary text-center">
-        <a href="index.php">
-            <img src="assets/logo.png" alt="Bookingjaunt"
-                class="h-10 w-auto opacity-90 hover:opacity-100 transition-opacity">
-        </a>
-        <div class="flex flex-wrap justify-center gap-4">
-            <span class="cursor-pointer hover:underline text-primary">Privacy & Cookies</span>
-            <span class="cursor-pointer hover:underline text-primary">Manage Cookie Settings</span>
-            <span class="cursor-pointer hover:underline text-primary">MSA Statement</span>
-        </div>
-        <div>© 2026 Bookingjaunt.com All rights reserved.</div>
-    </div>
+    <?php include 'footer.php'; ?>
 
     <script>
         function toggleGuestDropdown() {

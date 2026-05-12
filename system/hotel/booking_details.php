@@ -88,6 +88,13 @@ if ($nights <= 0) $nights = 1;
     </style>
 </head>
 <body class="py-4 md:py-10">
+    <?php if (isset($_GET['download'])): ?>
+        <script>
+            window.addEventListener('load', () => {
+                window.print();
+            });
+        </script>
+    <?php endif; ?>
     <div class="max-w-5xl mx-auto px-4 md:px-6">
         <!-- Compact Header -->
         <div class="flex justify-between items-center mb-3 md:mb-4 no-print">
@@ -95,10 +102,18 @@ if ($nights <= 0) $nights = 1;
                 <i class="fas fa-arrow-left"></i> <span class="hidden xs:inline">Back to List</span><span class="xs:hidden">Back</span>
             </a>
             <div class="flex items-center gap-3">
-                <button onclick="window.print()" class="text-[10px] md:text-xs font-bold text-neutral-700 uppercase tracking-widest hover:underline flex items-center gap-2">
+                <?php if ($is_owner): ?>
+                    <button onclick="openPaymentModal()" class="text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 px-3 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
+                        <i class="fas fa-plus-circle"></i> <span class="hidden xs:inline">Add Payment</span><span class="xs-hidden">Payment</span>
+                    </button>
+                    <button onclick="openExpenseModal()" class="text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 px-3 py-2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
+                        <i class="fas fa-receipt"></i> <span class="hidden xs:inline">Add Expense</span><span class="xs-hidden">Expense</span>
+                    </button>
+                <?php endif; ?>
+                <button onclick="window.print()" class="text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 px-3 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition">
                     <i class="fas fa-download"></i> <span class="hidden xs:inline">Download PDF</span><span class="xs-hidden">Download</span>
                 </button>
-                <button onclick="window.print()" class="text-[10px] md:text-xs font-bold text-neutral-700 uppercase tracking-widest hover:underline flex items-center gap-2">
+                <button onclick="window.print()" class="text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center gap-2 px-3 py-2 rounded-full bg-neutral-900 text-white border border-neutral-900 hover:bg-neutral-800 transition">
                     <i class="fas fa-print"></i> <span class="hidden xs:inline">Print Invoice</span><span class="xs-hidden">Print</span>
                 </button>
             </div>
@@ -185,28 +200,77 @@ if ($nights <= 0) $nights = 1;
             </div>
         </div>
 
-        <!-- Hidden Management Controls for Guests -->
         <?php if ($is_owner): ?>
-        <div class="mt-6 md:mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 no-print">
-            <div class="bg-white border border-neutral-200 p-4 md:p-6 rounded-xl md:rounded-2xl shadow-sm">
-                <h4 class="text-[9px] md:text-[11px] font-black uppercase tracking-widest mb-3 md:mb-4">Add Payment</h4>
-                <form method="POST" class="flex gap-2 md:gap-3">
-                    <input type="number" name="payment_amount" required class="flex-1 px-3 md:px-4 py-1.5 md:py-2 bg-neutral-50 border border-neutral-100 rounded-lg md:rounded-xl text-xs" placeholder="LKR 0.00">
-                    <button type="submit" name="add_payment" class="bg-neutral-900 text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest">Add</button>
-                </form>
-            </div>
-            <div class="bg-white border border-neutral-200 p-4 md:p-6 rounded-xl md:rounded-2xl shadow-sm">
-                <h4 class="text-[9px] md:text-[11px] font-black uppercase tracking-widest mb-3 md:mb-4">Add Extra Expense</h4>
-                <form method="POST" class="space-y-2 md:space-y-3">
-                    <input type="text" name="expense_desc" required class="w-full px-3 md:px-4 py-1.5 md:py-2 bg-neutral-50 border border-neutral-100 rounded-lg md:rounded-xl text-xs" placeholder="Description">
-                    <div class="flex gap-2 md:gap-3">
-                        <input type="number" name="expense_amount" required class="flex-1 px-3 md:px-4 py-1.5 md:py-2 bg-neutral-50 border border-neutral-100 rounded-lg md:rounded-xl text-xs" placeholder="Amount">
-                        <button type="submit" name="add_expense" class="bg-neutral-900 text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-widest">Add</button>
+            <!-- Payment Modal -->
+            <div id="paymentModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                    <div class="fixed inset-0 transition-opacity bg-black/40 backdrop-blur-sm" onclick="closePaymentModal()"></div>
+                    <div class="inline-block w-full max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-[2rem] border border-gray-100">
+                        <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                            <h3 class="text-lg font-black text-[#003580]">Add Payment</h3>
+                            <button onclick="closePaymentModal()" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50">
+                                <i class="fas fa-times text-lg"></i>
+                            </button>
+                        </div>
+                        <form method="POST" class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Amount (LKR)</label>
+                                <input type="number" name="payment_amount" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none" placeholder="0.00">
+                            </div>
+                            <button type="submit" name="add_payment" class="w-full px-6 py-3 bg-[#003580] text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">Add Payment</button>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <!-- Expense Modal -->
+            <div id="expenseModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                    <div class="fixed inset-0 transition-opacity bg-black/40 backdrop-blur-sm" onclick="closeExpenseModal()"></div>
+                    <div class="inline-block w-full max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-[2rem] border border-gray-100">
+                        <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                            <h3 class="text-lg font-black text-[#003580]">Add Expense</h3>
+                            <button onclick="closeExpenseModal()" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50">
+                                <i class="fas fa-times text-lg"></i>
+                            </button>
+                        </div>
+                        <form method="POST" class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Description</label>
+                                <input type="text" name="expense_desc" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none" placeholder="Extra service">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1 ml-1">Amount (LKR)</label>
+                                <input type="number" name="expense_amount" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-[#003580] outline-none" placeholder="0.00">
+                            </div>
+                            <button type="submit" name="add_expense" class="w-full px-6 py-3 bg-[#003580] text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-[#002560] transition-all shadow-lg shadow-blue-900/20">Add Expense</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         <?php endif; ?>
     </div>
+
+    <script>
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openExpenseModal() {
+            document.getElementById('expenseModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expenseModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    </script>
 </body>
 </html>

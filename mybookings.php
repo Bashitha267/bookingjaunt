@@ -15,10 +15,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review'])) {
     $property_id = (int)$_POST['property_id'];
     $rating = (int)$_POST['rating'];
     $comment = trim($_POST['comment']);
+    $feedback_type = $_POST['feedback_type'] ?? '';
 
-    if ($rating >= 1 && $rating <= 5) {
-        $stmt = $pdo->prepare("INSERT INTO reviews (user_id, property_id, booking_id, rating, comment) VALUES (?, ?, ?, ?, ?)");
-        if ($stmt->execute([$user_id, $property_id, $booking_id, $rating, $comment])) {
+    if ($rating >= 1 && $rating <= 5 && in_array($feedback_type, ['positive', 'negative'], true)) {
+        $stmt = $pdo->prepare("INSERT INTO reviews (user_id, property_id, booking_id, rating, comment, feedback_type) VALUES (?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([$user_id, $property_id, $booking_id, $rating, $comment, $feedback_type])) {
             $success = "Thank you for your feedback!";
         } else {
             $error = "Something went wrong. Please try again.";
@@ -45,6 +46,10 @@ $bookings = $stmt->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="manifest" href="/assets/site.webmanifest">
     <title>My Bookings - Bookingjaunt</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -201,6 +206,7 @@ $bookings = $stmt->fetchAll();
             <form action="mybookings.php" method="POST" class="p-5 md:p-6">
                 <input type="hidden" name="booking_id" id="modal_booking_id">
                 <input type="hidden" name="property_id" id="modal_property_id">
+                <input type="hidden" name="feedback_type" id="modal_feedback_type" value="" required>
                 
                 <p class="text-xs md:text-sm text-neutral-500 mb-4 md:mb-6">How was your stay at <span id="modal_property_name" class="font-bold text-neutral-800"></span>?</p>
 
@@ -211,6 +217,20 @@ $bookings = $stmt->fetchAll();
                         </button>
                     <?php endfor; ?>
                     <input type="hidden" name="rating" id="modal_rating" value="0" required>
+                </div>
+
+                <div class="mb-5 md:mb-6">
+                    <label class="block text-[9px] md:text-[11px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Type</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" onclick="setFeedbackType('positive')" class="feedback-type-btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-sm font-bold text-neutral-700 hover:border-emerald-300 hover:text-emerald-600 transition-all" data-type="positive">
+                            <span class="text-xl">😊</span>
+                            Positive
+                        </button>
+                        <button type="button" onclick="setFeedbackType('negative')" class="feedback-type-btn flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-sm font-bold text-neutral-700 hover:border-red-300 hover:text-red-600 transition-all" data-type="negative">
+                            <span class="text-xl">😞</span>
+                            Negative
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mb-5 md:mb-6">
@@ -230,6 +250,10 @@ $bookings = $stmt->fetchAll();
             document.getElementById('modal_booking_id').value = bookingId;
             document.getElementById('modal_property_id').value = propertyId;
             document.getElementById('modal_property_name').textContent = propertyName;
+            document.getElementById('modal_feedback_type').value = '';
+            document.querySelectorAll('.feedback-type-btn').forEach(btn => {
+                btn.classList.remove('border-emerald-400', 'text-emerald-700', 'border-red-400', 'text-red-700');
+            });
             document.getElementById('reviewModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -250,6 +274,22 @@ $bookings = $stmt->fetchAll();
                 } else {
                     star.classList.remove('text-gold');
                     star.classList.add('text-neutral-200');
+                }
+            });
+        }
+
+        function setFeedbackType(type) {
+            document.getElementById('modal_feedback_type').value = type;
+            const buttons = document.querySelectorAll('.feedback-type-btn');
+            buttons.forEach(btn => {
+                const btnType = btn.getAttribute('data-type');
+                btn.classList.remove('border-emerald-400', 'text-emerald-700', 'border-red-400', 'text-red-700');
+                if (btnType === type) {
+                    if (type === 'positive') {
+                        btn.classList.add('border-emerald-400', 'text-emerald-700');
+                    } else {
+                        btn.classList.add('border-red-400', 'text-red-700');
+                    }
                 }
             });
         }

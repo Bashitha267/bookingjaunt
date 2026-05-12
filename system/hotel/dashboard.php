@@ -114,9 +114,13 @@ $total_bookings_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE proper
 $total_bookings_stmt->execute([$property_id]);
 $total_bookings_count = $total_bookings_stmt->fetchColumn();
 
-$monthly_revenue_stmt = $pdo->prepare("SELECT SUM(amount_paid) FROM bookings WHERE property_id = ? AND MONTH(created_at) = MONTH(CURRENT_DATE())");
-$monthly_revenue_stmt->execute([$property_id]);
-$monthly_revenue = $monthly_revenue_stmt->fetchColumn() ?? 0;
+$online_revenue_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount_paid), 0) FROM bookings WHERE property_id = ? AND booking_type = 'online'");
+$online_revenue_stmt->execute([$property_id]);
+$online_revenue = $online_revenue_stmt->fetchColumn() ?? 0;
+
+$inplace_revenue_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount_paid), 0) FROM bookings WHERE property_id = ? AND booking_type = 'inplace'");
+$inplace_revenue_stmt->execute([$property_id]);
+$inplace_revenue = $inplace_revenue_stmt->fetchColumn() ?? 0;
 
 $pending_bookings_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE property_id = ? AND status = 'pending'");
 $pending_bookings_stmt->execute([$property_id]);
@@ -363,7 +367,7 @@ $current_boost = $active_boost_stmt->fetch();
                 <?php endif; ?>
 
                 <!-- Stats Grid (from image) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
                         <div class="flex justify-between items-start mb-6">
                             <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-xl">
@@ -376,12 +380,22 @@ $current_boost = $active_boost_stmt->fetch();
 
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
                         <div class="flex justify-between items-start mb-6">
-                            <div class="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center text-xl">
-                                <i class="fas fa-wallet"></i>
+                            <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-xl">
+                                <i class="fas fa-globe"></i>
                             </div>
                         </div>
-                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Monthly Revenue</p>
-                        <h3 class="text-2xl font-black text-[#003580]">LKR <?php echo number_format($monthly_revenue); ?></h3>
+                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Online Revenue</p>
+                        <h3 class="text-2xl font-black text-[#003580]">LKR <?php echo number_format($online_revenue); ?></h3>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="w-12 h-12 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center text-xl">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Physical Revenue</p>
+                        <h3 class="text-2xl font-black text-[#003580]">LKR <?php echo number_format($inplace_revenue); ?></h3>
                     </div>
 
                     <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
