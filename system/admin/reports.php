@@ -29,23 +29,14 @@ if ($day !== '') {
 	$date_label = 'Year ' . $year;
 }
 
-$total_bookings = (int)$pdo->query("SELECT COUNT(*) FROM bookings")->fetchColumn();
-$total_users = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
-$total_properties = (int)$pdo->query("SELECT COUNT(*) FROM properties")->fetchColumn();
-$total_revenue = (float)$pdo->query("SELECT COALESCE(SUM(total_price), 0) FROM bookings")->fetchColumn();
-$total_paid = (float)$pdo->query("SELECT COALESCE(SUM(amount_paid), 0) FROM bookings")->fetchColumn();
-$total_due = max(0, $total_revenue - $total_paid);
-$total_active_boosts = (int)$pdo->query("SELECT COUNT(*) FROM property_boosts WHERE status = 'active' AND DATE_ADD(start_date, INTERVAL duration_days DAY) >= CURDATE()")->fetchColumn();
-$total_boost_revenue = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM property_boosts WHERE payment_status = 'success'")->fetchColumn();
-
 $commission_rate = 0.2;
 $commission_start = date('Y-m-01');
 $commission_end = date('Y-m-t');
-$commission_stmt = $pdo->prepare("SELECT
-						COALESCE(SUM(total_price), 0) AS total_price,
-						COALESCE(SUM(amount_paid), 0) AS total_paid
-					FROM bookings
-					WHERE booking_type = 'online'
+$commission_stmt = $pdo->prepare("SELECT 
+						COALESCE(SUM(total_price), 0) AS total_price, 
+						COALESCE(SUM(amount_paid), 0) AS total_paid 
+					FROM bookings 
+					WHERE booking_type = 'online' 
 						AND DATE(created_at) BETWEEN ? AND ?");
 $commission_stmt->execute([$commission_start, $commission_end]);
 $commission_row = $commission_stmt->fetch();
@@ -53,36 +44,7 @@ $commission_total = ($commission_row['total_price'] ?? 0) * $commission_rate;
 $commission_paid = ($commission_row['total_paid'] ?? 0) * $commission_rate;
 $commission_due = max(0, $commission_total - $commission_paid);
 
-$bookings_filtered_sql = "SELECT COUNT(*) FROM bookings" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$bookings_filtered_stmt = $pdo->prepare($bookings_filtered_sql);
-$bookings_filtered_stmt->execute($date_params);
-$bookings_filtered = (int)$bookings_filtered_stmt->fetchColumn();
-
-$users_filtered_sql = "SELECT COUNT(*) FROM users WHERE role != 'admin'" . ($date_filter_clause ? " AND $date_filter_clause" : '');
-$users_filtered_stmt = $pdo->prepare($users_filtered_sql);
-$users_filtered_stmt->execute($date_params);
-$users_filtered = (int)$users_filtered_stmt->fetchColumn();
-
-$properties_filtered_sql = "SELECT COUNT(*) FROM properties" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$properties_filtered_stmt = $pdo->prepare($properties_filtered_sql);
-$properties_filtered_stmt->execute($date_params);
-$properties_filtered = (int)$properties_filtered_stmt->fetchColumn();
-
-$revenue_filtered_sql = "SELECT COALESCE(SUM(total_price), 0) FROM bookings" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$revenue_filtered_stmt = $pdo->prepare($revenue_filtered_sql);
-$revenue_filtered_stmt->execute($date_params);
-$revenue_filtered = (float)$revenue_filtered_stmt->fetchColumn();
-
-$boosts_filtered_sql = "SELECT COUNT(*) FROM property_boosts" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$boosts_filtered_stmt = $pdo->prepare($boosts_filtered_sql);
-$boosts_filtered_stmt->execute($date_params);
-$boosts_filtered = (int)$boosts_filtered_stmt->fetchColumn();
-
-$boost_revenue_filtered_sql = "SELECT COALESCE(SUM(amount), 0) FROM property_boosts" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$boost_revenue_filtered_stmt = $pdo->prepare($boost_revenue_filtered_sql);
-$boost_revenue_filtered_stmt->execute($date_params);
-$boost_revenue_filtered = (float)$boost_revenue_filtered_stmt->fetchColumn();
-
+// Chart Data Logic
 $chart_start = date('Y-m-01', strtotime('-11 months'));
 $chart_keys = [];
 $chart_labels = [];
@@ -114,7 +76,6 @@ foreach ($chart_keys as $key) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -124,24 +85,11 @@ foreach ($chart_keys as $key) {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<style>
-		body {
-			font-family: 'Plus Jakarta Sans', sans-serif;
-			background-color: #f8fafc;
-		}
-
-		@media print {
-			.no-print {
-				display: none;
-			}
-
-			body {
-				background: white;
-			}
-		}
+		body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+		@media print { .no-print { display: none; } body { background: white; } }
 	</style>
 </head>
-
-<body class="flex min-h-screen overflow-hidden">
+<body class="flex min-h-screen">
 
 	<?php include 'sidebar.php'; ?>
 
@@ -156,6 +104,7 @@ foreach ($chart_keys as $key) {
 					<p class="text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block">Booking, users, and property insights</p>
 				</div>
 			</div>
+			
 			<div class="no-print flex flex-wrap items-end gap-4">
 				<form method="GET" class="flex flex-wrap gap-3 items-end">
 					<div>
@@ -181,11 +130,11 @@ foreach ($chart_keys as $key) {
 
 		<div class="p-4 lg:p-8 space-y-8">
 			<div class="bg-white rounded-2xl border border-gray-100 p-6">
-				<div class="flex items-center justify-between">
+				<div class="flex items-center justify-between mb-6">
 					<h2 class="font-bold text-[#003580]">Commission (This Month)</h2>
 					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"><?php echo date('F Y'); ?></span>
 				</div>
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div class="p-5 rounded-2xl border border-gray-100">
 						<p class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Paid Commission</p>
 						<h3 class="text-xl font-black text-[#003580] mt-2">LKR <?php echo number_format($commission_paid, 2); ?></h3>
@@ -199,12 +148,12 @@ foreach ($chart_keys as $key) {
 				</div>
 			</div>
 
-			<div class="grid grid-cols-1 lg:flex gap-8">
+			<div class="w-full">
 				<div class="bg-white rounded-2xl border border-gray-100 p-6">
-					<h3 class="font-bold text-[#003580] mb-4">Growth Trends (Last 12 Months)</h3>
-					<canvas id="growthChart" height="220"></canvas>
-				</div>
-				
+					<h3 class="font-bold text-[#003580] mb-6">Growth Trends (Last 12 Months)</h3>
+					<div class="relative w-full" style="min-height: 350px; height: 60vh;">
+						<canvas id="growthChart"></canvas>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -226,42 +175,83 @@ foreach ($chart_keys as $key) {
 						label: 'Bookings',
 						data: bookingsData,
 						borderColor: '#006ce4',
-						backgroundColor: 'rgba(0, 108, 228, 0.15)',
-						tension: 0.35,
-						fill: true
+						backgroundColor: 'rgba(0, 108, 228, 0.1)',
+						tension: 0.4,
+						fill: true,
+						pointRadius: 4,
+						pointHoverRadius: 6
 					},
 					{
 						label: 'Properties',
 						data: propertiesData,
 						borderColor: '#f59e0b',
-						backgroundColor: 'rgba(245, 158, 11, 0.12)',
-						tension: 0.35,
-						fill: true
+						backgroundColor: 'rgba(245, 158, 11, 0.05)',
+						tension: 0.4,
+						fill: true,
+						pointRadius: 4,
+						pointHoverRadius: 6
 					},
 					{
 						label: 'Users',
 						data: usersData,
 						borderColor: '#10b981',
-						backgroundColor: 'rgba(16, 185, 129, 0.12)',
-						tension: 0.35,
-						fill: true
+						backgroundColor: 'rgba(16, 185, 129, 0.05)',
+						tension: 0.4,
+						fill: true,
+						pointRadius: 4,
+						pointHoverRadius: 6
 					}
 				]
 			},
 			options: {
 				responsive: true,
+				maintainAspectRatio: false, // Essential for full-width responsive scaling
 				plugins: {
 					legend: {
-						position: 'bottom'
+						position: 'bottom',
+						labels: {
+							padding: 25,
+							usePointStyle: true,
+							font: {
+								size: 12,
+								family: "'Plus Jakarta Sans', sans-serif",
+								weight: '600'
+							}
+						}
+					},
+					tooltip: {
+						backgroundColor: '#1e293b',
+						padding: 12,
+						titleFont: { size: 14, weight: 'bold' },
+						bodyFont: { size: 13 },
+						cornerRadius: 8
 					}
 				},
 				scales: {
 					y: {
 						beginAtZero: true,
 						ticks: {
-							precision: 0
+							precision: 0,
+							color: '#64748b',
+							font: { size: 11 }
+						},
+						grid: {
+							color: '#f1f5f9'
+						}
+					},
+					x: {
+						ticks: {
+							color: '#64748b',
+							font: { size: 11 }
+						},
+						grid: {
+							display: false
 						}
 					}
+				},
+				interaction: {
+					intersect: false,
+					mode: 'index'
 				}
 			}
 		});
@@ -269,8 +259,12 @@ foreach ($chart_keys as $key) {
 		document.getElementById('download-pdf').addEventListener('click', () => {
 			window.print();
 		});
+
+		function toggleSidebar() {
+			// Add your sidebar toggle logic here if it's not in sidebar.php
+			const sidebar = document.querySelector('aside');
+			sidebar.classList.toggle('-translate-x-full');
+		}
 	</script>
-
 </body>
-
 </html>
