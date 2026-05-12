@@ -199,7 +199,7 @@ foreach ($chart_keys as $key) {
 				</div>
 			</div>
 
-			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+			<div class="grid grid-cols-1 lg:flex gap-8">
 				<div class="bg-white rounded-2xl border border-gray-100 p-6">
 					<h3 class="font-bold text-[#003580] mb-4">Growth Trends (Last 12 Months)</h3>
 					<canvas id="growthChart" height="220"></canvas>
