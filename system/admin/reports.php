@@ -7,28 +7,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 	exit();
 }
 
+// 1. Determine the Year to filter
+$selected_year = $_GET['year'] ?? date('Y');
 $day = $_GET['day'] ?? '';
 $month = $_GET['month'] ?? '';
-$year = $_GET['year'] ?? '';
 
-$date_filter_clause = '';
-$date_params = [];
-$date_label = 'All time';
-
-if ($day !== '') {
-	$date_filter_clause = "DATE(created_at) = ?";
-	$date_params = [$day];
-	$date_label = 'Day ' . $day;
-} elseif ($month !== '') {
-	$date_filter_clause = "DATE_FORMAT(created_at, '%Y-%m') = ?";
-	$date_params = [$month];
-	$date_label = 'Month ' . $month;
-} elseif ($year !== '') {
-	$date_filter_clause = "YEAR(created_at) = ?";
-	$date_params = [$year];
-	$date_label = 'Year ' . $year;
-}
-
+// Commission logic (Keep as is for the current month summary)
 $commission_rate = 0.2;
 $commission_start = date('Y-m-01');
 $commission_end = date('Y-m-t');
@@ -44,25 +28,29 @@ $commission_total = ($commission_row['total_price'] ?? 0) * $commission_rate;
 $commission_paid = ($commission_row['total_paid'] ?? 0) * $commission_rate;
 $commission_due = max(0, $commission_total - $commission_paid);
 
-// Chart Data Logic
-$chart_start = date('Y-m-01', strtotime('-11 months'));
+// 2. FIXED: Generate Keys for JAN to DEC of the SELECTED YEAR
 $chart_keys = [];
 $chart_labels = [];
-for ($i = 11; $i >= 0; $i--) {
-	$chart_keys[] = date('Y-m', strtotime("-$i months"));
-	$chart_labels[] = date('M Y', strtotime("-$i months"));
+for ($m = 1; $m <= 12; $m++) {
+    $month_num = str_pad($m, 2, "0", STR_PAD_LEFT);
+    $chart_keys[] = $selected_year . '-' . $month_num;
+    $chart_labels[] = date('M', mktime(0, 0, 0, $m, 1)) . ' ' . $selected_year;
 }
 
-$bookings_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM bookings WHERE created_at >= ? GROUP BY ym");
-$bookings_stmt->execute([$chart_start]);
+$start_of_year = $selected_year . '-01-01 00:00:00';
+$end_of_year = $selected_year . '-12-31 23:59:59';
+
+// 3. Updated SQL to filter strictly by the selected year
+$bookings_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM bookings WHERE created_at BETWEEN ? AND ? GROUP BY ym");
+$bookings_stmt->execute([$start_of_year, $end_of_year]);
 $bookings_rows = $bookings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
-$properties_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM properties WHERE created_at >= ? GROUP BY ym");
-$properties_stmt->execute([$chart_start]);
+$properties_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM properties WHERE created_at BETWEEN ? AND ? GROUP BY ym");
+$properties_stmt->execute([$start_of_year, $end_of_year]);
 $properties_rows = $properties_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
-$users_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM users WHERE role != 'admin' AND created_at >= ? GROUP BY ym");
-$users_stmt->execute([$chart_start]);
+$users_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM users WHERE role != 'admin' AND created_at BETWEEN ? AND ? GROUP BY ym");
+$users_stmt->execute([$start_of_year, $end_of_year]);
 $users_rows = $users_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $booking_series = [];
@@ -101,25 +89,17 @@ foreach ($chart_keys as $key) {
 				</button>
 				<div>
 					<h1 class="text-2xl font-black text-[#003580]">Reports</h1>
-					<p class="text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block">Booking, users, and property insights</p>
+					<p class="text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block">Annual Insights for <?php echo $selected_year; ?></p>
 				</div>
 			</div>
 			
 			<div class="no-print flex flex-wrap items-end gap-4">
 				<form method="GET" class="flex flex-wrap gap-3 items-end">
 					<div>
-						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Day</label>
-						<input type="date" name="day" value="<?php echo htmlspecialchars($day); ?>" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Year Filter</label>
+						<input type="number" name="year" min="2000" max="2100" value="<?php echo htmlspecialchars($selected_year); ?>" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
 					</div>
-					<div>
-						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Month</label>
-						<input type="month" name="month" value="<?php echo htmlspecialchars($month); ?>" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
-					</div>
-					<div>
-						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Year</label>
-						<input type="number" name="year" min="2000" max="2100" value="<?php echo htmlspecialchars($year); ?>" placeholder="2026" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
-					</div>
-					<button class="px-5 py-2 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest">Apply</button>
+					<button class="px-5 py-2 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest">Filter Year</button>
 					<a href="reports.php" class="px-5 py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-widest">Reset</a>
 				</form>
 				<button id="download-pdf" class="ml-auto px-5 py-2 rounded-xl bg-[#003580] text-white text-xs font-bold uppercase tracking-widest">
@@ -150,8 +130,8 @@ foreach ($chart_keys as $key) {
 
 			<div class="w-full">
 				<div class="bg-white rounded-2xl border border-gray-100 p-6">
-					<h3 class="font-bold text-[#003580] mb-6">Growth Trends (Last 12 Months)</h3>
-					<div class="relative w-full" style="min-height: 350px; height: 60vh;">
+					<h3 class="font-bold text-[#003580] mb-6">Growth Trends (January - December <?php echo $selected_year; ?>)</h3>
+					<div class="relative w-full" style="min-height: 400px; height: 65vh;">
 						<canvas id="growthChart"></canvas>
 					</div>
 				</div>
@@ -178,8 +158,7 @@ foreach ($chart_keys as $key) {
 						backgroundColor: 'rgba(0, 108, 228, 0.1)',
 						tension: 0.4,
 						fill: true,
-						pointRadius: 4,
-						pointHoverRadius: 6
+						pointRadius: 5
 					},
 					{
 						label: 'Properties',
@@ -188,8 +167,7 @@ foreach ($chart_keys as $key) {
 						backgroundColor: 'rgba(245, 158, 11, 0.05)',
 						tension: 0.4,
 						fill: true,
-						pointRadius: 4,
-						pointHoverRadius: 6
+						pointRadius: 5
 					},
 					{
 						label: 'Users',
@@ -198,55 +176,32 @@ foreach ($chart_keys as $key) {
 						backgroundColor: 'rgba(16, 185, 129, 0.05)',
 						tension: 0.4,
 						fill: true,
-						pointRadius: 4,
-						pointHoverRadius: 6
+						pointRadius: 5
 					}
 				]
 			},
 			options: {
 				responsive: true,
-				maintainAspectRatio: false, // Essential for full-width responsive scaling
+				maintainAspectRatio: false,
 				plugins: {
 					legend: {
 						position: 'bottom',
 						labels: {
 							padding: 25,
 							usePointStyle: true,
-							font: {
-								size: 12,
-								family: "'Plus Jakarta Sans', sans-serif",
-								weight: '600'
-							}
+							font: { size: 12, weight: '600' }
 						}
-					},
-					tooltip: {
-						backgroundColor: '#1e293b',
-						padding: 12,
-						titleFont: { size: 14, weight: 'bold' },
-						bodyFont: { size: 13 },
-						cornerRadius: 8
 					}
 				},
 				scales: {
 					y: {
 						beginAtZero: true,
-						ticks: {
-							precision: 0,
-							color: '#64748b',
-							font: { size: 11 }
-						},
-						grid: {
-							color: '#f1f5f9'
-						}
+						ticks: { precision: 0, color: '#64748b' },
+						grid: { color: '#f1f5f9' }
 					},
 					x: {
-						ticks: {
-							color: '#64748b',
-							font: { size: 11 }
-						},
-						grid: {
-							display: false
-						}
+						ticks: { color: '#64748b' },
+						grid: { display: false }
 					}
 				},
 				interaction: {
@@ -261,9 +216,8 @@ foreach ($chart_keys as $key) {
 		});
 
 		function toggleSidebar() {
-			// Add your sidebar toggle logic here if it's not in sidebar.php
 			const sidebar = document.querySelector('aside');
-			sidebar.classList.toggle('-translate-x-full');
+			if(sidebar) sidebar.classList.toggle('-translate-x-full');
 		}
 	</script>
 </body>
