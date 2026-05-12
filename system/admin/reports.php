@@ -204,26 +204,7 @@ foreach ($chart_keys as $key) {
 					<h3 class="font-bold text-[#003580] mb-4">Growth Trends (Last 12 Months)</h3>
 					<canvas id="growthChart" height="220"></canvas>
 				</div>
-				<div class="bg-white rounded-2xl border border-gray-100 p-6">
-					<h3 class="font-bold text-[#003580] mb-4">Snapshot</h3>
-					<div class="space-y-4">
-						<div class="flex justify-between text-[11px] font-bold uppercase tracking-widest text-gray-500">
-							<span>Paid vs Due</span>
-							<span>LKR <?php echo number_format($total_paid, 2); ?> / LKR <?php echo number_format($total_due, 2); ?></span>
-						</div>
-						<div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-							<?php $paid_percent = $total_revenue > 0 ? round(($total_paid / $total_revenue) * 100) : 0; ?>
-							<div class="h-full bg-[#006ce4]" style="width: <?php echo $paid_percent; ?>%"></div>
-						</div>
-						<div class="grid grid-cols-1 gap-4">
-							<div class="p-4 rounded-xl bg-blue-50 text-blue-800 text-sm">
-								Bookings and revenue trends update monthly based on booking creation dates.
-							</div>
-							<div class="p-4 rounded-xl bg-emerald-50 text-emerald-800 text-sm">
-								Use the filter above to see how activity changes by day, month, or year.
-							</div>
-						</div>
-					</div>
+				
 				</div>
 			</div>
 		</div>
