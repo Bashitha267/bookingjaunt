@@ -225,7 +225,7 @@ try {
     <title>Bookingjaunt - Find your next stay</title>
     <meta name="description" content="Browse Sri Lanka hotels, resorts, villas, and apartments. Filter by budget, amenities, and ratings to find your perfect stay with Bookingjaunt.">
     <meta name="keywords" content="Sri Lanka hotels, Sri Lanka resorts, villas in Sri Lanka, apartments Sri Lanka, book hotels Sri Lanka, Colombo hotels, Kandy hotels, Galle hotels">
-    <link rel="canonical" href="https://bookingjaunt.com/hotels.php">
+    <link rel="canonical" href="https://bookingjaunt.com/hotels">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Sri Lanka Hotels & Stays - Bookingjaunt">
     <meta property="og:description" content="Discover Sri Lanka stays with trusted listings, real reviews, and great prices. Filter by amenities, budget, and location.">

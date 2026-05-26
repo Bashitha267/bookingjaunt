@@ -9,6 +9,47 @@ $check_in = $_GET['checkin'] ?? ($_POST['checkin'] ?? date('Y-m-d'));
 $check_out = $_GET['checkout'] ?? ($_POST['checkout'] ?? date('Y-m-d', strtotime('+1 day')));
 $room_qty = $_GET['qty'] ?? ($_POST['qty'] ?? 1);
 
+if (($_GET['action'] ?? '') === 'check_availability') {
+    header('Content-Type: application/json');
+
+    $room_id_check = (int) ($_GET['room_id'] ?? 0);
+    $check_in_check = $_GET['checkin'] ?? '';
+    $check_out_check = $_GET['checkout'] ?? '';
+    $room_qty_check = max(1, (int) ($_GET['qty'] ?? 1));
+
+    if (!$room_id_check || empty($check_in_check) || empty($check_out_check)) {
+        echo json_encode(['available' => false, 'message' => 'Please select both check-in and check-out dates.']);
+        exit();
+    }
+
+    if (strtotime($check_out_check) <= strtotime($check_in_check)) {
+        echo json_encode(['available' => false, 'message' => 'Check-out must be after check-in.']);
+        exit();
+    }
+
+    $room_stmt = $pdo->prepare("SELECT total_rooms FROM property_rooms WHERE id = ?");
+    $room_stmt->execute([$room_id_check]);
+    $total_rooms = (int) $room_stmt->fetchColumn();
+
+    if ($total_rooms <= 0) {
+        echo json_encode(['available' => false, 'message' => 'Room availability not found.']);
+        exit();
+    }
+
+    $booked_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE room_id = ? AND status NOT IN ('cancelled') AND (check_in_date < ? AND check_out_date > ?)");
+    $booked_stmt->execute([$room_id_check, $check_out_check, $check_in_check]);
+    $booked_rooms = (int) $booked_stmt->fetchColumn();
+
+    $available_rooms = $total_rooms - $booked_rooms;
+    $is_available = $available_rooms >= $room_qty_check;
+
+    echo json_encode([
+        'available' => $is_available,
+        'message' => $is_available ? 'Rooms are available for your dates.' : 'Sorry, this room is not available for the selected dates.'
+    ]);
+    exit();
+}
+
 if (!$property_id || !$room_id) {
     header("Location: index.php");
     exit();
@@ -177,8 +218,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                     <form method="POST" id="bookingForm">
                         <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
                         <input type="hidden" name="room_id" value="<?php echo $room_id; ?>">
-                        <input type="hidden" name="checkin" value="<?php echo $check_in; ?>">
-                        <input type="hidden" name="checkout" value="<?php echo $check_out; ?>">
                         <input type="hidden" name="qty" value="<?php echo $room_qty; ?>">
                         <input type="hidden" name="booking_type" value="<?php echo isset($_SESSION['user_id']) && $_SESSION['role'] != 'user' ? 'inplace' : 'online'; ?>">
 
@@ -212,6 +251,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Phone Number</label>
                                     <input type="tel" name="guest_phone" value="<?php echo htmlspecialchars($user_data['phone_number'] ?? ''); ?>" required placeholder="e.g. +94 77 123 4567" 
+                                           class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Check-in Date</label>
+                                    <input type="date" name="checkin" id="checkinInputVisible" value="<?php echo htmlspecialchars($check_in); ?>" min="<?php echo date('Y-m-d'); ?>" required
+                                           class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Check-out Date</label>
+                                    <input type="date" name="checkout" id="checkoutInputVisible" value="<?php echo htmlspecialchars($check_out); ?>" min="<?php echo date('Y-m-d'); ?>" required
                                            class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium">
                                 </div>
                             </div>
@@ -342,15 +394,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                             <div class="space-y-4 mb-8">
                                 <div class="flex justify-between items-center text-[11px]">
                                     <span class="font-bold text-gray-400 uppercase tracking-widest">Check-in</span>
-                                    <span class="font-black text-gray-900"><?php echo date('D, M d, Y', strtotime($check_in)); ?></span>
+                                    <span id="summaryCheckIn" class="font-black text-gray-900"><?php echo date('D, M d, Y', strtotime($check_in)); ?></span>
                                 </div>
                                 <div class="flex justify-between items-center text-[11px]">
                                     <span class="font-bold text-gray-400 uppercase tracking-widest">Check-out</span>
-                                    <span class="font-black text-gray-900"><?php echo date('D, M d, Y', strtotime($check_out)); ?></span>
+                                    <span id="summaryCheckOut" class="font-black text-gray-900"><?php echo date('D, M d, Y', strtotime($check_out)); ?></span>
                                 </div>
                                 <div class="flex justify-between items-center text-[11px]">
                                     <span class="font-bold text-gray-400 uppercase tracking-widest">Stay duration</span>
-                                    <span class="font-black text-gray-900">
+                                    <span id="summaryNights" class="font-black text-gray-900">
                                         <?php 
                                             $days = (strtotime($check_out) - strtotime($check_in)) / (60 * 60 * 24);
                                             if ($days <= 0) $days = 1;
@@ -378,7 +430,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                                 </div>
                             </div>
 
-                            <button type="button" onclick="document.getElementById('combined_guest_name').value = document.querySelector('[name=first_name]').value + ' ' + document.querySelector('[name=last_name]').value; document.getElementById('bookingForm').submit();" 
+                            <button type="button" onclick="handleBookingSubmit()" 
                                     class="w-full bg-[#003580] text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest mt-10 hover:bg-[#002560] transition-all shadow-xl shadow-blue-900/20 active:scale-95">
                                 Complete Booking
                             </button>
@@ -415,7 +467,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
             © <?php echo date('Y'); ?> StayEase – Your worldwide travel companion.
         </p>
     </footer>
+    <div id="toast" class="fixed top-6 right-6 z-50 hidden">
+        <div id="toastBody" class="px-5 py-4 rounded-xl shadow-lg text-sm font-bold"></div>
+    </div>
+
     <script>
+        const roomId = <?php echo (int) $room_id; ?>;
+        const roomQty = <?php echo (int) $room_qty; ?>;
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastBody = document.getElementById('toastBody');
+            toastBody.textContent = message;
+
+            toastBody.className = 'px-5 py-4 rounded-xl shadow-lg text-sm font-bold ' +
+                (type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700');
+
+            toast.classList.remove('hidden');
+            clearTimeout(toast.hideTimer);
+            toast.hideTimer = setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function updateSummaryDates() {
+            const checkin = document.getElementById('checkinInputVisible').value;
+            const checkout = document.getElementById('checkoutInputVisible').value;
+            const checkinEl = document.getElementById('summaryCheckIn');
+            const checkoutEl = document.getElementById('summaryCheckOut');
+            const nightsEl = document.getElementById('summaryNights');
+
+            if (checkin) {
+                checkinEl.textContent = new Date(checkin + 'T00:00:00').toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+                });
+            }
+
+            if (checkout) {
+                checkoutEl.textContent = new Date(checkout + 'T00:00:00').toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+                });
+            }
+
+            if (checkin && checkout) {
+                const start = new Date(checkin + 'T00:00:00');
+                const end = new Date(checkout + 'T00:00:00');
+                const diffDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+                nightsEl.textContent = diffDays + ' Nights';
+            }
+        }
+
+        function handleBookingSubmit() {
+            const checkin = document.getElementById('checkinInputVisible').value;
+            const checkout = document.getElementById('checkoutInputVisible').value;
+
+            if (!checkin || !checkout) {
+                showToast('Please select both check-in and check-out dates.', 'error');
+                return;
+            }
+
+            if (new Date(checkout) <= new Date(checkin)) {
+                showToast('Check-out must be after check-in.', 'error');
+                return;
+            }
+
+            fetch(`newbooking.php?action=check_availability&room_id=${roomId}&checkin=${encodeURIComponent(checkin)}&checkout=${encodeURIComponent(checkout)}&qty=${roomQty}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.available) {
+                        showToast(data.message || 'Room not available for selected dates.', 'error');
+                        return;
+                    }
+
+                    document.getElementById('combined_guest_name').value =
+                        document.querySelector('[name=first_name]').value + ' ' +
+                        document.querySelector('[name=last_name]').value;
+
+                    showToast(data.message || 'Rooms are available.', 'success');
+                    setTimeout(() => document.getElementById('bookingForm').submit(), 600);
+                })
+                .catch(() => showToast('Unable to check availability. Please try again.', 'error'));
+        }
+
         function togglePayment(show) {
             const paymentDetails = document.getElementById('paymentDetails');
             if (show) {
@@ -425,6 +556,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                 paymentDetails.style.display = 'none';
             }
         }
+
+        document.getElementById('checkinInputVisible').addEventListener('change', updateSummaryDates);
+        document.getElementById('checkoutInputVisible').addEventListener('change', updateSummaryDates);
+        updateSummaryDates();
     </script>
 </body>
 </html>

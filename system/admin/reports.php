@@ -13,7 +13,7 @@ $year = $_GET['year'] ?? '';
 
 $date_filter_clause = '';
 $date_params = [];
-$date_label = 'All time';
+$date_label = 'This Month';
 
 if ($day !== '') {
 	$date_filter_clause = "DATE(created_at) = ?";
@@ -22,11 +22,17 @@ if ($day !== '') {
 } elseif ($month !== '') {
 	$date_filter_clause = "DATE_FORMAT(created_at, '%Y-%m') = ?";
 	$date_params = [$month];
-	$date_label = 'Month ' . $month;
+	$date_label = 'Month ' . date('F Y', strtotime($month . '-01'));
 } elseif ($year !== '') {
 	$date_filter_clause = "YEAR(created_at) = ?";
 	$date_params = [$year];
 	$date_label = 'Year ' . $year;
+} else {
+	// Default to current month
+	$month = date('Y-m');
+	$date_filter_clause = "DATE_FORMAT(created_at, '%Y-%m') = ?";
+	$date_params = [$month];
+	$date_label = date('F Y');
 }
 
 $total_bookings = (int)$pdo->query("SELECT COUNT(*) FROM bookings")->fetchColumn();
@@ -39,18 +45,14 @@ $total_active_boosts = (int)$pdo->query("SELECT COUNT(*) FROM property_boosts WH
 $total_boost_revenue = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM property_boosts WHERE payment_status = 'success'")->fetchColumn();
 
 $commission_rate = 0.2;
-$commission_start = date('Y-m-01');
-$commission_end = date('Y-m-t');
-$commission_stmt = $pdo->prepare("SELECT
-						COALESCE(SUM(total_price), 0) AS total_price,
-						COALESCE(SUM(amount_paid), 0) AS total_paid
-					FROM bookings
-					WHERE booking_type = 'online'
-						AND DATE(created_at) BETWEEN ? AND ?");
-$commission_stmt->execute([$commission_start, $commission_end]);
-$commission_row = $commission_stmt->fetch();
-$commission_total = ($commission_row['total_price'] ?? 0) * $commission_rate;
-$commission_paid = ($commission_row['total_paid'] ?? 0) * $commission_rate;
+$commission_stmt = $pdo->prepare("SELECT COALESCE(SUM(total_price), 0) FROM bookings WHERE booking_type = 'online' AND " . ($date_filter_clause ? $date_filter_clause : "1=1"));
+$commission_stmt->execute($date_params);
+$commission_total = $commission_stmt->fetchColumn() * $commission_rate;
+
+$paid_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM hotel_service_payments WHERE status = 'approved' AND " . ($date_filter_clause ? $date_filter_clause : "1=1"));
+$paid_stmt->execute($date_params);
+$commission_paid = $paid_stmt->fetchColumn();
+
 $commission_due = max(0, $commission_total - $commission_paid);
 
 $bookings_filtered_sql = "SELECT COUNT(*) FROM bookings" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
@@ -182,8 +184,8 @@ foreach ($chart_keys as $key) {
 		<div class="p-4 lg:p-8 space-y-8">
 			<div class="bg-white rounded-2xl border border-gray-100 p-6">
 				<div class="flex items-center justify-between">
-					<h2 class="font-bold text-[#003580]">Commission (This Month)</h2>
-					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"><?php echo date('F Y'); ?></span>
+					<h2 class="font-bold text-[#003580]">Commission Details</h2>
+					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"><?php echo htmlspecialchars($date_label); ?></span>
 				</div>
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 					<div class="p-5 rounded-2xl border border-gray-100">
@@ -204,25 +206,21 @@ foreach ($chart_keys as $key) {
 					<h3 class="font-bold text-[#003580] mb-4">Growth Trends (Last 12 Months)</h3>
 					<canvas id="growthChart" height="220"></canvas>
 				</div>
-				<div class="bg-white rounded-2xl border border-gray-100 p-6">
-					<h3 class="font-bold text-[#003580] mb-4">Snapshot</h3>
-					<div class="space-y-4">
-						<div class="flex justify-between text-[11px] font-bold uppercase tracking-widest text-gray-500">
-							<span>Paid vs Due</span>
-							<span>LKR <?php echo number_format($total_paid, 2); ?> / LKR <?php echo number_format($total_due, 2); ?></span>
-						</div>
-						<div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-							<?php $paid_percent = $total_revenue > 0 ? round(($total_paid / $total_revenue) * 100) : 0; ?>
-							<div class="h-full bg-[#006ce4]" style="width: <?php echo $paid_percent; ?>%"></div>
-						</div>
-						<div class="grid grid-cols-1 gap-4">
-							<div class="p-4 rounded-xl bg-blue-50 text-blue-800 text-sm">
-								Bookings and revenue trends update monthly based on booking creation dates.
-							</div>
-							<div class="p-4 rounded-xl bg-emerald-50 text-emerald-800 text-sm">
-								Use the filter above to see how activity changes by day, month, or year.
-							</div>
-						</div>
+				<div class="grid grid-cols-1 gap-4 h-full">
+					<div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center h-full">
+						<p class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Total Bookings</p>
+						<h3 class="text-3xl font-black text-[#003580] mt-2"><?php echo number_format($bookings_filtered); ?></h3>
+						<p class="text-xs text-gray-400 mt-1 font-medium">In selected period</p>
+					</div>
+					<div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center h-full">
+						<p class="text-[10px] font-bold uppercase tracking-widest text-emerald-500">New Users Registered</p>
+						<h3 class="text-3xl font-black text-[#003580] mt-2"><?php echo number_format($users_filtered); ?></h3>
+						<p class="text-xs text-gray-400 mt-1 font-medium">In selected period</p>
+					</div>
+					<div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center h-full">
+						<p class="text-[10px] font-bold uppercase tracking-widest text-amber-500">Properties Registered</p>
+						<h3 class="text-3xl font-black text-[#003580] mt-2"><?php echo number_format($properties_filtered); ?></h3>
+						<p class="text-xs text-gray-400 mt-1 font-medium">In selected period</p>
 					</div>
 				</div>
 			</div>

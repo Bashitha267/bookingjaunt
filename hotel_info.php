@@ -25,13 +25,15 @@ $amenities_stmt->execute([$property_id]);
 $amenities = $amenities_stmt->fetchAll();
 
 // Handle Availability Dates
-$dates_specified = isset($_GET['checkin']) && isset($_GET['checkout']);
-$check_in = $_GET['checkin'] ?? date('Y-m-d');
-$check_out = $_GET['checkout'] ?? date('Y-m-d', strtotime('+1 day'));
+$dates_specified = !empty($_GET['checkin']) && !empty($_GET['checkout']);
+$check_in = $dates_specified ? $_GET['checkin'] : '';
+$check_out = $dates_specified ? $_GET['checkout'] : '';
+$availability_check_in = $dates_specified ? $check_in : date('Y-m-d');
+$availability_check_out = $dates_specified ? $check_out : date('Y-m-d', strtotime('+1 day'));
 
 // Calculate Nights
-$date1 = new DateTime($check_in);
-$date2 = new DateTime($check_out);
+$date1 = new DateTime($availability_check_in);
+$date2 = new DateTime($availability_check_out);
 $nights = $date1->diff($date2)->days;
 if ($nights <= 0) $nights = 1;
 
@@ -52,7 +54,7 @@ $rooms_stmt = $pdo->prepare("
     WHERE pr.property_id = ?
     HAVING available_count > 0
 ");
-$rooms_stmt->execute([$check_out, $check_in, $property_id]);
+$rooms_stmt->execute([$availability_check_out, $availability_check_in, $property_id]);
 $rooms = $rooms_stmt->fetchAll();
 
 // Fetch Media
@@ -145,17 +147,15 @@ $review_count = $rating_stats['review_count'];
 
         function validateBooking(event, checkin, checkout, specified) {
             if (!specified) {
-                if (!confirm("You haven't explicitly selected dates. We've set them to the earliest available: \n\nCheck-in: " + checkin + "\nCheck-out: " + checkout + "\n\nWould you like to proceed with these dates?")) {
-                    event.preventDefault();
-                    document.getElementById('availability').scrollIntoView({ behavior: 'smooth' });
-                    // Highlight the date inputs
-                    const inputs = document.querySelectorAll('#availability input[type="date"]');
-                    inputs.forEach(i => {
-                        i.classList.add('ring-4', 'ring-brand-600/30');
-                        setTimeout(() => i.classList.remove('ring-4', 'ring-brand-600/30'), 3000);
-                    });
-                    return false;
-                }
+                event.preventDefault();
+                alert("Please select your check-in and check-out dates, then click Check Availability.");
+                document.getElementById('availability').scrollIntoView({ behavior: 'smooth' });
+                const inputs = document.querySelectorAll('#availability input[type="date"]');
+                inputs.forEach(i => {
+                    i.classList.add('ring-4', 'ring-brand-600/30');
+                    setTimeout(() => i.classList.remove('ring-4', 'ring-brand-600/30'), 3000);
+                });
+                return false;
             }
             return true;
         }
@@ -271,7 +271,7 @@ $review_count = $rating_stats['review_count'];
                     <label class="block text-[11px] font-bold text-neutral-500 uppercase mb-1.5 ml-1">Check-in Date</label>
                     <div class="relative">
                         <i class="far fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                        <input type="date" name="checkin" value="<?php echo $check_in; ?>" min="<?php echo date('Y-m-d'); ?>" 
+                           <input type="date" name="checkin" value="<?php echo htmlspecialchars($check_in); ?>" min="<?php echo date('Y-m-d'); ?>" 
                                class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
                     </div>
                 </div>
@@ -279,7 +279,7 @@ $review_count = $rating_stats['review_count'];
                     <label class="block text-[11px] font-bold text-neutral-500 uppercase mb-1.5 ml-1">Check-out Date</label>
                     <div class="relative">
                         <i class="far fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                        <input type="date" name="checkout" value="<?php echo $check_out; ?>" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>"
+                           <input type="date" name="checkout" value="<?php echo htmlspecialchars($check_out); ?>" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>"
                                class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
                     </div>
                 </div>

@@ -168,7 +168,7 @@ try {
     <title>Bookingjaunt - Find your next stay</title>
     <meta name="description" content="Discover Sri Lanka hotels, resorts, villas, and day outs with Bookingjaunt. Browse trusted stays, compare prices, and book your next Sri Lankan getaway with ease.">
     <meta name="keywords" content="Sri Lanka hotels, Sri Lanka resorts, Sri Lanka villas, Sri Lanka day outs, Sri Lanka accommodation, book hotels Sri Lanka, Colombo hotels, Kandy hotels, Galle hotels, Bookingjaunt">
-    <link rel="canonical" href="https://bookingjaunt.com/index.php">
+    <link rel="canonical" href="https://bookingjaunt.com/index">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Bookingjaunt - Sri Lanka Hotel & Stay Booking">
     <meta property="og:description" content="Find Sri Lanka hotels, resorts, villas, and day outs. Book trusted stays and explore top destinations with Bookingjaunt.">
@@ -450,7 +450,7 @@ try {
                 $meta = $type_meta[$p_type_lower] ?? ['label' => ucfirst(str_replace('_', ' ', $p_type)), 'img' => 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=400&q=80'];
                 
                 // Special handling for Dayouts link
-                $link = ($p_type_lower === 'dayouts') ? 'srilanka_dayouts.php' : 'hotels.php?type=' . urlencode($p_type);
+                $link = ($p_type_lower === 'dayouts') ? 'srilanka_dayouts' : 'hotels?type=' . urlencode($p_type);
                 ?>
                 <a href="<?php echo $link; ?>"
                     class="min-w-[260px] snap-start group cursor-pointer">
@@ -502,7 +502,7 @@ try {
                                 <p class="text-[10px] text-text-secondary uppercase font-bold tracking-tighter">Starting from</p>
                                 <p class="text-lg font-bold text-primary">LKR <?= number_format($hotel['price_lkr']) ?></p>
                             </div>
-                            <a href="property_details.php?id=<?= $hotel['id'] ?>" class="bg-secondary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">Book Now</a>
+                            <a href="property_details?id=<?= $hotel['id'] ?>" class="bg-secondary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">Book Now</a>
                         </div>
                     </div>
                 </div>
@@ -546,7 +546,7 @@ try {
                                 <p class="text-[10px] text-text-secondary uppercase font-bold tracking-tighter">Package price</p>
                                 <p class="text-lg font-bold text-primary">LKR <?= number_format($dayout['price_lkr']) ?></p>
                             </div>
-                            <a href="property_details.php?id=<?= $dayout['id'] ?>" class="bg-secondary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">Book Now</a>
+                            <a href="property_details?id=<?= $dayout['id'] ?>" class="bg-secondary hover:bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">Book Now</a>
                         </div>
                     </div>
                 </div>
@@ -810,6 +810,94 @@ try {
         });
     </script>
     <?php include 'footer.php'; ?>
+
+    <!-- Under Development Modal -->
+    <div id="devModal" class="fixed inset-0 z-[2000] flex items-center justify-center px-4 opacity-0 pointer-events-none transition-all duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onclick="closeDevModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative bg-white p-8 md:p-10 rounded-3xl shadow-2xl max-w-[460px] w-full text-center border border-slate-100 transform scale-95 transition-all duration-300">
+            <!-- Close Button -->
+            <button onclick="closeDevModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+
+            <!-- Construction/Development Icon -->
+            <div class="mb-6 flex justify-center">
+                <div class="w-20 h-20 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 shadow-inner">
+                    <i class="fas fa-screwdriver-wrench text-3xl animate-pulse"></i>
+                </div>
+            </div>
+
+            <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-[11px] font-bold uppercase tracking-wider rounded-full mb-3">
+                Under Development
+            </span>
+
+            <h2 class="text-2xl font-black text-slate-800 leading-tight mb-3">
+                Website Under Construction
+            </h2>
+
+            <p class="text-slate-500 text-sm mb-6 leading-relaxed font-medium">
+                Welcome to <span class="font-bold text-[#003580]">Bookingjaunt</span>! We are currently building and testing our platform. <strong>We are not accepting any bookings yet</strong>.
+            </p>
+
+            <div class="space-y-3">
+                <button onclick="closeDevModal()" class="block w-full bg-[#006ce4] hover:bg-[#003580] text-white py-3.5 rounded-2xl font-black text-base transition-all shadow-lg shadow-blue-500/20 hover:scale-[1.02] cursor-pointer">
+                    Got It, Let Me Explore
+                </button>
+            </div>
+
+            <p class="mt-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
+                Thank you for your patience!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const devModal = document.getElementById('devModal');
+            const modalContent = devModal.querySelector('.relative');
+            
+            // Show modal if not shown in this session
+            if (!sessionStorage.getItem('dev_modal_shown')) {
+                // Hide welcome modal if it exists to avoid overlapping
+                const welcomeModal = document.getElementById('welcomeModal');
+                if (welcomeModal) {
+                    welcomeModal.style.display = 'none';
+                }
+                
+                // Show dev modal with transition
+                setTimeout(() => {
+                    devModal.classList.remove('pointer-events-none');
+                    devModal.classList.add('opacity-100');
+                    modalContent.classList.remove('scale-95');
+                    modalContent.classList.add('scale-100');
+                }, 500);
+            }
+        });
+
+        function closeDevModal() {
+            const devModal = document.getElementById('devModal');
+            const modalContent = devModal.querySelector('.relative');
+            
+            devModal.classList.remove('opacity-100');
+            devModal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            devModal.classList.add('pointer-events-none');
+            
+            sessionStorage.setItem('dev_modal_shown', 'true');
+            
+            // After closing dev modal, show the welcome modal if user is not logged in
+            const welcomeModal = document.getElementById('welcomeModal');
+            if (welcomeModal) {
+                welcomeModal.style.display = '';
+                welcomeModal.classList.add('animate-fade-in');
+            }
+        }
+    </script>
+
     <!-- Guest Welcome Modal -->
     <?php if (!isset($_SESSION['user_id'])): ?>
         <div id="welcomeModal" class="fixed inset-0 z-[1000] flex items-center justify-center px-4">

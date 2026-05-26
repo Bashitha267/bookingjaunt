@@ -27,6 +27,63 @@ if (!is_dir($dest_upload_dir)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	$action = $_POST['action'];
 
+	if ($action === 'upload_bg') {
+		if (!isset($_FILES['bg_image']) || $_FILES['bg_image']['error'] !== UPLOAD_ERR_OK) {
+			$error = 'Please select a valid image file.';
+		} else {
+			$file = $_FILES['bg_image'];
+			$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+			$allowed_images = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
+			if (!in_array($ext, $allowed_images, true)) {
+				$error = 'Unsupported file type. Use JPG, PNG, WEBP, or GIF.';
+			} else {
+				$admin_bg_dir = __DIR__ . '/../../uploads/admin_bg/';
+				if (!is_dir($admin_bg_dir)) {
+					mkdir($admin_bg_dir, 0755, true);
+				}
+				
+				// Clean directory first to avoid hoarding files, but keep default.png
+				$files = glob($admin_bg_dir . '*');
+				foreach ($files as $f) {
+					if (is_file($f) && basename($f) !== 'default.png') {
+						unlink($f);
+					}
+				}
+
+				$filename = 'admin_bg_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+				$target_path = $admin_bg_dir . $filename;
+
+				if (move_uploaded_file($file['tmp_name'], $target_path)) {
+					// Store setting in database table admin_settings
+					$db_path = 'uploads/admin_bg/' . $filename;
+					$stmt = $pdo->prepare("INSERT INTO admin_settings (setting_key, setting_value) VALUES ('background_path', ?) 
+											ON DUPLICATE KEY UPDATE setting_value = ?");
+					$stmt->execute([$db_path, $db_path]);
+					$feedback = 'Admin background image updated.';
+				} else {
+					$error = 'Upload failed. Please try again.';
+				}
+			}
+		}
+	}
+
+	if ($action === 'reset_bg') {
+		// Delete any custom files in directory
+		$admin_bg_dir = __DIR__ . '/../../uploads/admin_bg/';
+		$files = glob($admin_bg_dir . '*');
+		foreach ($files as $f) {
+			if (is_file($f) && basename($f) !== 'default.png') {
+				unlink($f);
+			}
+		}
+		
+		// Update database setting to empty
+		$stmt = $pdo->prepare("UPDATE admin_settings SET setting_value = '' WHERE setting_key = 'background_path'");
+		$stmt->execute();
+		$feedback = 'Admin background reset to default.';
+	}
+
 	if ($action === 'upload') {
 		if (!isset($_FILES['media']) || $_FILES['media']['error'] !== UPLOAD_ERR_OK) {
 			$error = 'Please select a valid image or video file.';
@@ -199,6 +256,15 @@ $districts = [
 	'Puttalam', 'Ratnapura', 'Trincomalee', 'Vavuniya'
 ];
 
+$current_bg = '';
+try {
+	$stmt = $pdo->prepare("SELECT setting_value FROM admin_settings WHERE setting_key = 'background_path'");
+	$stmt->execute();
+	$current_bg = $stmt->fetchColumn();
+} catch (PDOException $e) {
+	// Table not found/error
+}
+
 function h($value) {
 	return htmlspecialchars((string)$value);
 }
@@ -246,6 +312,38 @@ function h($value) {
 					<?php echo h($error); ?>
 				</div>
 			<?php endif; ?>
+
+			<div class="bg-white rounded-2xl border border-gray-100 p-6">
+				<h2 class="text-lg font-bold text-[#003580] mb-4">Admin Background Styling</h2>
+				<div class="flex flex-col md:flex-row gap-8 items-start">
+					<div class="flex-1 w-full">
+						<form method="POST" enctype="multipart/form-data" class="space-y-4">
+							<input type="hidden" name="action" value="upload_bg">
+							<div>
+								<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Upload New Background Image</label>
+								<input type="file" name="bg_image" accept="image/*" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" required>
+							</div>
+							<div class="flex gap-3">
+								<button type="submit" class="px-5 py-2.5 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#0053b3] transition-colors">Apply Background</button>
+								<?php if (!empty($current_bg)): ?>
+									<button type="submit" name="action" value="reset_bg" class="px-5 py-2.5 rounded-xl bg-red-50 text-red-600 text-xs font-bold uppercase tracking-widest hover:bg-red-100 transition-colors">Reset to Default</button>
+								<?php endif; ?>
+							</div>
+						</form>
+					</div>
+					<div class="w-full md:w-64">
+						<p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Current Background Preview</p>
+						<?php if (!empty($current_bg)): ?>
+							<img src="../../<?php echo h($current_bg); ?>" class="w-full h-32 object-cover rounded-xl border border-gray-100 shadow-sm" alt="Current Background">
+						<?php else: ?>
+							<div class="w-full h-32 rounded-xl border border-dashed border-gray-200 flex flex-col items-center justify-center bg-gray-50/50 text-gray-400">
+								<i class="fas fa-image text-2xl mb-1"></i>
+								<span class="text-[10px] font-bold uppercase">Default Theme Active</span>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
 
 			<div class="bg-white rounded-2xl border border-gray-100 p-6">
 				<h2 class="text-lg font-bold text-[#003580] mb-4">Add Hero Slide</h2>

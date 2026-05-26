@@ -45,23 +45,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $package = $pkg_stmt->fetch();
             
             if ($package) {
-                $stmt = $pdo->prepare("INSERT INTO advertisements (user_id, ad_title, owner_name, package_id, package_name, package_type, package_price, package_duration_days, package_is_active, price, image_path, link_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
-                
-                $stmt->execute([
-                    $user_id,
-                    $ad_title,
-                    $owner_name,
-                    $package_id,
-                    $package['package_name'],
-                    $package['package_type'],
-                    $package['price'],
-                    $package['duration_days'],
-                    $package['is_active'],
-                    $package['price'], // Setting price to package price for record
-                    $image_path,
-                    $link_url
-                ]);
-                $success_msg = "Thank you for publishing your ad! Your payment was successful and the ad is now active.";
+                $placement_limits = [
+                    'horizontal_strip_ad' => 2,
+                    'sidebar_ad' => 5
+                ];
+
+                if (isset($placement_limits[$package['package_type']])) {
+                    $limit = $placement_limits[$package['package_type']];
+                    $count_stmt = $pdo->prepare("SELECT COUNT(*) FROM advertisements WHERE status = 'active' AND package_type = ?");
+                    $count_stmt->execute([$package['package_type']]);
+                    $active_count = (int) $count_stmt->fetchColumn();
+
+                    if ($active_count >= $limit) {
+                        $placement_label = $package['package_type'] === 'horizontal_strip_ad' ? 'horizontal' : 'vertical';
+                        $error_msg = "Sorry, the {$placement_label} placement is full. Only {$limit} {$placement_label} ads are allowed at a time.";
+                    }
+                }
+
+                if (empty($error_msg)) {
+                    $stmt = $pdo->prepare("INSERT INTO advertisements (user_id, ad_title, owner_name, package_id, package_name, package_type, package_price, package_duration_days, package_is_active, price, image_path, link_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
+                    
+                    $stmt->execute([
+                        $user_id,
+                        $ad_title,
+                        $owner_name,
+                        $package_id,
+                        $package['package_name'],
+                        $package['package_type'],
+                        $package['price'],
+                        $package['duration_days'],
+                        $package['is_active'],
+                        $package['price'], // Setting price to package price for record
+                        $image_path,
+                        $link_url
+                    ]);
+                    $success_msg = "Thank you for publishing your ad! Your payment was successful and the ad is now active.";
+                }
             } else {
                 $error_msg = "Invalid package selected.";
             }

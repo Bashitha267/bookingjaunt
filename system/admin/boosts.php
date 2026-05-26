@@ -22,6 +22,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$name, $duration, $price, $is_active, $id]);
             $msg = "Package updated successfully.";
         }
+        elseif ($_POST['action'] === 'create_package') {
+            $name = $_POST['name'];
+            $duration = $_POST['duration'];
+            $price = $_POST['price'];
+            $is_active = isset($_POST['is_active']) ? 1 : 0;
+
+            $stmt = $pdo->prepare("INSERT INTO boost_packages (name, duration_days, price_lkr, is_active) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$name, $duration, $price, $is_active]);
+            $msg = "Package created successfully.";
+        }
         elseif ($_POST['action'] === 'activate_boost') {
             $id = $_POST['boost_id'];
             $stmt = $pdo->prepare("UPDATE property_boosts SET status='active', payment_status='success' WHERE id=?");
@@ -92,6 +102,33 @@ $boosts = $pdo->query("
                     <h3 class="font-bold text-[#003580]">Boost Packages</h3>
                 </div>
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <form method="POST" class="border border-dashed border-gray-300 rounded-xl p-5 relative bg-gray-50/40">
+                        <input type="hidden" name="action" value="create_package">
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">New Package Name</label>
+                                <input type="text" name="name" required class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#003580]">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Duration (Days)</label>
+                                    <input type="number" name="duration" min="1" required class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#003580]">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Price (LKR)</label>
+                                    <input type="number" name="price" min="0" step="0.01" required class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#003580]">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" name="is_active" checked class="w-4 h-4 text-[#003580]">
+                                <label class="text-sm font-bold text-gray-600 cursor-pointer">Active</label>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-right">
+                            <button type="submit" class="bg-[#003580] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-[#002560] transition-colors shadow-sm">Create Package</button>
+                        </div>
+                    </form>
                     <?php foreach ($packages as $pkg): ?>
                     <form method="POST" class="border border-gray-200 rounded-xl p-5 relative">
                         <input type="hidden" name="action" value="edit_package">

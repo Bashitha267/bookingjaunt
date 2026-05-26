@@ -54,7 +54,7 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                             </div>
                         <div class="py-1">
                             <?php 
-                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? 'system/admin/dashboard.php' : 'system/hotel/dashboard.php';
+                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? 'system/admin/dashboard' : 'system/hotel/dashboard';
                             ?>
                             <a href="<?php echo $dash_link; ?>" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="fas fa-columns text-neutral-400 w-5"></i>
@@ -196,7 +196,7 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                                 <p class="text-[13px] font-bold text-primary truncate"><?php echo htmlspecialchars($_SESSION['user_name']); ?></p>
                             </div>
                             <?php 
-                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? 'system/admin/dashboard.php' : 'system/hotel/dashboard.php';
+                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? 'system/admin/dashboard' : 'system/hotel/dashboard';
                             ?>
                             <a href="<?php echo $dash_link; ?>" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="fas fa-columns text-neutral-400"></i>

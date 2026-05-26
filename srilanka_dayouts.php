@@ -35,8 +35,8 @@ try {
     $children = (int) ($_GET['children'] ?? 0);
     $selected_budget = $_GET['budget'] ?? '';
     
-    $params = ["dayouts"];
-    $where = ["p.business_type = ?"];
+    $params = [$adults, "dayouts", "dayout"];
+    $where = ["p.business_type IN (?, ?)"];
     
     if (!empty($q)) {
         $where[] = "(p.property_name LIKE ? OR p.city LIKE ? OR p.district LIKE ? OR p.closest_main_town LIKE ?)";
@@ -46,10 +46,6 @@ try {
         $params[] = "%$q%";
     }
     
-    // Capacity filter
-    $where[] = "(r.adults >= ?)";
-    $params[] = $adults;
-
     if (!empty($selected_budget)) {
         if ($selected_budget == '0-5000') {
             $where[] = "r.price_lkr <= 5000";
@@ -64,21 +60,22 @@ try {
 
     $where_sql = implode(" AND ", $where);
 
-    $dayout_query = "SELECT p.*, r.room_name as pkg_name, r.price_lkr, r.room_image as pkg_image, r.adults,
-              (pb.id IS NOT NULL) as is_featured
-              FROM properties p 
-              JOIN property_rooms r ON r.property_id = p.id
-              LEFT JOIN property_boosts pb ON pb.property_id = p.id AND pb.status = 'active' 
-                   AND pb.start_date <= CURDATE() AND DATE_ADD(pb.start_date, INTERVAL pb.duration_days DAY) >= CURDATE()
-              WHERE $where_sql
-              AND r.price_lkr = (
-                  SELECT MIN(price_lkr) FROM property_rooms r2 
-                  WHERE r2.property_id = p.id 
-                  AND r2.adults >= ?
-              )
-              GROUP BY p.id
-              ORDER BY is_featured DESC, p.created_at DESC";
-    $params[] = $adults; // For subquery
+        $dayout_query = "SELECT p.*, r.room_name as pkg_name, r.price_lkr, r.room_image as pkg_image, r.adults,
+                (pb.id IS NOT NULL) as is_featured
+                FROM properties p 
+                LEFT JOIN property_rooms r 
+                    ON r.id = (
+                        SELECT r2.id FROM property_rooms r2
+                        WHERE r2.property_id = p.id
+                        AND r2.adults >= ?
+                        ORDER BY r2.price_lkr ASC
+                        LIMIT 1
+                    )
+                LEFT JOIN property_boosts pb ON pb.property_id = p.id AND pb.status = 'active' 
+                    AND pb.start_date <= CURDATE() AND DATE_ADD(pb.start_date, INTERVAL pb.duration_days DAY) >= CURDATE()
+                WHERE $where_sql
+                ORDER BY is_featured DESC, p.created_at DESC";
+        // Adults placeholder is first in the params list.
 
     $stmt_dayouts = $pdo->prepare($dayout_query);
     $stmt_dayouts->execute($params);
@@ -93,7 +90,7 @@ try {
                        JOIN property_rooms r ON r.property_id = p.id
                        LEFT JOIN reviews rev ON rev.property_id = p.id
                        WHERE pb.status = 'active' 
-                       AND p.business_type = 'dayouts'
+                       AND p.business_type IN ('dayouts', 'dayout')
                        AND pb.start_date <= CURDATE() 
                        AND DATE_ADD(pb.start_date, INTERVAL pb.duration_days DAY) >= CURDATE()
                        AND r.price_lkr = (
@@ -133,7 +130,7 @@ try {
     <title>Sri Lanka Dayouts - Bookingjaunt</title>
     <meta name="description" content="Explore Sri Lanka dayouts and one-day experiences. Compare packages, prices, and locations to plan the perfect day trip with Bookingjaunt.">
     <meta name="keywords" content="Sri Lanka dayouts, day trips Sri Lanka, day packages Sri Lanka, one day tours Sri Lanka, book dayouts">
-    <link rel="canonical" href="https://bookingjaunt.com/srilanka_dayouts.php">
+    <link rel="canonical" href="https://bookingjaunt.com/srilanka_dayouts">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Sri Lanka Dayouts & Day Packages - Bookingjaunt">
     <meta property="og:description" content="Find the best Sri Lanka dayouts and one-day packages with trusted listings and great prices.">
@@ -410,7 +407,8 @@ try {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
             <?php foreach($dayouts as $dayout): 
                 $img = !empty($dayout['cover_image']) ? $dayout['cover_image'] : (!empty($dayout['pkg_image']) ? $dayout['pkg_image'] : 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=400&q=80');
-                $display_price = ($currency == 'USD') ? ceil($dayout['price_lkr'] / $exchange_rate) : $dayout['price_lkr'];
+                $base_price = isset($dayout['price_lkr']) ? (float)$dayout['price_lkr'] : 0;
+                $display_price = ($currency == 'USD') ? ceil($base_price / $exchange_rate) : $base_price;
             ?>
             <div class="group bg-white rounded-3xl border border-neutral-100 overflow-hidden hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 flex flex-col h-full cursor-pointer" onclick="window.location.href='hotel_info.php?id=<?php echo $dayout['id']; ?>'">
                 <!-- Image Section -->
