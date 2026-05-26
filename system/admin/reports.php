@@ -7,13 +7,15 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 	exit();
 }
 
+// 1. Determine the Year to filter
+$selected_year = $_GET['year'] ?? date('Y');
 $day = $_GET['day'] ?? '';
 $month = $_GET['month'] ?? '';
 $year = $_GET['year'] ?? '';
 
 $date_filter_clause = '';
 $date_params = [];
-$date_label = 'This Month';
+$date_label = 'All time';
 
 if ($day !== '') {
 	$date_filter_clause = "DATE(created_at) = ?";
@@ -22,17 +24,11 @@ if ($day !== '') {
 } elseif ($month !== '') {
 	$date_filter_clause = "DATE_FORMAT(created_at, '%Y-%m') = ?";
 	$date_params = [$month];
-	$date_label = 'Month ' . date('F Y', strtotime($month . '-01'));
+	$date_label = 'Month ' . $month;
 } elseif ($year !== '') {
 	$date_filter_clause = "YEAR(created_at) = ?";
 	$date_params = [$year];
 	$date_label = 'Year ' . $year;
-} else {
-	// Default to current month
-	$month = date('Y-m');
-	$date_filter_clause = "DATE_FORMAT(created_at, '%Y-%m') = ?";
-	$date_params = [$month];
-	$date_label = date('F Y');
 }
 
 $total_bookings = (int)$pdo->query("SELECT COUNT(*) FROM bookings")->fetchColumn();
@@ -45,64 +41,43 @@ $total_active_boosts = (int)$pdo->query("SELECT COUNT(*) FROM property_boosts WH
 $total_boost_revenue = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM property_boosts WHERE payment_status = 'success'")->fetchColumn();
 
 $commission_rate = 0.2;
-$commission_stmt = $pdo->prepare("SELECT COALESCE(SUM(total_price), 0) FROM bookings WHERE booking_type = 'online' AND " . ($date_filter_clause ? $date_filter_clause : "1=1"));
-$commission_stmt->execute($date_params);
-$commission_total = $commission_stmt->fetchColumn() * $commission_rate;
-
-$paid_stmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM hotel_service_payments WHERE status = 'approved' AND " . ($date_filter_clause ? $date_filter_clause : "1=1"));
-$paid_stmt->execute($date_params);
-$commission_paid = $paid_stmt->fetchColumn();
-
+$commission_start = date('Y-m-01');
+$commission_end = date('Y-m-t');
+$commission_stmt = $pdo->prepare("SELECT
+						COALESCE(SUM(total_price), 0) AS total_price,
+						COALESCE(SUM(amount_paid), 0) AS total_paid
+					FROM bookings
+					WHERE booking_type = 'online'
+						AND DATE(created_at) BETWEEN ? AND ?");
+$commission_stmt->execute([$commission_start, $commission_end]);
+$commission_row = $commission_stmt->fetch();
+$commission_total = ($commission_row['total_price'] ?? 0) * $commission_rate;
+$commission_paid = ($commission_row['total_paid'] ?? 0) * $commission_rate;
 $commission_due = max(0, $commission_total - $commission_paid);
 
-$bookings_filtered_sql = "SELECT COUNT(*) FROM bookings" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$bookings_filtered_stmt = $pdo->prepare($bookings_filtered_sql);
-$bookings_filtered_stmt->execute($date_params);
-$bookings_filtered = (int)$bookings_filtered_stmt->fetchColumn();
-
-$users_filtered_sql = "SELECT COUNT(*) FROM users WHERE role != 'admin'" . ($date_filter_clause ? " AND $date_filter_clause" : '');
-$users_filtered_stmt = $pdo->prepare($users_filtered_sql);
-$users_filtered_stmt->execute($date_params);
-$users_filtered = (int)$users_filtered_stmt->fetchColumn();
-
-$properties_filtered_sql = "SELECT COUNT(*) FROM properties" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$properties_filtered_stmt = $pdo->prepare($properties_filtered_sql);
-$properties_filtered_stmt->execute($date_params);
-$properties_filtered = (int)$properties_filtered_stmt->fetchColumn();
-
-$revenue_filtered_sql = "SELECT COALESCE(SUM(total_price), 0) FROM bookings" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$revenue_filtered_stmt = $pdo->prepare($revenue_filtered_sql);
-$revenue_filtered_stmt->execute($date_params);
-$revenue_filtered = (float)$revenue_filtered_stmt->fetchColumn();
-
-$boosts_filtered_sql = "SELECT COUNT(*) FROM property_boosts" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$boosts_filtered_stmt = $pdo->prepare($boosts_filtered_sql);
-$boosts_filtered_stmt->execute($date_params);
-$boosts_filtered = (int)$boosts_filtered_stmt->fetchColumn();
-
-$boost_revenue_filtered_sql = "SELECT COALESCE(SUM(amount), 0) FROM property_boosts" . ($date_filter_clause ? " WHERE $date_filter_clause" : '');
-$boost_revenue_filtered_stmt = $pdo->prepare($boost_revenue_filtered_sql);
-$boost_revenue_filtered_stmt->execute($date_params);
-$boost_revenue_filtered = (float)$boost_revenue_filtered_stmt->fetchColumn();
-
-$chart_start = date('Y-m-01', strtotime('-11 months'));
+// 2. FIXED: Generate Keys for JAN to DEC of the SELECTED YEAR
 $chart_keys = [];
 $chart_labels = [];
-for ($i = 11; $i >= 0; $i--) {
-	$chart_keys[] = date('Y-m', strtotime("-$i months"));
-	$chart_labels[] = date('M Y', strtotime("-$i months"));
+for ($m = 1; $m <= 12; $m++) {
+    $month_num = str_pad($m, 2, "0", STR_PAD_LEFT);
+    $chart_keys[] = $selected_year . '-' . $month_num;
+    $chart_labels[] = date('M', mktime(0, 0, 0, $m, 1)) . ' ' . $selected_year;
 }
 
-$bookings_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM bookings WHERE created_at >= ? GROUP BY ym");
-$bookings_stmt->execute([$chart_start]);
+$start_of_year = $selected_year . '-01-01 00:00:00';
+$end_of_year = $selected_year . '-12-31 23:59:59';
+
+// 3. Updated SQL to filter strictly by the selected year
+$bookings_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM bookings WHERE created_at BETWEEN ? AND ? GROUP BY ym");
+$bookings_stmt->execute([$start_of_year, $end_of_year]);
 $bookings_rows = $bookings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
-$properties_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM properties WHERE created_at >= ? GROUP BY ym");
-$properties_stmt->execute([$chart_start]);
+$properties_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM properties WHERE created_at BETWEEN ? AND ? GROUP BY ym");
+$properties_stmt->execute([$start_of_year, $end_of_year]);
 $properties_rows = $properties_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
-$users_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM users WHERE role != 'admin' AND created_at >= ? GROUP BY ym");
-$users_stmt->execute([$chart_start]);
+$users_stmt = $pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS count FROM users WHERE role != 'admin' AND created_at BETWEEN ? AND ? GROUP BY ym");
+$users_stmt->execute([$start_of_year, $end_of_year]);
 $users_rows = $users_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $booking_series = [];
@@ -116,7 +91,6 @@ foreach ($chart_keys as $key) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,24 +100,11 @@ foreach ($chart_keys as $key) {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<style>
-		body {
-			font-family: 'Plus Jakarta Sans', sans-serif;
-			background-color: #f8fafc;
-		}
-
-		@media print {
-			.no-print {
-				display: none;
-			}
-
-			body {
-				background: white;
-			}
-		}
+		body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+		@media print { .no-print { display: none; } body { background: white; } }
 	</style>
 </head>
-
-<body class="flex min-h-screen overflow-hidden">
+<body class="flex min-h-screen">
 
 	<?php include 'sidebar.php'; ?>
 
@@ -155,24 +116,17 @@ foreach ($chart_keys as $key) {
 				</button>
 				<div>
 					<h1 class="text-2xl font-black text-[#003580]">Reports</h1>
-					<p class="text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block">Booking, users, and property insights</p>
+					<p class="text-xs text-gray-500 font-bold uppercase tracking-widest hidden sm:block">Annual Insights for <?php echo $selected_year; ?></p>
 				</div>
 			</div>
+			
 			<div class="no-print flex flex-wrap items-end gap-4">
 				<form method="GET" class="flex flex-wrap gap-3 items-end">
 					<div>
-						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Day</label>
-						<input type="date" name="day" value="<?php echo htmlspecialchars($day); ?>" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Year Filter</label>
+						<input type="number" name="year" min="2000" max="2100" value="<?php echo htmlspecialchars($selected_year); ?>" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
 					</div>
-					<div>
-						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Month</label>
-						<input type="month" name="month" value="<?php echo htmlspecialchars($month); ?>" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
-					</div>
-					<div>
-						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Year</label>
-						<input type="number" name="year" min="2000" max="2100" value="<?php echo htmlspecialchars($year); ?>" placeholder="2026" class="mt-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm">
-					</div>
-					<button class="px-5 py-2 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest">Apply</button>
+					<button class="px-5 py-2 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest">Filter Year</button>
 					<a href="reports.php" class="px-5 py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-widest">Reset</a>
 				</form>
 				<button id="download-pdf" class="ml-auto px-5 py-2 rounded-xl bg-[#003580] text-white text-xs font-bold uppercase tracking-widest">
@@ -184,10 +138,10 @@ foreach ($chart_keys as $key) {
 		<div class="p-4 lg:p-8 space-y-8">
 			<div class="bg-white rounded-2xl border border-gray-100 p-6">
 				<div class="flex items-center justify-between">
-					<h2 class="font-bold text-[#003580]">Commission Details</h2>
-					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"><?php echo htmlspecialchars($date_label); ?></span>
+					<h2 class="font-bold text-[#003580]">Commission (This Month)</h2>
+					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"><?php echo date('F Y'); ?></span>
 				</div>
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div class="p-5 rounded-2xl border border-gray-100">
 						<p class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Paid Commission</p>
 						<h3 class="text-xl font-black text-[#003580] mt-2">LKR <?php echo number_format($commission_paid, 2); ?></h3>
@@ -201,26 +155,30 @@ foreach ($chart_keys as $key) {
 				</div>
 			</div>
 
-			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+			<div class="w-full">
 				<div class="bg-white rounded-2xl border border-gray-100 p-6">
 					<h3 class="font-bold text-[#003580] mb-4">Growth Trends (Last 12 Months)</h3>
 					<canvas id="growthChart" height="220"></canvas>
 				</div>
-				<div class="grid grid-cols-1 gap-4 h-full">
-					<div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center h-full">
-						<p class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Total Bookings</p>
-						<h3 class="text-3xl font-black text-[#003580] mt-2"><?php echo number_format($bookings_filtered); ?></h3>
-						<p class="text-xs text-gray-400 mt-1 font-medium">In selected period</p>
-					</div>
-					<div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center h-full">
-						<p class="text-[10px] font-bold uppercase tracking-widest text-emerald-500">New Users Registered</p>
-						<h3 class="text-3xl font-black text-[#003580] mt-2"><?php echo number_format($users_filtered); ?></h3>
-						<p class="text-xs text-gray-400 mt-1 font-medium">In selected period</p>
-					</div>
-					<div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col justify-center h-full">
-						<p class="text-[10px] font-bold uppercase tracking-widest text-amber-500">Properties Registered</p>
-						<h3 class="text-3xl font-black text-[#003580] mt-2"><?php echo number_format($properties_filtered); ?></h3>
-						<p class="text-xs text-gray-400 mt-1 font-medium">In selected period</p>
+				<div class="bg-white rounded-2xl border border-gray-100 p-6">
+					<h3 class="font-bold text-[#003580] mb-4">Snapshot</h3>
+					<div class="space-y-4">
+						<div class="flex justify-between text-[11px] font-bold uppercase tracking-widest text-gray-500">
+							<span>Paid vs Due</span>
+							<span>LKR <?php echo number_format($total_paid, 2); ?> / LKR <?php echo number_format($total_due, 2); ?></span>
+						</div>
+						<div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+							<?php $paid_percent = $total_revenue > 0 ? round(($total_paid / $total_revenue) * 100) : 0; ?>
+							<div class="h-full bg-[#006ce4]" style="width: <?php echo $paid_percent; ?>%"></div>
+						</div>
+						<div class="grid grid-cols-1 gap-4">
+							<div class="p-4 rounded-xl bg-blue-50 text-blue-800 text-sm">
+								Bookings and revenue trends update monthly based on booking creation dates.
+							</div>
+							<div class="p-4 rounded-xl bg-emerald-50 text-emerald-800 text-sm">
+								Use the filter above to see how activity changes by day, month, or year.
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -243,42 +201,58 @@ foreach ($chart_keys as $key) {
 						label: 'Bookings',
 						data: bookingsData,
 						borderColor: '#006ce4',
-						backgroundColor: 'rgba(0, 108, 228, 0.15)',
-						tension: 0.35,
-						fill: true
+						backgroundColor: 'rgba(0, 108, 228, 0.1)',
+						tension: 0.4,
+						fill: true,
+						pointRadius: 5
 					},
 					{
 						label: 'Properties',
 						data: propertiesData,
 						borderColor: '#f59e0b',
-						backgroundColor: 'rgba(245, 158, 11, 0.12)',
-						tension: 0.35,
-						fill: true
+						backgroundColor: 'rgba(245, 158, 11, 0.05)',
+						tension: 0.4,
+						fill: true,
+						pointRadius: 5
 					},
 					{
 						label: 'Users',
 						data: usersData,
 						borderColor: '#10b981',
-						backgroundColor: 'rgba(16, 185, 129, 0.12)',
-						tension: 0.35,
-						fill: true
+						backgroundColor: 'rgba(16, 185, 129, 0.05)',
+						tension: 0.4,
+						fill: true,
+						pointRadius: 5
 					}
 				]
 			},
 			options: {
 				responsive: true,
+				maintainAspectRatio: false,
 				plugins: {
 					legend: {
-						position: 'bottom'
+						position: 'bottom',
+						labels: {
+							padding: 25,
+							usePointStyle: true,
+							font: { size: 12, weight: '600' }
+						}
 					}
 				},
 				scales: {
 					y: {
 						beginAtZero: true,
-						ticks: {
-							precision: 0
-						}
+						ticks: { precision: 0, color: '#64748b' },
+						grid: { color: '#f1f5f9' }
+					},
+					x: {
+						ticks: { color: '#64748b' },
+						grid: { display: false }
 					}
+				},
+				interaction: {
+					intersect: false,
+					mode: 'index'
 				}
 			}
 		});
@@ -286,8 +260,11 @@ foreach ($chart_keys as $key) {
 		document.getElementById('download-pdf').addEventListener('click', () => {
 			window.print();
 		});
+
+		function toggleSidebar() {
+			const sidebar = document.querySelector('aside');
+			if(sidebar) sidebar.classList.toggle('-translate-x-full');
+		}
 	</script>
-
 </body>
-
 </html>
