@@ -21,7 +21,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </a>
         <a href="actions.php" class="sidebar-link <?php echo $current_page == 'actions.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group">
             <i class="fas fa-clipboard-check w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
-            Approvals
+            Edit Approvals
+        </a>
+        <a href="pending_properties.php" class="sidebar-link <?php echo $current_page == 'pending_properties.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group">
+            <i class="fas fa-check-to-slot w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            New Approvals
         </a>
         <a href="properties.php" class="sidebar-link <?php echo $current_page == 'properties.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
             <i class="fas fa-hotel w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>

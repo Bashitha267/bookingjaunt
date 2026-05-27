@@ -27,8 +27,8 @@ if ($edit_id) {
     $stmt->execute([$edit_id]);
     $edit_data = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Safety check: ensure owner or admin
-    if ($edit_data && $edit_data['owner_id'] != $_SESSION['user_id'] && $_SESSION['role'] !== 'admin') {
+    // Safety check: ensure owner, admin, or manager
+    if ($edit_data && $edit_data['owner_id'] != $_SESSION['user_id'] && !in_array($_SESSION['role'], ['admin', 'manager'])) {
         header("Location: system/hotel/dashboard.php");
         exit();
     }

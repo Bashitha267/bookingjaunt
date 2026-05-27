@@ -36,7 +36,7 @@ try {
     $selected_budget = $_GET['budget'] ?? '';
     
     $params = [$adults, "dayouts", "dayout"];
-    $where = ["p.business_type IN (?, ?)"];
+    $where = ["p.business_type IN (?, ?)", "p.approval_status = 'approved'"];
     
     if (!empty($q)) {
         $where[] = "(p.property_name LIKE ? OR p.city LIKE ? OR p.district LIKE ? OR p.closest_main_town LIKE ?)";

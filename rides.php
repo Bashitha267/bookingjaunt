@@ -26,7 +26,7 @@ try {
 
     // --- Build WHERE clause ---
     $params = [];
-    $where  = ["p.business_type = 'vehicle'"];
+    $where  = ["p.business_type = 'vehicle'", "p.approval_status = 'approved'"];
 
     if (!empty($q)) {
         $where[]  = "(p.property_name LIKE ? OR p.city LIKE ? OR p.district LIKE ? OR p.closest_main_town LIKE ?)";

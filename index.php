@@ -21,7 +21,7 @@ try {
     $type = $_GET['type'] ?? 'hotel';
 
     $params = [];
-    $where = ["p.business_type = ?"];
+    $where = ["p.business_type = ?", "p.approval_status = 'approved'"];
     $params[] = $type;
 
     if (!empty($q)) {
@@ -52,7 +52,7 @@ try {
     $where_sql = implode(" AND ", $where);
 
     // Fetch unique property types for the "Browse by" section
-    $stmt_types = $pdo->query("SELECT DISTINCT business_type FROM properties WHERE business_type IS NOT NULL");
+    $stmt_types = $pdo->query("SELECT DISTINCT business_type FROM properties WHERE business_type IS NOT NULL AND approval_status = 'approved'");
     $db_property_types = $stmt_types->fetchAll(PDO::FETCH_COLUMN);
 
     // Fetch properties and their cheapest matching room

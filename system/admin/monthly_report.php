@@ -7,6 +7,38 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit();
 }
 
+// Handle CSV Download
+if (isset($_GET['csv_month'])) {
+    $m = (int)$_GET['csv_month'];
+    $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+    
+    $month_start = sprintf('%04d-%02d-01', $year, $m);
+    $month_end   = date('Y-m-t', strtotime($month_start));
+    
+    $stmt = $pdo->prepare("
+        SELECT p.property_name, p.business_type, COUNT(b.id) AS total_bookings, COALESCE(SUM(b.amount_paid),0) AS total_revenue
+        FROM properties p
+        LEFT JOIN bookings b ON p.id = b.property_id AND DATE(b.created_at) BETWEEN ? AND ?
+        GROUP BY p.id
+        ORDER BY total_bookings DESC, p.property_name ASC
+    ");
+    $stmt->execute([$month_start, $month_end]);
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="property_bookings_' . date('F', mktime(0,0,0,$m,1)) . '_' . $year . '.csv"');
+    
+    $output = fopen('php://output', 'w');
+    fputcsv($output, ['Property Name', 'Business Type', 'Total Bookings', 'Total Revenue (LKR)']);
+    
+    foreach ($results as $row) {
+        fputcsv($output, $row);
+    }
+    
+    fclose($output);
+    exit();
+}
+
 // Year selector
 $selected_year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $min_year_stmt = $pdo->query("SELECT MIN(YEAR(created_at)) FROM bookings");
@@ -594,12 +626,18 @@ if ($is_print && isset($monthly_data[$print_month])) {
 
                     <?php endif; ?>
 
-                    <!-- Download Button -->
                     <a href="monthly_report.php?year=<?php echo $selected_year; ?>&property_id=<?php echo $selected_pid; ?>&print=<?php echo $m; ?>"
                        target="_blank" class="download-btn">
                         <i class="fas fa-file-download"></i>
                         Download <?php echo $md['month_label']; ?> Report
                     </a>
+                    <?php if ($selected_pid === 0): ?>
+                    <a href="monthly_report.php?year=<?php echo $selected_year; ?>&csv_month=<?php echo $m; ?>"
+                       class="download-btn" style="margin-top:8px; border-color:#16a34a; color:#16a34a;">
+                        <i class="fas fa-file-csv"></i>
+                        CSV: Property Bookings
+                    </a>
+                    <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
             </div>

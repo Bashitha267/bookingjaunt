@@ -11,7 +11,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <button onclick="toggleSidebar()" class="lg:hidden text-white/60 hover:text-white transition-colors">
             <i class="fas fa-times text-xl"></i>
         </button>
-        <p class="text-[10px] font-bold text-sky-300 mt-1 uppercase tracking-widest opacity-80 lg:block hidden">Manager Console</p>
+        <p class="text-[10px] font-bold text-sky-300 mt-1 uppercase tracking-widest opacity-80 lg:block hidden">Staff Console</p>
     </div>
 
     <nav class="flex-1 mt-4 px-3 space-y-1 overflow-y-auto custom-scrollbar">
@@ -43,10 +43,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-users w-5 text-center text-sky-400 group-hover:text-[#0ea5e9]"></i>
             User Details
         </a>
-        <a href="manage_staff.php" class="sidebar-link <?php echo $current_page == 'manage_staff.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-emerald-300">
-            <i class="fas fa-sitemap w-5 text-center text-emerald-400 group-hover:text-emerald-300"></i>
-            Manage Staff
-        </a>
         <a href="boosts.php" class="sidebar-link <?php echo $current_page == 'boosts.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group">
             <i class="fas fa-rocket w-5 text-center text-sky-400 group-hover:text-[#0ea5e9]"></i>
             Boosts
@@ -76,12 +72,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
     <div class="p-4 bg-white/5 m-4 rounded-2xl border border-white/10 lg:block hidden backdrop-blur-md">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-[#0ea5e9] rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-sky-900/30">
-                <?php echo substr($_SESSION['user_name'] ?? 'M', 0, 1); ?>
+            <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-900/30">
+                <?php echo substr($_SESSION['user_name'] ?? 'S', 0, 1); ?>
             </div>
             <div>
-                <p class="text-xs font-bold text-white truncate w-32"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Manager'); ?></p>
-                <p class="text-[9px] text-sky-300 uppercase tracking-wider font-bold">Manager</p>
+                <p class="text-xs font-bold text-white truncate w-32"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Staff'); ?></p>
+                <p class="text-[9px] text-emerald-300 uppercase tracking-wider font-bold">Site Staff</p>
             </div>
         </div>
     </div>
@@ -94,7 +90,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $bg_url = '../../uploads/admin_bg/default.png';
 if (isset($pdo)) {
     try {
-        // First try to get user's specific background
         if (isset($_SESSION['user_id'])) {
             $stmt = $pdo->prepare("SELECT manager_bg FROM users WHERE id = ?");
             $stmt->execute([$_SESSION['user_id']]);
@@ -102,7 +97,6 @@ if (isset($pdo)) {
             if (!empty($user_bg)) {
                 $bg_url = '../../' . $user_bg;
             } else {
-                // Fallback to admin default
                 $stmt = $pdo->prepare("SELECT setting_value FROM admin_settings WHERE setting_key = 'background_path'");
                 $stmt->execute();
                 $db_bg = $stmt->fetchColumn();
@@ -116,7 +110,7 @@ if (isset($pdo)) {
 ?>
 
 <style>
-    /* Extreme Glassmorphism Styles for Manager/Staff */
+    /* Extreme Glassmorphism Styles for Staff */
     body {
         background: linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.45)), url('<?php echo $bg_url; ?>') no-repeat center center fixed !important;
         background-size: cover !important;
@@ -138,7 +132,7 @@ if (isset($pdo)) {
 
     .sidebar-link.active {
         background-color: rgba(255, 255, 255, 0.15);
-        border-left: 4px solid #0ea5e9;
+        border-left: 4px solid #34d399; /* Emerald 400 */
         color: white;
         border-radius: 0 12px 12px 0;
         margin-left: -12px;
@@ -177,16 +171,15 @@ if (isset($pdo)) {
     
     .custom-input:focus {
         background: rgba(0, 0, 0, 0.3) !important;
-        border-color: #0ea5e9 !important;
+        border-color: #34d399 !important;
         outline: none;
-        box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+        box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
     }
 
     .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     
-    /* Table styles for glass mode */
     table thead { background: rgba(255,255,255,0.05); }
     table th { color: rgba(255,255,255,0.7) !important; text-transform: uppercase; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; }
     table tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
