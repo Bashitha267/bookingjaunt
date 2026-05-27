@@ -10,7 +10,7 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
         <!-- Mobile Top Row / Desktop Left -->
         <div class="flex items-center justify-between w-full xl:w-auto">
             <!-- 1. Logo -->
-            <a href="index.php" class="flex-shrink-0 group no-underline">
+            <a href="/" class="flex-shrink-0 group no-underline">
                 <span class="navbar-logo-text text-white text-xl xl:text-2xl font-black tracking-tighter font-['Outfit'] transition-transform group-hover:scale-105 block">
                     Booking<span class="text-[#febb02]">Jaunt</span>
                 </span>
@@ -20,10 +20,11 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
             // Global Nav Items definition
             if (!isset($nav_items)) {
                 $nav_items = [
-                    ['id' => 'home', 'label' => 'Home', 'icon' => 'fa-home', 'url' => 'index.php'],
-                    ['id' => 'hotel', 'label' => 'Stays', 'icon' => 'fa-bed', 'url' => 'hotels.php'],
-                    ['id' => 'dayouts', 'label' => 'Dayouts', 'icon' => 'fa-sun', 'url' => 'srilanka_dayouts.php'],
-                    ['id' => 'reception', 'label' => 'Reception', 'icon' => 'fa-synagogue', 'url' => 'hotels.php?type=reception_hall'],
+                    ['id' => 'home', 'label' => 'Home', 'icon' => 'fa-home', 'url' => '/'],
+                    ['id' => 'hotel', 'label' => 'Stays', 'icon' => 'fa-bed', 'url' => '/hotels'],
+                    ['id' => 'dayouts', 'label' => 'Dayouts', 'icon' => 'fa-sun', 'url' => '/srilanka_dayouts'],
+                    ['id' => 'rides', 'label' => 'Rides', 'icon' => 'fa-car', 'url' => '/rides'],
+                    ['id' => 'reception', 'label' => 'Reception', 'icon' => 'fa-synagogue', 'url' => '/hotels?type=reception_hall'],
                 ];
             }
             $current_currency = $_SESSION['currency'] ?? 'LKR';
@@ -54,36 +55,36 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                             </div>
                         <div class="py-1">
                             <?php 
-                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? 'system/admin/dashboard' : 'system/hotel/dashboard';
+                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? '/system/admin/dashboard' : '/system/hotel/dashboard';
                             ?>
                             <a href="<?php echo $dash_link; ?>" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="fas fa-columns text-neutral-400 w-5"></i>
                                 <span>Dashboard</span>
                             </a>
-                            <a href="manage_account.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
+                            <a href="/manage_account" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="far fa-user-circle text-neutral-400 w-5"></i>
                                 <span>Manage Account</span>
                             </a>
-                            <a href="mybookings.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
+                            <a href="/mybookings" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="fas fa-briefcase text-neutral-400 w-5"></i>
                                 <span>My Bookings</span>
                             </a>
-                            <a href="property_wizard.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
+                            <a href="/property_wizard" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="fas fa-plus-circle text-neutral-400 w-5"></i>
                                 <span>List your property</span>
                             </a>
-                            <a href="logout.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-red-600 hover:bg-red-50 transition-colors border-t border-neutral-100 no-underline mt-1">
+                            <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-red-600 hover:bg-red-50 transition-colors border-t border-neutral-100 no-underline mt-1">
                                 <i class="fas fa-sign-out-alt w-5"></i>
                                 <span>Logout</span>
                             </a>
                         </div>
                         <?php else: ?>
                             <div class="p-4 flex flex-col gap-3">
-                                <a href="login.php" class="w-full bg-[#003580] text-white text-center py-2.5 rounded-lg font-bold text-[14px] hover:bg-[#002b66] transition-colors no-underline">Sign in</a>
-                                <a href="register.php" class="w-full bg-white border border-[#003580] text-[#003580] text-center py-2.5 rounded-lg font-bold text-[14px] hover:bg-neutral-50 transition-colors no-underline">Create account</a>
+                                <a href="/login" class="w-full bg-[#003580] text-white text-center py-2.5 rounded-lg font-bold text-[14px] hover:bg-[#002b66] transition-colors no-underline">Sign in</a>
+                                <a href="/register" class="w-full bg-white border border-[#003580] text-[#003580] text-center py-2.5 rounded-lg font-bold text-[14px] hover:bg-neutral-50 transition-colors no-underline">Create account</a>
                             </div>
                             <div class="border-t border-neutral-100">
-                                <a href="property_wizard.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
+                                <a href="/property_wizard" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                     <i class="fas fa-plus-circle text-neutral-400 text-lg"></i>
                                     <span>List your property</span>
                                 </a>
@@ -123,6 +124,8 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                     $active = ($current_page == 'hotels.php' && $current_type != 'safari');
                 } else if ($item['id'] === 'dayouts') {
                     $active = ($current_page == 'srilanka_dayouts.php');
+                } else if ($item['id'] === 'rides') {
+                    $active = ($current_page == 'rides.php' || $current_page == 'vehicle_details.php');
                 } else {
                     $active = false; // About contact active state is optional/static for now
                 }
@@ -174,7 +177,7 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
 
             <!-- Auth Buttons -->
             <?php if (isset($_SESSION['user_id'])): ?>
-                <a href="property_wizard.php"
+                <a href="/property_wizard"
                     class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-1.5 rounded-lg font-black text-[13px] transition-all shadow-lg shadow-[#10b981]/20 flex items-center gap-2">
                     <i class="fas fa-plus-circle"></i> List property
                 </a>
@@ -196,21 +199,21 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                                 <p class="text-[13px] font-bold text-primary truncate"><?php echo htmlspecialchars($_SESSION['user_name']); ?></p>
                             </div>
                             <?php 
-                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? 'system/admin/dashboard' : 'system/hotel/dashboard';
+                            $dash_link = (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? '/system/admin/dashboard' : '/system/hotel/dashboard';
                             ?>
                             <a href="<?php echo $dash_link; ?>" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors no-underline">
                                 <i class="fas fa-columns text-neutral-400"></i>
                                 <span>Dashboard</span>
                             </a>
-                            <a href="manage_account.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors">
+                            <a href="/manage_account" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors">
                                 <i class="far fa-user-circle text-neutral-400"></i>
                                 <span>Manage Account</span>
                             </a>
-                            <a href="mybookings.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors">
+                            <a href="/mybookings" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-neutral-700 hover:bg-neutral-50 transition-colors">
                                 <i class="fas fa-briefcase text-neutral-400"></i>
                                 <span>My Bookings</span>
                             </a>
-                            <a href="logout.php" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-red-600 hover:bg-red-50 transition-colors border-t border-neutral-100">
+                            <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-[13px] font-bold text-red-600 hover:bg-red-50 transition-colors border-t border-neutral-100">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
                             </a>
@@ -218,9 +221,9 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                     </div>
                 </div>
 <?php else: ?>
-                <a href="register.php"
+                <a href="/register"
                     class="text-white hover:bg-white/10 px-3 py-1.5 rounded font-bold text-[13px] transition-colors">Register</a>
-                <a href="login.php"
+                <a href="/login"
                     class="bg-white text-[#003580] hover:bg-[#febb02] px-4 py-1.5 rounded font-bold text-[13px] transition-all shadow-md">Sign
                     in</a>
             <?php endif; ?>
@@ -261,24 +264,24 @@ $nav_bg_class = ($nav_current_page === 'index.php') ? '' : 'always-solid';
                             <i class="fas fa-columns text-neutral-400 w-6"></i>
                             <span>Dashboard</span>
                         </a>
-                        <a href="mybookings.php" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-neutral-700 hover:bg-neutral-50 no-underline">
+                        <a href="/mybookings" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-neutral-700 hover:bg-neutral-50 no-underline">
                             <i class="fas fa-briefcase text-neutral-400 w-6"></i>
                             <span>My Bookings</span>
                         </a>
-                        <a href="logout.php" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-red-600 hover:bg-red-50 no-underline">
+                        <a href="/logout" class="flex items-center gap-4 px-6 py-4 text-[15px] font-bold text-red-600 hover:bg-red-50 no-underline">
                             <i class="fas fa-sign-out-alt w-6"></i>
                             <span>Logout</span>
                         </a>
                     <?php else: ?>
                         <div class="px-6 py-4 flex flex-col gap-3">
-                            <a href="login.php" class="w-full bg-[#003580] text-white text-center py-3 rounded-xl font-bold no-underline shadow-lg shadow-[#003580]/20">Sign in</a>
-                            <a href="register.php" class="w-full bg-white border-2 border-[#003580] text-[#003580] text-center py-3 rounded-xl font-bold no-underline">Register</a>
+                            <a href="/login" class="w-full bg-[#003580] text-white text-center py-3 rounded-xl font-bold no-underline shadow-lg shadow-[#003580]/20">Sign in</a>
+                            <a href="/register" class="w-full bg-white border-2 border-[#003580] text-[#003580] text-center py-3 rounded-xl font-bold no-underline">Register</a>
                         </div>
                     <?php endif; ?>
                 </div>
                 
                 <div class="p-6 mt-4">
-                    <a href="property_wizard.php" class="flex items-center justify-center gap-2 w-full bg-[#febb02] text-[#003580] py-4 rounded-2xl font-black text-[14px] no-underline shadow-lg shadow-[#febb02]/20">
+                    <a href="/property_wizard" class="flex items-center justify-center gap-2 w-full bg-[#febb02] text-[#003580] py-4 rounded-2xl font-black text-[14px] no-underline shadow-lg shadow-[#febb02]/20">
                         <i class="fas fa-plus-circle"></i>
                         <span>List your property</span>
                     </a>

@@ -245,7 +245,7 @@ if ($edit_id) {
                     <h2 class="text-3xl font-extrabold text-gray-900">What type of property do you have?</h2>
                     <p class="text-gray-500 mt-2 text-sm">Select the most relevant category to get tailored registration steps.</p>
                 </div>
-                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                     <!-- Hotel -->
                     <label
                         class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
@@ -318,8 +318,490 @@ if ($edit_id) {
                         <div class="font-bold text-sm md:text-lg mb-1">Dayouts</div>
                         <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Package based day outings.</p>
                     </label>
+
+                    <!-- Vehicle -->
+                    <label class="group relative border-2 rounded-2xl p-4 md:p-8 cursor-pointer hover:bg-blue-50/50 transition-all text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 ring-offset-2 has-[:checked]:ring-2 ring-[#006ce4] flex flex-col items-center">
+                        <input type="radio" name="business_type" value="vehicle" class="hidden" <?= $type == 'vehicle' ? 'checked' : '' ?>>
+                        <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-50 text-[#006ce4] rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform group-has-[:checked]:bg-white shadow-sm">
+                            <i class="fas fa-car text-xl md:text-2xl"></i>
+                        </div>
+                        <div class="font-bold text-sm md:text-lg mb-1">Vehicle</div>
+                        <p class="text-[10px] md:text-xs text-gray-500 leading-relaxed">Cars, Vans, SUVs & More.</p>
+                    </label>
                 </div>
             </div>
+
+            
+            <!-- VEHICLE WIZARD STEPS (shown only when business_type = 'vehicle') -->
+            <div class="wizard-step" data-vstep="1" style="display:none;">
+                <div class="mb-8">
+                    <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 01 — Vehicle</span>
+                    <h2 class="text-2xl font-bold text-gray-900">Basic Vehicle Information</h2>
+                    <p class="text-sm text-gray-500 mt-1">Tell us about the vehicle you want to list.</p>
+                </div>
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Vehicle Title / Name *</label>
+                            <input type="text" name="property_name" placeholder="e.g. Toyota Prius 2022" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Vehicle Category *</label>
+                            <select name="vehicle_category" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <option value="">Select Category</option>
+                                <option value="car">Car</option>
+                                <option value="van">Van</option>
+                                <option value="suv">SUV</option>
+                                <option value="jeep">Jeep</option>
+                                <option value="bus">Bus</option>
+                                <option value="tuk_tuk">Tuk-Tuk</option>
+                                <option value="motorbike">Motorbike</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Brand</label>
+                            <input type="text" name="brand" placeholder="e.g. Toyota" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Model</label>
+                            <input type="text" name="model" placeholder="e.g. Prius" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Year</label>
+                            <input type="number" name="manufactured_year" placeholder="e.g. 2022" min="1980" max="2026" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Registration Number *</label>
+                            <input type="text" name="registration_number" placeholder="e.g. WP CAB-1234" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Chassis Number (Optional)</label>
+                            <input type="text" name="chassis_number" placeholder="Chassis/VIN" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Engine Number (Optional)</label>
+                            <input type="text" name="engine_number" placeholder="Engine number" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Color</label>
+                            <input type="text" name="vehicle_color" placeholder="e.g. Silver" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Fuel Type</label>
+                            <select name="fuel_type" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <option value="petrol">Petrol</option>
+                                <option value="diesel">Diesel</option>
+                                <option value="electric">Electric</option>
+                                <option value="hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Transmission</label>
+                            <select name="transmission_type" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <option value="automatic">Automatic</option>
+                                <option value="manual">Manual</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Condition</label>
+                            <select name="vehicle_condition" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <option value="excellent">Excellent</option>
+                                <option value="good" selected>Good</option>
+                                <option value="fair">Fair</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Vehicle Description</label>
+                        <textarea name="description" rows="3" placeholder="Describe your vehicle, its features, and why travelers should choose it..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- V-Step 2: Capacity -->
+            <div class="wizard-step" data-vstep="2" style="display:none;">
+                <div class="mb-8">
+                    <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 02 — Vehicle</span>
+                    <h2 class="text-2xl font-bold text-gray-900">Capacity Details</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-blue-50/40 p-6 rounded-2xl border border-blue-100 text-center">
+                        <i class="fas fa-users text-[#006ce4] text-3xl mb-4"></i>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Number of Seats</label>
+                        <input type="number" name="seat_count" value="4" min="1" max="60" class="w-full px-5 py-3 rounded-xl border bg-white text-sm text-center font-bold outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    </div>
+                    <div class="bg-blue-50/40 p-6 rounded-2xl border border-blue-100 text-center">
+                        <i class="fas fa-suitcase text-[#006ce4] text-3xl mb-4"></i>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Luggage Capacity</label>
+                        <input type="number" name="luggage_count" value="2" min="0" max="30" class="w-full px-5 py-3 rounded-xl border bg-white text-sm text-center font-bold outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    </div>
+                    <div class="bg-blue-50/40 p-6 rounded-2xl border border-blue-100 text-center">
+                        <i class="fas fa-user-friends text-[#006ce4] text-3xl mb-4"></i>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Max Passengers</label>
+                        <input type="number" name="max_passengers" value="4" min="1" max="60" class="w-full px-5 py-3 rounded-xl border bg-white text-sm text-center font-bold outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- V-Step 3: Pricing -->
+            <div class="wizard-step" data-vstep="3" style="display:none;">
+                <div class="mb-8">
+                    <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 03 — Vehicle</span>
+                    <h2 class="text-2xl font-bold text-gray-900">Rental Pricing</h2>
+                </div>
+                <div class="space-y-8">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-4 uppercase tracking-wide">Primary Pricing Type</label>
+                        <div class="flex gap-4">
+                            <label class="flex-1 border-2 rounded-2xl p-5 cursor-pointer has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 text-center">
+                                <input type="radio" name="pricing_type" value="day_wise" checked class="hidden">
+                                <i class="fas fa-calendar-day text-2xl text-[#006ce4] mb-2 block"></i>
+                                <span class="font-bold">Day Wise</span>
+                                <p class="text-xs text-gray-500 mt-1">Charge per day</p>
+                            </label>
+                            <label class="flex-1 border-2 rounded-2xl p-5 cursor-pointer has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 text-center">
+                                <input type="radio" name="pricing_type" value="km_wise" class="hidden">
+                                <i class="fas fa-road text-2xl text-[#006ce4] mb-2 block"></i>
+                                <span class="font-bold">KM Wise</span>
+                                <p class="text-xs text-gray-500 mt-1">Charge per kilometer</p>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Price Per Day (LKR)</label>
+                            <input type="number" name="price_per_day" placeholder="e.g. 8000" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Included KM/Day</label>
+                            <input type="number" name="included_km_per_day" placeholder="e.g. 200" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Extra KM Price (LKR)</label>
+                            <input type="number" name="extra_km_price" placeholder="e.g. 50" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Price Per KM (LKR)</label>
+                            <input type="number" name="price_per_km" placeholder="e.g. 60" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Hourly Price (Optional)</label>
+                            <input type="number" name="hourly_price" placeholder="e.g. 1500" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Weekly Price (Optional)</label>
+                            <input type="number" name="weekly_price" placeholder="e.g. 50000" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- V-Step 4: Driver Info -->
+            <div class="wizard-step" data-vstep="4" style="display:none;">
+                <div class="mb-8">
+                    <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 04 — Vehicle</span>
+                    <h2 class="text-2xl font-bold text-gray-900">Driver Information</h2>
+                </div>
+                <div class="space-y-8">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-4 uppercase tracking-wide">Driver Availability</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <label class="border-2 rounded-2xl p-5 cursor-pointer has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 text-center">
+                                <input type="radio" name="driver_option" value="with_driver" class="hidden">
+                                <i class="fas fa-user-tie text-2xl text-[#006ce4] mb-2 block"></i>
+                                <span class="font-bold text-sm">With Driver Only</span>
+                            </label>
+                            <label class="border-2 rounded-2xl p-5 cursor-pointer has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 text-center">
+                                <input type="radio" name="driver_option" value="without_driver" class="hidden">
+                                <i class="fas fa-car text-2xl text-gray-400 mb-2 block"></i>
+                                <span class="font-bold text-sm">Without Driver Only</span>
+                            </label>
+                            <label class="border-2 rounded-2xl p-5 cursor-pointer has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 text-center">
+                                <input type="radio" name="driver_option" value="both" checked class="hidden">
+                                <i class="fas fa-exchange-alt text-2xl text-[#006ce4] mb-2 block"></i>
+                                <span class="font-bold text-sm">Both Available</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Driver Full Name</label>
+                            <input type="text" name="driver_name" placeholder="Full name" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Driver Contact</label>
+                            <input type="text" name="driver_contact" placeholder="+94 ..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Driver WhatsApp</label>
+                            <input type="text" name="driver_whatsapp" placeholder="+94 ..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">NIC Number</label>
+                            <input type="text" name="driver_nic" placeholder="National ID" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">License Number</label>
+                            <input type="text" name="driver_license" placeholder="License number" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Years of Experience</label>
+                            <input type="text" name="driver_experience" placeholder="e.g. 5 years" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Languages Spoken</label>
+                            <input type="text" name="driver_languages" placeholder="e.g. Sinhala, English, Tamil" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- V-Step 5: Vehicle Features -->
+            <div class="wizard-step" data-vstep="5" style="display:none;">
+                <div class="mb-8">
+                    <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 05 — Vehicle</span>
+                    <h2 class="text-2xl font-bold text-gray-900">Vehicle Features</h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_ac" value="1" class="hidden">
+                        <i class="fas fa-snowflake text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Air Conditioning</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_gps" value="1" class="hidden">
+                        <i class="fas fa-map text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">GPS Navigation</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_bluetooth" value="1" class="hidden">
+                        <i class="fab fa-bluetooth-b text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Bluetooth</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_wifi" value="1" class="hidden">
+                        <i class="fas fa-wifi text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">WiFi</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_music_system" value="1" class="hidden">
+                        <i class="fas fa-music text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Music System</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_charging_ports" value="1" class="hidden">
+                        <i class="fas fa-plug text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Charging Ports</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_baby_seat" value="1" class="hidden">
+                        <i class="fas fa-baby text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Baby Seat</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_sunroof" value="1" class="hidden">
+                        <i class="fas fa-sun text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Sunroof</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_reverse_camera" value="1" class="hidden">
+                        <i class="fas fa-camera text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Reverse Camera</span>
+                    </label>
+                    <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                        <input type="checkbox" name="has_airbags" value="1" class="hidden">
+                        <i class="fas fa-shield-alt text-2xl text-gray-400 mb-2 block"></i>
+                        <span class="text-xs font-bold">Safety Airbags</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- V-Step 6: Location & Delivery -->
+            <div class="wizard-step" data-vstep="6" style="display:none;">
+                <div class="mb-8">
+                    <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 06 — Vehicle</span>
+                    <h2 class="text-2xl font-bold text-gray-900">Location & Delivery</h2>
+                </div>
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">District *</label>
+                            <select name="district" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                <option value="">Select District</option>
+                                <option value="Ampara">Ampara</option>
+                                <option value="Anuradhapura">Anuradhapura</option>
+                                <option value="Badulla">Badulla</option>
+                                <option value="Batticaloa">Batticaloa</option>
+                                <option value="Colombo">Colombo</option>
+                                <option value="Galle">Galle</option>
+                                <option value="Gampaha">Gampaha</option>
+                                <option value="Hambantota">Hambantota</option>
+                                <option value="Jaffna">Jaffna</option>
+                                <option value="Kalutara">Kalutara</option>
+                                <option value="Kandy">Kandy</option>
+                                <option value="Kegalle">Kegalle</option>
+                                <option value="Kilinochchi">Kilinochchi</option>
+                                <option value="Kurunegala">Kurunegala</option>
+                                <option value="Mannar">Mannar</option>
+                                <option value="Matale">Matale</option>
+                                <option value="Matara">Matara</option>
+                                <option value="Moneragala">Moneragala</option>
+                                <option value="Mullaitivu">Mullaitivu</option>
+                                <option value="Nuwara Eliya">Nuwara Eliya</option>
+                                <option value="Polonnaruwa">Polonnaruwa</option>
+                                <option value="Puttalam">Puttalam</option>
+                                <option value="Ratnapura">Ratnapura</option>
+                                <option value="Trincomalee">Trincomalee</option>
+                                <option value="Vavuniya">Vavuniya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest Town</label>
+                            <input type="text" name="closest_main_town" placeholder="e.g. Negombo" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">City</label>
+                            <input type="text" name="city" placeholder="City" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Exact Pickup Location</label>
+                        <input type="text" name="exact_pickup_location" placeholder="e.g. No. 123, Main Street, Negombo" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Google Maps Link (Optional)</label>
+                        <input type="text" name="google_map_location" placeholder="Paste Google Maps link" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                            <input type="checkbox" name="delivery_available" value="1" class="hidden">
+                            <i class="fas fa-truck text-2xl text-gray-400 mb-2 block"></i>
+                            <span class="text-xs font-bold">Delivery Available</span>
+                        </label>
+                        <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                            <input type="checkbox" name="pickup_available" value="1" checked class="hidden">
+                            <i class="fas fa-map-pin text-2xl text-gray-400 mb-2 block"></i>
+                            <span class="text-xs font-bold">Self Pickup</span>
+                        </label>
+                        <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                            <input type="checkbox" name="airport_delivery" value="1" class="hidden">
+                            <i class="fas fa-plane text-2xl text-gray-400 mb-2 block"></i>
+                            <span class="text-xs font-bold">Airport Delivery</span>
+                        </label>
+                        <label class="border-2 rounded-2xl p-4 cursor-pointer text-center has-[:checked]:border-[#006ce4] has-[:checked]:bg-blue-50 transition-all">
+                            <input type="checkbox" name="hotel_delivery" value="1" class="hidden">
+                            <i class="fas fa-hotel text-2xl text-gray-400 mb-2 block"></i>
+                            <span class="text-xs font-bold">Hotel Delivery</span>
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Delivery Fee (LKR)</label>
+                            <input type="number" name="delivery_fee" placeholder="e.g. 500" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Contact Number *</label>
+                            <input type="text" name="mobile_telephone" placeholder="+94 ..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Delivery Towns (comma-separated)</label>
+                        <input type="text" name="delivery_towns" placeholder="e.g. Colombo, Negombo, Gampaha" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- V-Step 7: Images -->
+            <div class="wizard-step" data-vstep="7" style="display:none;">
+                <div class="mb-8">
+                    <span class="text-[#006ce4] font-bold text-xs tracking-widest uppercase mb-1 block">Step 07 — Vehicle</span>
+                    <h2 class="text-2xl font-bold text-gray-900">Vehicle Images</h2>
+                    <p class="text-sm text-gray-500 mt-1">Upload 1 cover image and up to 4 gallery images.</p>
+                </div>
+                <div class="space-y-8">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Cover Image (Main Photo) *</label>
+                        <div class="upload-container relative group" id="cover-upload">
+                            <input type="file" accept="image/*" class="hidden file-input" data-type="cover">
+                            <input type="hidden" name="cover_image">
+                            <div class="w-full h-52 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
+                                <i class="fas fa-image text-gray-400 text-3xl mb-2"></i>
+                                <span class="text-xs font-bold text-gray-400 uppercase">Upload Cover Photo</span>
+                            </div>
+                            <div class="preview-container hidden absolute inset-0 bg-white rounded-2xl border flex items-center justify-center p-1">
+                                <img src="" class="max-w-full max-h-full rounded-xl object-contain w-full h-full">
+                                <button type="button" class="absolute -top-3 -right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-image">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-4 uppercase tracking-wide">Gallery Images (Up to 4)</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <?php for ($pi = 0; $pi < 4; $pi++): ?>
+                            <div class="upload-container relative group" id="photo-upload-<?= $pi ?>">
+                                <input type="file" accept="image/*" class="hidden file-input" data-type="photo-<?= $pi ?>">
+                                <input type="hidden" name="property_photos[]">
+                                <div class="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-all cursor-pointer upload-trigger">
+                                    <i class="fas fa-plus text-gray-400 text-xl mb-1"></i>
+                                    <span class="text-[10px] font-bold text-gray-400">Photo <?= $pi + 1 ?></span>
+                                </div>
+                                <div class="preview-container hidden absolute inset-0 bg-white rounded-xl border flex items-center justify-center p-1">
+                                    <img src="" class="max-w-full max-h-full rounded-lg object-cover w-full h-full">
+                                    <button type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg remove-image">
+                                        <i class="fas fa-times text-[10px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-4 uppercase tracking-wide">Payout Details</label>
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Bank Name</label>
+                                    <input type="text" name="bank_name" placeholder="e.g. Bank of Ceylon" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                                <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                    <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Branch Name</label>
+                                    <input type="text" name="bank_branch" placeholder="e.g. Colombo Fort" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                                </div>
+                            </div>
+                            <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Bank Account Holder Name *</label>
+                                <input type="text" name="bank_account_name" required placeholder="Name as it appears on bank passbook" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                            <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Account Number *</label>
+                                <input type="text" name="bank_account_number" required placeholder="Enter your full account number" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                <div class="flex flex-col gap-4 mt-12 pt-8 border-t border-gray-100" id="vehicle-submit-container" style="display:none;">
+                    <button type="submit"
+                        class="w-full bg-[#10b981] text-white py-5 rounded-[2rem] font-bold text-xl shadow-xl shadow-green-900/10 hover:bg-[#059669] transition-all transform hover:-translate-y-1">Finish
+                        & Submit for Review</button>
+                    <p class="text-[10px] text-center text-gray-400 uppercase tracking-widest font-bold">By clicking
+                        finish, you agree to our terms of service and commission agreement.</p>
+                </div>
+            </div>
+            <!-- END VEHICLE WIZARD STEPS -->
 
             <!-- Step 2: Basic Info -->
             <div class="wizard-step" data-step="2">
@@ -485,7 +967,7 @@ if ($edit_id) {
                 <div class="space-y-6">
                     <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Logistics & Media</h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label
                                 class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest
@@ -496,10 +978,23 @@ if ($edit_id) {
                         <div>
                             <label
                                 class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest
+                                Fuel Station</label>
+                            <input type="text" name="closest_fuel_station" placeholder="Name of station"
+                                class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Closest
                                 Hospital</label>
                             <input type="text" name="closest_hospital" placeholder="Name of hospital"
                                 class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
                         </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Near Tourist Attractions</label>
+                        <textarea name="tourist_attractions" rows="3" placeholder="- Yala National Park&#10;- Temple of the Tooth&#10;- Sigiriya Rock"
+                            class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -827,6 +1322,12 @@ if ($edit_id) {
                                 ['name' => 'Standard Package', 'icon' => 'fa-box', 'adults' => 10, 'children' => 0],
                                 ['name' => 'Premium Package', 'icon' => 'fa-star', 'adults' => 20, 'children' => 0],
                                 ['name' => 'Corporate Package', 'icon' => 'fa-briefcase', 'adults' => 50, 'children' => 0],
+                            ],
+                            'vehicle' => [
+                                ['name' => 'Sedan', 'icon' => 'fa-car', 'adults' => 4, 'children' => 0],
+                                ['name' => 'SUV', 'icon' => 'fa-truck', 'adults' => 6, 'children' => 0],
+                                ['name' => 'Van / Minivan', 'icon' => 'fa-shuttle-van', 'adults' => 8, 'children' => 0],
+                                ['name' => 'Luxury Car', 'icon' => 'fa-crown', 'adults' => 4, 'children' => 0],
                             ]
                         ];
 
@@ -1547,7 +2048,115 @@ if ($edit_id) {
             localStorage.setItem('property_wizard_data', JSON.stringify(data));
         }
 
+        
+        // Vehicle wizard mode navigation
+        let vehicleMode = false;
+        let currentVStep = 1;
+        const totalVSteps = 7;
+
+        function isVehicleMode() {
+            const checked = document.querySelector('input[name="business_type"]:checked');
+            return checked && checked.value === 'vehicle';
+        }
+
+        function updateVehicleSteps() {
+            document.querySelectorAll('[data-vstep]').forEach(el => {
+                el.style.display = 'none';
+                el.querySelectorAll('input, select, textarea').forEach(inp => inp.disabled = true);
+            });
+            document.querySelectorAll('.wizard-step[data-step]').forEach(el => {
+                el.querySelectorAll('input, select, textarea').forEach(inp => inp.disabled = false);
+            });
+            
+            if (isVehicleMode()) {
+                document.querySelectorAll('.wizard-step[data-step]').forEach(el => {
+                    el.classList.remove('active');
+                    el.querySelectorAll('input, select, textarea').forEach(inp => {
+                        if (inp.name === 'business_type') {
+                            inp.disabled = false;
+                            return;
+                        }
+                        inp.disabled = true;
+                    });
+                });
+                
+                document.querySelectorAll('[data-vstep]').forEach(el => {
+                    el.querySelectorAll('input, select, textarea').forEach(inp => inp.disabled = false);
+                });
+                
+                if (currentStep > 1) {
+                    const vstep = document.querySelector(`[data-vstep="${currentVStep}"]`);
+                    if (vstep) vstep.style.display = 'block';
+                }
+            }
+        }
+
         function changeStep(delta) {
+            if (isVehicleMode() && (currentStep > 1 || delta > 0)) {
+                if (delta > 0 && currentStep > 1) {
+                    const currentVStepEl = document.querySelector(`.wizard-step[data-vstep="${currentVStep}"]`);
+                    if (currentVStepEl) {
+                        const inputs = currentVStepEl.querySelectorAll('input[required], select[required], textarea[required]');
+                        let isValid = true;
+                        inputs.forEach(input => {
+                            if (input.style.display !== 'none' && input.offsetParent !== null) {
+                                if (!input.value.trim()) {
+                                    isValid = false;
+                                    input.classList.add('border-red-500', 'bg-red-50');
+                                } else {
+                                    input.classList.remove('border-red-500', 'bg-red-50');
+                                }
+                            }
+                        });
+                        if (!isValid) {
+                            const firstError = currentVStepEl.querySelector('.border-red-500');
+                            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            return;
+                        }
+                    }
+                }
+
+                if (currentStep === 1 && delta > 0) {
+                    currentStep++;
+                    currentVStep = 1;
+                } else if (currentVStep + delta > 0 && currentVStep + delta <= totalVSteps) {
+                    currentVStep += delta;
+                } else if (currentVStep + delta === 0) {
+                    currentStep = 1;
+                    currentVStep = 1;
+                }
+
+                if (currentStep === 1) {
+                    document.querySelectorAll('[data-vstep]').forEach(el => el.style.display = 'none');
+                    updateDisplay();
+                } else {
+                    updateVehicleSteps();
+                    
+                    document.querySelectorAll('.step-item').forEach(el => {
+                        const step = parseInt(el.dataset.step);
+                        el.classList.remove('active', 'completed');
+                        if (step === currentVStep) el.classList.add('active');
+                        else if (step < currentVStep) el.classList.add('completed');
+                    });
+                    
+                    document.getElementById('prev-btn').style.visibility = 'visible';
+                    document.getElementById('next-btn').style.display = currentVStep === totalVSteps ? 'none' : 'block';
+                    
+                    const vehicleSubmitContainer = document.getElementById('vehicle-submit-container');
+                    if (currentVStep === totalVSteps) {
+                        vehicleSubmitContainer.style.display = 'flex';
+                    } else {
+                        vehicleSubmitContainer.style.display = 'none';
+                    }
+                    
+                    document.getElementById('step-counter').innerText = `Step ${currentVStep} of ${totalVSteps} (Vehicle Mode)`;
+                    const remaining = totalVSteps - currentVStep;
+                    document.getElementById('steps-remaining').innerText = remaining === 0 ? 'Last step!' : `${remaining} steps remaining`;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                return;
+            }
+
             if (delta > 0) {
                 const currentStepEl = document.querySelector(`.wizard-step[data-step="${currentStep}"]`);
                 if (currentStepEl) {
@@ -1598,6 +2207,9 @@ if ($edit_id) {
             } else if (propertyType === 'dayouts') {
                 typeLabel = "Package";
                 namePlaceholder = "e.g. Standard Dayout Package";
+            } else if (propertyType === 'vehicle') {
+                typeLabel = "Vehicle";
+                namePlaceholder = "e.g. Toyota Prius (Sedan)";
             }
 
             const card = document.createElement('div');

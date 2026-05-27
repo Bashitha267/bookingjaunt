@@ -419,6 +419,12 @@ $bg_url = $bg_path ? '../../' . htmlspecialchars($bg_path) : null;
         <a href="my_properties.php" class="sidebar-link <?php echo ($current_page == 'my_properties.php') ? 'active' : ''; ?>">
             <i class="fas fa-hotel"></i> My Properties
         </a>
+        <a href="my_vehicles.php" class="sidebar-link <?php echo ($current_page == 'my_vehicles.php') ? 'active' : ''; ?>">
+            <i class="fas fa-car"></i> My Vehicles
+        </a>
+        <a href="vehicle_bookings.php" class="sidebar-link <?php echo ($current_page == 'vehicle_bookings.php') ? 'active' : ''; ?>">
+            <i class="fas fa-car-side"></i> Vehicle Bookings
+        </a>
 
         <!-- Account Section -->
         <div class="pt-8 pb-3">

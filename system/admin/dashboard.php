@@ -14,7 +14,9 @@ $total_reception_halls = $pdo->query("SELECT COUNT(*) FROM properties WHERE busi
 $total_pilgrim_rests = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'rest_hall'")->fetchColumn();
 $total_hostels = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'hostel'")->fetchColumn();
 $total_users = $pdo->query("SELECT COUNT(*) FROM users WHERE role != 'admin'")->fetchColumn();
-$total_properties = $total_hotels + $total_reception_halls + $total_pilgrim_rests + $total_hostels;
+$total_vehicles = $pdo->query("SELECT COUNT(*) FROM properties WHERE business_type = 'vehicle'")->fetchColumn();
+$total_vehicle_bookings = $pdo->query("SELECT COUNT(*) FROM bookings WHERE booking_category = 'vehicle'")->fetchColumn();
+$total_properties = $total_hotels + $total_reception_halls + $total_pilgrim_rests + $total_hostels + $total_vehicles;
 $total_boost_spent = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM property_boosts WHERE payment_status = 'success'")->fetchColumn();
 $active_boosts = $pdo->query("SELECT COUNT(*) FROM property_boosts WHERE status = 'active' AND DATE_ADD(start_date, INTERVAL duration_days DAY) >= CURDATE()")->fetchColumn();
 
@@ -111,7 +113,7 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
 
         <div class="p-4 lg:p-8">
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-9 gap-6 mb-8">
                 <!-- Hotels -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
                     <div class="flex justify-between items-start mb-4">
@@ -192,6 +194,30 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
                     </div>
                     <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Boosts</p>
                     <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($active_boosts); ?></h3>
+                </div>
+
+                <!-- Vehicles -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+0%</span>
+                    </div>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Vehicles</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_vehicles); ?></h3>
+                </div>
+
+                <!-- Vehicle Bookings -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">+0%</span>
+                    </div>
+                    <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Vehicle Bookings</p>
+                    <h3 class="text-2xl font-black text-[#003580]"><?php echo number_format($total_vehicle_bookings); ?></h3>
                 </div>
             </div>
 

@@ -39,6 +39,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-calendar-check w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Bookings
         </a>
+        <a href="vehicles.php" class="sidebar-link <?php echo $current_page == 'vehicles.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+            <i class="fas fa-car w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Vehicles
+        </a>
+        <a href="vehicle_bookings.php" class="sidebar-link <?php echo $current_page == 'vehicle_bookings.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+            <i class="fas fa-car-side w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Vehicle Bookings
+        </a>
         <a href="feedbacks.php" class="sidebar-link <?php echo $current_page == 'feedbacks.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
             <i class="fas fa-comment-dots w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Feedbacks

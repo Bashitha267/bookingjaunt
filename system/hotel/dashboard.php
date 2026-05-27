@@ -179,6 +179,34 @@ $boost_packages = $boost_packages_stmt->fetchAll();
 $active_boost_stmt = $pdo->prepare("SELECT * FROM property_boosts WHERE property_id = ? AND status IN ('pending', 'active') AND (status = 'pending' OR DATE_ADD(start_date, INTERVAL duration_days DAY) >= CURDATE()) ORDER BY created_at DESC LIMIT 1");
 $active_boost_stmt->execute([$property_id]);
 $current_boost = $active_boost_stmt->fetch();
+
+// --- Vehicle Stats ---
+$total_vehicles = $pdo->prepare("SELECT COUNT(*) FROM properties WHERE owner_id = ? AND business_type = 'vehicle'");
+$total_vehicles->execute([$_SESSION['user_id']]);
+$vehicle_count = $total_vehicles->fetchColumn();
+
+$total_vbookings = $pdo->prepare("SELECT COUNT(*) FROM bookings b JOIN properties p ON b.property_id = p.id WHERE p.owner_id = ? AND b.booking_category = 'vehicle'");
+$total_vbookings->execute([$_SESSION['user_id']]);
+$vehicle_booking_count = $total_vbookings->fetchColumn();
+
+// --- Vehicle Calendar Events ---
+$vehicle_events_stmt = $pdo->prepare("
+    SELECT b.guest_name, b.check_in_date, b.check_out_date, b.status, p.property_name
+    FROM bookings b
+    JOIN properties p ON b.property_id = p.id
+    WHERE p.owner_id = ? AND b.booking_category = 'vehicle'
+");
+$vehicle_events_stmt->execute([$_SESSION['user_id']]);
+$vehicle_bookings_raw = $vehicle_events_stmt->fetchAll();
+
+foreach ($vehicle_bookings_raw as $vb) {
+    $calendar_events[] = [
+        'title' => '🚗 ' . $vb['guest_name'] . ' (' . $vb['property_name'] . ')',
+        'start' => $vb['check_in_date'],
+        'end'   => $vb['check_out_date'],
+        'color' => '#f59e0b'
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -288,7 +316,7 @@ $current_boost = $active_boost_stmt->fetch();
                 <?php endif; ?>
 
                 <!-- Stats Grid -->
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
                     <div class="glass-card p-5 flex flex-col anim-up">
                         <div class="stat-icon mb-4" style="background:rgba(96,165,250,0.15);"><i class="fas fa-calendar-check" style="color:#93c5fd;"></i></div>
                         <p class="stat-label">Total Bookings</p>
@@ -324,6 +352,16 @@ $current_boost = $active_boost_stmt->fetch();
                         <div class="stat-icon mb-4" style="background:rgba(248,113,113,0.15);"><i class="fas fa-file-invoice" style="color:#fca5a5;"></i></div>
                         <p class="stat-label">Service Fee Due</p>
                         <h3 class="stat-value" style="font-size:1.1rem;">LKR <?php echo number_format($service_fee_due); ?></h3>
+                    </div>
+                    <div class="glass-card p-5 flex flex-col anim-up">
+                        <div class="stat-icon mb-4" style="background:rgba(245,158,11,0.18);"><i class="fas fa-car" style="color:#fbbf24;"></i></div>
+                        <p class="stat-label">My Vehicles</p>
+                        <h3 class="stat-value"><?php echo number_format($vehicle_count); ?></h3>
+                    </div>
+                    <div class="glass-card p-5 flex flex-col anim-up-2">
+                        <div class="stat-icon mb-4" style="background:rgba(251,191,36,0.15);"><i class="fas fa-car-side" style="color:#fcd34d;"></i></div>
+                        <p class="stat-label">Vehicle Bookings</p>
+                        <h3 class="stat-value"><?php echo number_format($vehicle_booking_count); ?></h3>
                     </div>
                 </div>
 
