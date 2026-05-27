@@ -35,6 +35,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-users w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             User Management
         </a>
+        <a href="team.php" class="sidebar-link <?php echo $current_page == 'team.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+            <i class="fas fa-sitemap w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Team Management
+        </a>
         <a href="bookings.php" class="sidebar-link <?php echo $current_page == 'bookings.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
             <i class="fas fa-calendar-check w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Bookings

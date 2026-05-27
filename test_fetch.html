@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+async function test() {
+    const fd = new FormData();
+    fd.append('action', 'request_edit');
+    fd.append('property_id', '29');
+    
+    // Test 1: fetch register.php
+    let r1 = await fetch('register.php', { method: 'POST', body: fd });
+    console.log("register.php status:", r1.status);
+    console.log("register.php url:", r1.url);
+    console.log("register.php text:", (await r1.text()).slice(0, 100));
+
+    // Test 2: fetch register
+    let r2 = await fetch('register', { method: 'POST', body: fd });
+    console.log("register status:", r2.status);
+    console.log("register url:", r2.url);
+    console.log("register text:", (await r2.text()).slice(0, 100));
+}
+test();
+</script>
+</body>
+</html>

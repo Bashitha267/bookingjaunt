@@ -142,7 +142,7 @@ $property = $properties[0] ?? null;
 
                             <!-- Actions -->
                             <div class="flex gap-3">
-                                <a href="../../property_wizard.php?edit=<?php echo $prop['id']; ?>" class="btn-primary flex-1 justify-center py-3.5">
+                                <a href="../../<?php echo $prop['business_type'] === 'vehicle' ? 'vehicle_register_wizard.php' : 'property_wizard.php'; ?>?edit=<?php echo $prop['id']; ?>" class="btn-primary flex-1 justify-center py-3.5">
                                     <i class="fas fa-edit"></i> Edit Property
                                 </a>
                                 <a href="dashboard.php?property_id=<?php echo $prop['id']; ?>" class="btn-glass px-4 py-3.5 justify-center">

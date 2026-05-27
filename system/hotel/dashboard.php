@@ -455,7 +455,7 @@ foreach ($vehicle_bookings_raw as $vb) {
                                 </div>
                             </div>
                             <div class="flex gap-3">
-                                <a href="../../property_wizard.php?edit=<?php echo $property['id']; ?>" class="btn-primary flex-1 justify-center py-4">
+                                <a href="../../<?php echo $property['business_type'] === 'vehicle' ? 'vehicle_register_wizard.php' : 'property_wizard.php'; ?>?edit=<?php echo $property['id']; ?>" class="btn-primary flex-1 justify-center py-4">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
                                 <button onclick="requestDeletion(<?php echo $property['id']; ?>)" class="px-5 py-4 rounded-2xl border transition-all" style="border-color:rgba(248,113,113,0.3); color:#fca5a5; background:rgba(248,113,113,0.08);">

@@ -52,7 +52,7 @@ $vehicles = $stmt->fetchAll();
             </div>
             <div class="flex items-center gap-3">
                 <a href="../../index.php" target="_blank" class="btn-glass hidden xl:flex"><i class="fas fa-external-link-alt"></i> Visit Site</a>
-                <a href="../../property_wizard.php?type=vehicle" class="btn-primary">
+                <a href="../../vehicle_register_wizard.php" class="btn-primary">
                     <i class="fas fa-plus"></i>
                     <span class="hidden sm:inline">Add Vehicle</span>
                 </a>
@@ -83,7 +83,7 @@ $vehicles = $stmt->fetchAll();
                         </div>
                         <h3 class="text-xl font-black mb-3" style="color:white;">No vehicles listed yet</h3>
                         <p class="text-sm mb-8 max-w-sm mx-auto" style="color:rgba(255,255,255,0.5);">Start by adding your first vehicle to the BookingJaunt platform and reach thousands of travelers.</p>
-                        <a href="../../property_wizard.php?type=vehicle" class="btn-primary" style="display:inline-flex;">
+                        <a href="../../vehicle_register_wizard.php" class="btn-primary" style="display:inline-flex;">
                             <i class="fas fa-plus"></i> Add Your First Vehicle
                         </a>
                     </div>
@@ -171,7 +171,7 @@ $vehicles = $stmt->fetchAll();
                                 <a href="../../vehicle_details.php?id=<?php echo $v['id']; ?>" class="btn-primary flex-1 justify-center py-3.5" target="_blank">
                                     <i class="fas fa-eye"></i> View
                                 </a>
-                                <a href="../../property_wizard.php?edit=<?php echo $v['id']; ?>" class="btn-glass px-4 py-3.5 justify-center" title="Edit">
+                                <a href="../../vehicle_register_wizard.php?edit=<?php echo $v['id']; ?>" class="btn-glass px-4 py-3.5 justify-center" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <?php if (!$v['is_boosted']): ?>
@@ -189,7 +189,7 @@ $vehicles = $stmt->fetchAll();
                     <?php endforeach; ?>
 
                     <!-- Add New Vehicle Card -->
-                    <a href="../../property_wizard.php?type=vehicle" class="glass-card flex flex-col items-center justify-center p-12 text-center group cursor-pointer anim-up-3" style="border-radius:2rem; border-style:dashed; min-height:320px; text-decoration:none; transition: all 0.3s;">
+                    <a href="../../vehicle_register_wizard.php" class="glass-card flex flex-col items-center justify-center p-12 text-center group cursor-pointer anim-up-3" style="border-radius:2rem; border-style:dashed; min-height:320px; text-decoration:none; transition: all 0.3s;">
                         <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all group-hover:scale-110" style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3);">
                             <i class="fas fa-plus text-2xl" style="color:#fbbf24;"></i>
                         </div>

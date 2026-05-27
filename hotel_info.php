@@ -251,6 +251,65 @@ $review_count = $rating_stats['review_count'];
                         <?php endforeach; ?>
                     </div>
                 </div>
+
+                <?php if (!empty($property['closest_police_station']) || !empty($property['closest_hospital']) || !empty($property['closest_fuel_station'])): ?>
+                <!-- Logistics & Proximity -->
+                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
+                    <h3 class="text-xl font-bold font-display mb-6">Location & Proximity</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <?php if (!empty($property['closest_police_station'])): ?>
+                            <div class="flex items-center gap-4 text-[14px] text-neutral-600">
+                                <div class="w-12 h-12 shrink-0 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg"><i class="fas fa-shield-alt"></i></div>
+                                <div>
+                                    <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Police Station</p>
+                                    <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_police_station']); ?></p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($property['closest_hospital'])): ?>
+                            <div class="flex items-center gap-4 text-[14px] text-neutral-600">
+                                <div class="w-12 h-12 shrink-0 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-lg"><i class="fas fa-hospital"></i></div>
+                                <div>
+                                    <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Hospital</p>
+                                    <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_hospital']); ?></p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($property['closest_fuel_station'])): ?>
+                            <div class="flex items-center gap-4 text-[14px] text-neutral-600">
+                                <div class="w-12 h-12 shrink-0 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-lg"><i class="fas fa-gas-pump"></i></div>
+                                <div>
+                                    <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Fuel Station</p>
+                                    <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_fuel_station']); ?></p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($property['tourist_attractions'])): ?>
+                <!-- Tourist Attractions -->
+                <div class="mb-10 border-t border-neutral-200 pt-8">
+                    <h3 class="text-xl font-bold font-display mb-6">Nearby Tourist Attractions</h3>
+                    <ul class="space-y-4">
+                        <?php 
+                        $attractions = explode("\n", $property['tourist_attractions']);
+                        foreach ($attractions as $attraction):
+                            $attraction = trim(str_replace(['-', '•', '*'], '', $attraction));
+                            if (empty($attraction)) continue;
+                        ?>
+                            <li class="flex items-start gap-3 text-[14px] text-neutral-700 bg-neutral-50 p-3 rounded-lg border border-neutral-100">
+                                <i class="fas fa-map-marker-alt text-brand-600 mt-1"></i>
+                                <span class="font-medium"><?php echo htmlspecialchars($attraction); ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
             </div>
             <div class="hidden lg:block">
                 <div class="bg-brand-50 p-6 rounded-xl border border-brand-100 sticky top-6">

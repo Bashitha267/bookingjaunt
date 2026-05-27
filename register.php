@@ -1,9 +1,11 @@
 <?php
+ob_start(); // Buffer any stray output (warnings, notices) so they don't corrupt JSON
 require_once 'config.php';
 session_start();
 
 // Handle AJAX requests for Email Check and Registration
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
+    ob_end_clean(); // Discard any buffered output before sending JSON
     header('Content-Type: application/json');
 
     if ($_POST['action'] == 'check_email') {
@@ -312,33 +314,57 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
     // 2. Request Edit logic
     if ($_POST['action'] == 'request_edit') {
-        $user_id = $_SESSION['user_id'] ?? 0;
-        $property_id = $_POST['property_id'];
-        
-        // Fetch current data for old_data
-        $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
-        $stmt->execute([$property_id]);
-        $old_data = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        $new_data = json_encode($_POST);
-        
-        $stmt = $pdo->prepare("INSERT INTO property_requests (property_id, user_id, request_type, old_data, new_data) VALUES (?, ?, 'edit', ?, ?)");
-        $stmt->execute([$property_id, $user_id, json_encode($old_data), $new_data]);
-        
-        echo json_encode(['success' => true, 'message' => 'Edit request submitted for admin approval.']);
-        exit;
+        try {
+            $user_id = $_SESSION['user_id'] ?? 0;
+            $property_id = $_POST['property_id'] ?? null;
+
+            if (!$property_id) {
+                echo json_encode(['success' => false, 'message' => 'Missing property ID.']);
+                exit;
+            }
+
+            // Fetch current data for old_data
+            $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
+            $stmt->execute([$property_id]);
+            $old_data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Store only a safe subset of new_data to avoid massive payload issues
+            $safe_new_data = array_filter($_POST, function($key) {
+                return !in_array($key, ['_token']); // exclude any internal keys if needed
+            }, ARRAY_FILTER_USE_KEY);
+            $new_data = json_encode($safe_new_data);
+
+            $stmt = $pdo->prepare("INSERT INTO property_requests (property_id, user_id, request_type, old_data, new_data) VALUES (?, ?, 'edit', ?, ?)");
+            $stmt->execute([$property_id, $user_id, json_encode($old_data), $new_data]);
+
+            echo json_encode(['success' => true, 'message' => 'Edit request submitted for admin approval.']);
+            exit;
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Failed to submit edit request: ' . $e->getMessage()]);
+            exit;
+        }
     }
 
     // 3. Request Delete logic
     if ($_POST['action'] == 'request_delete') {
-        $user_id = $_SESSION['user_id'] ?? 0;
-        $property_id = $_POST['property_id'];
-        
-        $stmt = $pdo->prepare("INSERT INTO property_requests (property_id, user_id, request_type) VALUES (?, ?, 'delete')");
-        $stmt->execute([$property_id, $user_id]);
-        
-        echo json_encode(['success' => true, 'message' => 'Deletion request submitted for admin approval.']);
-        exit;
+        try {
+            $user_id = $_SESSION['user_id'] ?? 0;
+            $property_id = $_POST['property_id'] ?? null;
+
+            if (!$property_id) {
+                echo json_encode(['success' => false, 'message' => 'Missing property ID.']);
+                exit;
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO property_requests (property_id, user_id, request_type) VALUES (?, ?, 'delete')");
+            $stmt->execute([$property_id, $user_id]);
+
+            echo json_encode(['success' => true, 'message' => 'Deletion request submitted for admin approval.']);
+            exit;
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Failed to submit delete request: ' . $e->getMessage()]);
+            exit;
+        }
     }
 }
 ?>
