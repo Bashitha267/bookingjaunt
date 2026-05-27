@@ -47,6 +47,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-chart-line w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Reports
         </a>
+        <a href="monthly_report.php" class="sidebar-link <?php echo $current_page == 'monthly_report.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
+            <i class="fas fa-calendar-alt w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
+            Monthly Reports
+        </a>
         <a href="payouts.php" class="sidebar-link <?php echo $current_page == 'payouts.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group text-white/60">
             <i class="fas fa-wallet w-5 text-center text-blue-400 group-hover:text-[#febb02]"></i>
             Payouts
