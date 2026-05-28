@@ -101,6 +101,31 @@ $avg_rating_stmt->execute([$property_id]);
 $rating_stats = $avg_rating_stmt->fetch();
 $avg_rating = round($rating_stats['avg_rating'], 1) ?: 'New';
 $review_count = $rating_stats['review_count'];
+
+// Fetch nearest tourist destinations (popular destinations in the same district or matching the city)
+$nearest_destinations = [];
+if (!empty($property['district']) || !empty($property['city'])) {
+    try {
+        $dest_stmt = $pdo->prepare("
+            SELECT * FROM popular_destinations 
+            WHERE is_active = 1 
+              AND (
+                LOWER(district_name) = LOWER(:district) 
+                OR LOWER(destination_name) = LOWER(:district)
+                OR LOWER(district_name) = LOWER(:city) 
+                OR LOWER(destination_name) = LOWER(:city)
+              )
+            ORDER BY sort_order, id
+        ");
+        $dest_stmt->execute([
+            'district' => $property['district'] ?? '',
+            'city' => $property['city'] ?? ''
+        ]);
+        $nearest_destinations = $dest_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $nearest_destinations = [];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -290,23 +315,84 @@ $review_count = $rating_stats['review_count'];
                 </div>
                 <?php endif; ?>
 
-                <?php if (!empty($property['tourist_attractions'])): ?>
-                <!-- Tourist Attractions -->
+                <?php 
+                // Parse tourist attractions robustly (JSON array or newline string)
+                $attractions = [];
+                if (!empty($property['tourist_attractions'])) {
+                    $decoded = json_decode($property['tourist_attractions'], true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $attractions = $decoded;
+                    } else {
+                        $raw_lines = explode("\n", $property['tourist_attractions']);
+                        foreach ($raw_lines as $line) {
+                            $cleaned = trim(str_replace(['-', '•', '*', '[', ']', '"', "'"], '', $line));
+                            if (!empty($cleaned)) {
+                                $attractions[] = $cleaned;
+                            }
+                        }
+                    }
+                }
+                ?>
+
+                <?php if (!empty($attractions) || !empty($nearest_destinations)): ?>
+                <!-- Tourist Attractions & Nearest Destinations -->
                 <div class="mb-10 border-t border-neutral-200 pt-8">
-                    <h3 class="text-xl font-bold font-display mb-6">Nearby Tourist Attractions</h3>
-                    <ul class="space-y-4">
-                        <?php 
-                        $attractions = explode("\n", $property['tourist_attractions']);
-                        foreach ($attractions as $attraction):
-                            $attraction = trim(str_replace(['-', '•', '*'], '', $attraction));
-                            if (empty($attraction)) continue;
-                        ?>
-                            <li class="flex items-start gap-3 text-[14px] text-neutral-700 bg-neutral-50 p-3 rounded-lg border border-neutral-100">
-                                <i class="fas fa-map-marker-alt text-brand-600 mt-1"></i>
-                                <span class="font-medium"><?php echo htmlspecialchars($attraction); ?></span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
+                    <h3 class="text-xl font-bold font-display mb-6">Explore the Area</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <?php if (!empty($attractions)): ?>
+                        <!-- Property Nearby Attractions -->
+                        <div>
+                            <h4 class="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-map-marked-alt text-brand-600"></i>
+                                <span>Nearby Attractions</span>
+                            </h4>
+                            <ul class="space-y-3">
+                                <?php foreach ($attractions as $attraction): ?>
+                                    <li class="flex items-start gap-3 text-[14px] text-neutral-700 bg-neutral-50 p-3 rounded-lg border border-neutral-100">
+                                        <i class="fas fa-location-arrow text-brand-600 mt-1"></i>
+                                        <span class="font-medium"><?php echo htmlspecialchars($attraction); ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($nearest_destinations)): ?>
+                        <!-- Popular District Destinations -->
+                        <div class="<?php echo empty($attractions) ? 'col-span-2' : ''; ?>">
+                            <h4 class="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-compass text-brand-600"></i>
+                                <span>Nearest Tourist Destinations</span>
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <?php foreach ($nearest_destinations as $destination): ?>
+                                    <?php 
+                                    $query_name = $destination['destination_name'] ?: $destination['district_name'];
+                                    $media_type = $destination['media_type'] ?? 'image';
+                                    ?>
+                                    <a href="hotels.php?q=<?php echo urlencode($query_name); ?>" class="group cursor-pointer block border border-neutral-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                                        <div class="relative h-[120px] overflow-hidden">
+                                            <?php if ($media_type === 'video'): ?>
+                                                <video class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" autoplay muted loop playsinline>
+                                                    <source src="<?php echo htmlspecialchars($destination['media_path']); ?>">
+                                                </video>
+                                            <?php else: ?>
+                                                <img src="<?php echo htmlspecialchars($destination['media_path']); ?>" alt="<?php echo htmlspecialchars($destination['destination_name']); ?>"
+                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                            <?php endif; ?>
+                                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+                                            <div class="absolute bottom-2 left-3 text-white right-2">
+                                                <h5 class="font-bold text-sm tracking-tight leading-tight"><?php echo htmlspecialchars($destination['destination_name']); ?></h5>
+                                                <p class="text-[10px] opacity-85 truncate mt-0.5"><?php echo htmlspecialchars($destination['description']); ?></p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php endif; ?>
 

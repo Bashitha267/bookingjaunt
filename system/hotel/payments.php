@@ -60,6 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     $proof_path = '';
     if (isset($_FILES['proof_image']) && $_FILES['proof_image']['error'] === UPLOAD_ERR_OK) {
+        if ($_FILES['proof_image']['size'] > 10 * 1024 * 1024) {
+            header("Location: payments.php?property_id=$property_id&msg=size_limit");
+            exit();
+        }
         $upload_dir = '../../uploads/payments/';
         if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
         $ext = strtolower(pathinfo($_FILES['proof_image']['name'], PATHINFO_EXTENSION));

@@ -21,6 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $file = $_FILES['file'];
+        if ($file['size'] > 10 * 1024 * 1024) {
+            echo json_encode(['success' => false, 'message' => 'File size exceeds the 10MB limit']);
+            exit;
+        }
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = uniqid('prop_') . '.' . $ext;
         $target = $upload_dir . $filename;

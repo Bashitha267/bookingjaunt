@@ -22,6 +22,8 @@ $type = trim($_GET['type'] ?? '');
 $params = [];
 $where = [];
 
+$where[] = "p.business_type != 'vehicle'";
+
 if ($search !== '') {
 	$like = '%' . $search . '%';
 	$where[] = "(p.property_name LIKE ? OR u.email LIKE ? OR p.contact_number LIKE ? OR p.mobile_telephone LIKE ? OR p.fixed_telephone LIKE ?)";

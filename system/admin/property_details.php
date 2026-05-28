@@ -2,7 +2,7 @@
 require_once '../../config.php';
 session_start();
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'manager', 'site_staff'], true)) {
 	header("Location: ../../admin.php");
 	exit();
 }
@@ -119,66 +119,90 @@ foreach ($amenities as $item) {
 	<style>
 		body {
 			font-family: "Times New Roman", serif;
-			color: #111;
-			background: transparent;
+			color: #0f172a;
+			background: #f5f7fb;
+			margin: 0;
 		}
 		.container {
-			max-width: 1100px;
-			margin: 24px auto;
-			padding: 0 16px 40px;
+			max-width: 1150px;
+			margin: 28px auto 40px;
+			padding: 0 18px 40px;
 		}
 		h1 {
-			font-size: 24px;
+			font-size: 26px;
 			margin: 0 0 8px;
-			color: #1a1a1a;
+			color: #0b3a8a;
 		}
 		.meta {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+			gap: 8px 16px;
 			font-size: 13px;
-			color: #333;
+			color: #1f2937;
+			padding: 12px 14px;
+			background: #ffffff;
+			border: 1px solid #d9e2f0;
+			border-radius: 12px;
 		}
 		.section {
-			margin-top: 24px;
+			margin-top: 22px;
+			background: #ffffff;
+			border: 1px solid #d9e2f0;
+			border-radius: 14px;
+			padding: 16px 18px 18px;
+			box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 		}
 		.section h2 {
-			font-size: 18px;
-			margin: 0 0 8px;
-			padding-bottom: 4px;
-			border-bottom: 1px solid #111;
-			color: #1f2937;
+			font-size: 16px;
+			margin: 0 0 12px;
+			padding-bottom: 6px;
+			border-bottom: 1px solid #c7d5ee;
+			color: #0b3a8a;
+			letter-spacing: 0.6px;
+			text-transform: uppercase;
 		}
 		.media-thumb {
 			width: 140px;
 			height: 90px;
 			object-fit: cover;
-			border: 1px solid #111;
+			border: 1px solid #d0d7e5;
+			border-radius: 8px;
 		}
 		table {
 			width: 100%;
 			border-collapse: collapse;
 		}
 		th, td {
-			border: 1px solid #111;
-			padding: 6px 8px;
+			border: 1px solid #d0d7e5;
+			padding: 8px 10px;
 			vertical-align: top;
-			font-size: 14px;
+			font-size: 13px;
 		}
 		th {
 			text-align: left;
 			width: 30%;
 			font-weight: bold;
+			color: #0b3a8a;
+			background: #f3f7ff;
 		}
 		.list-table th {
 			width: auto;
 		}
 		.empty {
 			font-style: italic;
-			color: #4b5563;
+			color: #64748b;
 		}
 		.back-link {
-			display: inline-block;
-			margin-bottom: 12px;
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
 			font-size: 13px;
-			color: #1d4ed8;
+			color: #0b3a8a;
+			text-decoration: none;
+			padding: 8px 12px;
+			border: 1px solid #c7d5ee;
+			border-radius: 10px;
+			background: #ffffff;
 		}
 		.page-header {
 			display: flex;
@@ -186,13 +210,34 @@ foreach ($amenities as $item) {
 			justify-content: space-between;
 			gap: 12px;
 			flex-wrap: wrap;
+			margin-bottom: 16px;
 		}
 		.pdf-btn {
-			border: 1px solid #111;
-			padding: 6px 12px;
-			font-size: 13px;
+			border: 1px solid #0b3a8a;
+			padding: 8px 14px;
+			font-size: 12px;
+			font-weight: bold;
+			text-transform: uppercase;
 			cursor: pointer;
-			background: transparent;
+			background: #0b3a8a;
+			color: #ffffff;
+			border-radius: 10px;
+		}
+		.pdf-btn:hover {
+			background: #062f6f;
+		}
+		.page-card {
+			background: #ffffff;
+			border: 1px solid #d9e2f0;
+			border-radius: 16px;
+			padding: 18px 20px;
+			box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+		}
+		.title-row {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			margin-bottom: 18px;
 		}
 		@media print {
 			.no-print {
@@ -200,6 +245,14 @@ foreach ($amenities as $item) {
 			}
 			body {
 				margin: 0;
+			}
+			.container {
+				max-width: none;
+				margin: 0;
+				padding: 0;
+			}
+			.page-card, .section, .meta {
+				box-shadow: none;
 			}
 		}
 	</style>
@@ -213,16 +266,21 @@ foreach ($amenities as $item) {
 		</div>
 
 		<?php if ($error !== ''): ?>
-			<h1>Property Details</h1>
-			<p><?php echo h($error); ?></p>
-		<?php else: ?>
-			<h1><?php echo h($property['property_name']); ?> - Property Report</h1>
-			<div class="meta">
-				<div>Property ID: <?php echo (int)$property['id']; ?></div>
-				<div>Business Type: <?php echo h(str_replace('_', ' ', $property['business_type'])); ?></div>
-				<div>Hotel Category: <?php echo h($property['hotel_category'] ?: 'N/A'); ?></div>
-				<div>Created At: <?php echo h($property['created_at']); ?></div>
+			<div class="page-card">
+				<h1>Property Details</h1>
+				<p><?php echo h($error); ?></p>
 			</div>
+		<?php else: ?>
+			<div class="page-card">
+				<div class="title-row">
+					<h1><?php echo h($property['property_name']); ?> - Property Report</h1>
+					<div class="meta">
+						<div>Property ID: <?php echo (int)$property['id']; ?></div>
+						<div>Business Type: <?php echo h(str_replace('_', ' ', $property['business_type'])); ?></div>
+						<div>Hotel Category: <?php echo h($property['hotel_category'] ?: 'N/A'); ?></div>
+						<div>Created At: <?php echo h($property['created_at']); ?></div>
+					</div>
+				</div>
 
 			<div class="section">
 				<h2>Owner Information</h2>

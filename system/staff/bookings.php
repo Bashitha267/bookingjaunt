@@ -31,8 +31,8 @@ $params = [];
 
 if ($search !== '') {
     $like = '%' . $search . '%';
-    $where[] = "(p.property_name LIKE ? OR b.guest_name LIKE ? OR r.room_name LIKE ?)";
-    $params = array_merge($params, [$like, $like, $like]);
+    $where[] = "(p.property_name LIKE ? OR b.guest_name LIKE ? OR r.room_name LIKE ? OR b.guest_phone LIKE ? OR p.contact_number LIKE ?)";
+    $params = array_merge($params, [$like, $like, $like, $like, $like]);
 }
 if ($status !== '') {
     $where[] = "b.status = ?";
@@ -145,6 +145,12 @@ $bookings = $stmt->fetchAll();
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
+                                        <a href="../shared/booking_download.php?booking_id=<?php echo (int)$booking['id']; ?>&view=1" target="_blank" class="text-white px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold transition-colors inline-block">
+                                            View
+                                        </a>
+                                        <a href="../shared/booking_download.php?booking_id=<?php echo (int)$booking['id']; ?>" class="text-sky-300 hover:text-white px-3 py-1 bg-sky-500/10 hover:bg-sky-500/20 rounded-lg text-xs font-bold transition-colors inline-block">
+                                            Download
+                                        </a>
                                         <?php if ($booking['status'] !== 'cancelled' && $booking['status'] !== 'checked_out'): ?>
                                         <button onclick="openCancelModal(<?php echo $booking['id']; ?>)" class="text-red-400 hover:text-red-300 px-3 py-1 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-xs font-bold transition-colors">
                                             Cancel

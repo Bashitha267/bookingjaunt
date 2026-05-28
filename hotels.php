@@ -15,15 +15,33 @@ $exchange_rate = 300; // Standard approximation: 1 USD = 300 LKR
 try {
     // --- Core Search Variables ---
     $q = $_GET['q'] ?? '';
+    $destination = $_GET['destination'] ?? '';
     $checkin = $_GET['checkin'] ?? '';
     $checkout = $_GET['checkout'] ?? '';
     $adults = (int) ($_GET['adults'] ?? 1);
     $children = (int) ($_GET['children'] ?? 0);
     $type = $_GET['type'] ?? 'hotel';
 
+    // Pagination
+    $per_page = 15;
+    $page     = max(1, (int)($_GET['page'] ?? 1));
+    $offset   = ($page - 1) * $per_page;
+
     $params = [];
     $where = ["p.business_type = ?", "p.approval_status = 'approved'"];
     $params[] = $type;
+
+    if (!empty($destination)) {
+        if (strpos($destination, 'district:') === 0) {
+            $dist = substr($destination, 9);
+            $where[] = "p.district = ?";
+            $params[] = $dist;
+        } elseif (strpos($destination, 'town:') === 0) {
+            $town = substr($destination, 5);
+            $where[] = "p.closest_main_town = ?";
+            $params[] = $town;
+        }
+    }
 
     if (!empty($q)) {
         $where[] = "(p.property_name LIKE ? OR p.city LIKE ? OR p.district LIKE ? OR p.closest_main_town LIKE ?)";
@@ -99,6 +117,19 @@ try {
     $stmt_types = $pdo->query("SELECT DISTINCT business_type FROM properties WHERE business_type IS NOT NULL AND approval_status = 'approved'");
     $db_property_types = $stmt_types->fetchAll(PDO::FETCH_COLUMN);
 
+    // Fetch unique districts and closest main towns for destination dropdown (accommodations only)
+    $districts = [];
+    $towns = [];
+    try {
+        $dist_stmt = $pdo->query("SELECT DISTINCT district FROM properties WHERE district IS NOT NULL AND district != '' AND business_type != 'vehicle' AND approval_status = 'approved' ORDER BY district");
+        $districts = $dist_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $town_stmt = $pdo->query("SELECT DISTINCT closest_main_town FROM properties WHERE closest_main_town IS NOT NULL AND closest_main_town != '' AND business_type != 'vehicle' AND approval_status = 'approved' ORDER BY closest_main_town");
+        $towns = $town_stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        error_log("Error fetching districts/towns: " . $e->getMessage());
+    }
+
     $type_meta = [
         'hotel' => ['label' => 'Hotels', 'img' => 'assets/hotel_category.png', 'icon' => 'fa-hotel'],
         'apartment' => ['label' => 'Apartments', 'img' => 'assets/apartment_category.png', 'icon' => 'fa-building'],
@@ -145,6 +176,33 @@ try {
         $params[] = $checkout;
         $params[] = $checkin;
     }
+
+    // --- Count query for pagination ---
+    $count_query = "SELECT COUNT(DISTINCT p.id) 
+                    FROM properties p 
+                    JOIN property_rooms r ON r.property_id = p.id
+                    LEFT JOIN reviews rev ON rev.property_id = p.id
+                    LEFT JOIN property_boosts pb ON pb.property_id = p.id AND pb.status = 'active' 
+                         AND pb.start_date <= CURDATE() AND DATE_ADD(pb.start_date, INTERVAL pb.duration_days DAY) >= CURDATE()
+                    WHERE $where_sql
+                    AND r.price_lkr = (
+                        SELECT MIN(price_lkr) FROM property_rooms r2 
+                        WHERE r2.property_id = p.id 
+                        AND r2.adults >= ? AND (r2.adults + r2.children) >= ?
+                        " . (!empty($checkin) && !empty($checkout) ? "AND r2.total_rooms > (
+                            SELECT COUNT(*) FROM bookings b2 
+                            WHERE b2.room_id = r2.id 
+                            AND b2.status NOT IN ('cancelled')
+                            AND (b2.check_in_date < ? AND b2.check_out_date > ?)
+                        )" : "") . "
+                    )";
+    $count_stmt = $pdo->prepare($count_query);
+    $count_stmt->execute($params);
+    $total_results = (int) $count_stmt->fetchColumn();
+    $total_pages   = max(1, (int) ceil($total_results / $per_page));
+
+    // Append limit and offset to main query
+    $query .= " LIMIT $per_page OFFSET $offset";
 
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
@@ -260,11 +318,189 @@ try {
             }
         }
     </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hero-gradient {
+            background: linear-gradient(135deg, #003580 0%, #006ce4 60%, #0057b8 100%);
+        }
+        .search-bar-glass {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+        .pagination-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid #e7e7e7;
+            color: #4a4a4a;
+            background: #fff;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover { background: #003580; color: #fff; border-color: #003580; }
+        .pagination-btn.active { background: #003580; color: #fff; border-color: #003580; }
+    </style>
 </head>
 
 <body>
 
     <?php include 'navbar.php'; ?>
+
+    <!-- =========================================================
+         HERO SEARCH SECTION
+    ========================================================= -->
+    <section class="hero-gradient py-10 md:py-16 px-4">
+        <div class="max-w-[1200px] mx-auto text-center">
+            <!-- Badge -->
+            <div class="inline-flex items-center gap-2 bg-white/15 text-white/90 text-xs font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full mb-5 border border-white/20">
+                <i class="fas fa-hotel"></i> Premium Stays Sri Lanka
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black text-white leading-tight mb-3">
+                Find Your Perfect Stay
+            </h1>
+            <p class="text-white/75 text-base md:text-lg font-medium mb-8">
+                Family Travel. Securely Enjoyed.
+            </p>
+
+            <!-- Search Bar -->
+            <form method="GET" action="hotels.php" class="search-bar-glass rounded-2xl p-3 md:p-4 max-w-[1300px] mx-auto">
+                <!-- Keep existing filter types if active -->
+                <input type="hidden" name="type" value="<?php echo htmlspecialchars($type); ?>">
+                <!-- Hidden inputs for adults and children counts -->
+                <input type="hidden" name="adults" id="adultsHidden" value="<?php echo htmlspecialchars($adults); ?>">
+                <input type="hidden" name="children" id="childrenHidden" value="<?php echo htmlspecialchars($children); ?>">
+
+                <!-- Invisible overlay backdrop for guest count popup closing -->
+                <div id="guestOverlay" class="hidden fixed inset-0 z-40 bg-transparent" onclick="toggleGuestDropdown()"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3 relative z-50">
+                    <!-- Where are you going? (Col Span 4) -->
+                    <div class="lg:col-span-4 flex items-center gap-3 bg-white text-neutral-800 rounded-2xl px-4 py-3 border border-neutral-200 shadow-sm">
+                        <i class="fas fa-bed text-secondary text-lg flex-shrink-0"></i>
+                        <div class="w-full flex flex-col items-start text-left">
+                            <label class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold leading-none mb-1">Where are you going?</label>
+                            <input
+                                type="text"
+                                name="q"
+                                list="destinations"
+                                value="<?php echo htmlspecialchars($q); ?>"
+                                placeholder="Search destination or stays..."
+                                class="w-full text-sm font-semibold text-neutral-800 placeholder-neutral-400 outline-none bg-transparent"
+                            >
+                            <datalist id="destinations">
+                                <?php if (!empty($districts)): ?>
+                                    <?php foreach ($districts as $d): ?>
+                                        <option value="<?php echo htmlspecialchars($d); ?>">
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <?php if (!empty($towns)): ?>
+                                    <?php foreach ($towns as $t): ?>
+                                        <option value="<?php echo htmlspecialchars($t); ?>">
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <!-- Check-in Date (Col Span 2) -->
+                    <div class="lg:col-span-2 flex items-center gap-3 bg-white text-neutral-800 rounded-2xl px-4 py-3 border border-neutral-200 shadow-sm">
+                        <i class="fas fa-calendar-alt text-secondary text-lg flex-shrink-0"></i>
+                        <div class="w-full flex flex-col items-start text-left">
+                            <label class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold leading-none mb-1">Check-in</label>
+                            <input
+                                type="date"
+                                name="checkin"
+                                value="<?php echo htmlspecialchars($checkin); ?>"
+                                class="w-full text-xs font-semibold text-neutral-800 outline-none bg-transparent [color-scheme:light] cursor-pointer"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Check-out Date (Col Span 2) -->
+                    <div class="lg:col-span-2 flex items-center gap-3 bg-white text-neutral-800 rounded-2xl px-4 py-3 border border-neutral-200 shadow-sm">
+                        <i class="fas fa-calendar-alt text-secondary text-lg flex-shrink-0"></i>
+                        <div class="w-full flex flex-col items-start text-left">
+                            <label class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold leading-none mb-1">Check-out</label>
+                            <input
+                                type="date"
+                                name="checkout"
+                                value="<?php echo htmlspecialchars($checkout); ?>"
+                                class="w-full text-xs font-semibold text-neutral-800 outline-none bg-transparent [color-scheme:light] cursor-pointer"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Guests Selector Popup Trigger (Col Span 2) -->
+                    <div id="guestDropdownContainer" class="lg:col-span-2 relative">
+                        <button type="button" onclick="toggleGuestDropdown()" class="w-full flex items-center justify-between gap-3 bg-white text-neutral-800 rounded-2xl px-4 py-3 border border-neutral-200 shadow-sm hover:border-neutral-300 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-user text-secondary text-lg flex-shrink-0"></i>
+                                <div class="flex flex-col items-start text-left">
+                                    <span class="text-[9px] uppercase tracking-wider text-neutral-400 font-bold leading-none mb-1">Guests</span>
+                                    <span id="guestInputDisplay" class="text-xs font-semibold text-neutral-800 truncate max-w-[120px] block"><?php echo $adults; ?> adults · <?php echo $children; ?> children</span>
+                                </div>
+                            </div>
+                            <i id="guestChevron" class="fas fa-chevron-down text-neutral-400 text-xs transition-transform"></i>
+                        </button>
+
+                        <!-- Guest Selection Card Popup -->
+                        <div id="guestPopup" class="hidden absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-neutral-100 p-6 z-50 text-left">
+                            <h4 class="text-xs font-black text-secondary uppercase tracking-widest mb-4">Guest Selection</h4>
+                            
+                            <!-- Adults Selection Row -->
+                            <div class="flex items-center justify-between py-3 border-b border-neutral-100">
+                                <div>
+                                    <div class="font-bold text-neutral-800 text-sm">Adults</div>
+                                    <div class="text-[11px] text-neutral-400">Ages 13 or above</div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" onclick="updateGuestCount('adults', -1)" class="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 font-bold transition-colors">&minus;</button>
+                                    <span id="adultsCount" class="font-bold text-neutral-800 w-4 text-center"><?php echo $adults; ?></span>
+                                    <button type="button" onclick="updateGuestCount('adults', 1)" class="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 font-bold transition-colors">+</button>
+                                </div>
+                            </div>
+
+                            <!-- Children Selection Row -->
+                            <div class="flex items-center justify-between py-3">
+                                <div>
+                                    <div class="font-bold text-neutral-800 text-sm">Children</div>
+                                    <div class="text-[11px] text-neutral-400">Ages 0 - 12</div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" onclick="updateGuestCount('children', -1)" class="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 font-bold transition-colors">&minus;</button>
+                                    <span id="childrenCount" class="font-bold text-neutral-800 w-4 text-center"><?php echo $children; ?></span>
+                                    <button type="button" onclick="updateGuestCount('children', 1)" class="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-600 hover:bg-neutral-50 font-bold transition-colors">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Button (Col Span 2) -->
+                    <button type="submit"
+                        class="lg:col-span-2 bg-secondary hover:bg-primary text-white font-black text-sm py-3 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-secondary/30 uppercase tracking-wider">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Stats -->
+            <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-white/60 text-xs font-bold">
+                <span class="flex items-center gap-1.5"><i class="fas fa-shield-alt text-gold"></i> Verified Stays</span>
+                <span class="hidden sm:inline w-1 h-1 rounded-full bg-white/30"></span>
+                <span class="flex items-center gap-1.5"><i class="fas fa-headset text-gold"></i> 24/7 Support</span>
+                <span class="hidden sm:inline w-1 h-1 rounded-full bg-white/30"></span>
+                <span class="flex items-center gap-1.5"><i class="fas fa-tag text-gold"></i> Best Prices</span>
+            </div>
+        </div>
+    </section>
 
 
 
@@ -279,7 +515,7 @@ try {
                     $meta = $type_meta[strtolower($p_type)] ?? ['label' => ucfirst($p_type), 'img' => 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=400&q=80', 'icon' => 'fa-hotel'];
                     $isActive = ($type == $p_type);
                     ?>
-                    <a href="hotels.php?type=<?php echo urlencode($p_type); ?>&q=<?php echo urlencode($q); ?>"
+                    <a href="hotels.php?type=<?php echo urlencode($p_type); ?>&q=<?php echo urlencode($q); ?>&destination=<?php echo urlencode($destination); ?>&checkin=<?php echo urlencode($checkin); ?>&checkout=<?php echo urlencode($checkout); ?>&adults=<?php echo urlencode($adults); ?>"
                         class="min-w-[200px] snap-start group cursor-pointer no-underline block">
                         <div
                             class="relative h-[130px] rounded-2xl overflow-hidden mb-3 <?php echo $isActive ? 'ring-4 ring-primary ring-offset-2' : ''; ?>">
@@ -313,7 +549,7 @@ try {
                     $meta = $type_meta[strtolower($p_type)] ?? ['label' => ucfirst($p_type), 'icon' => 'fa-hotel'];
                     $isActive = ($type == $p_type);
                     ?>
-                    <a href="hotels.php?type=<?php echo urlencode($p_type); ?>&q=<?php echo urlencode($q); ?>"
+                    <a href="hotels.php?type=<?php echo urlencode($p_type); ?>&q=<?php echo urlencode($q); ?>&destination=<?php echo urlencode($destination); ?>&checkin=<?php echo urlencode($checkin); ?>&checkout=<?php echo urlencode($checkout); ?>&adults=<?php echo urlencode($adults); ?>"
                         class="flex items-center gap-2.5 px-6 py-3.5 rounded-full whitespace-nowrap text-[14px] font-black transition-all shrink-0 snap-start no-underline <?php echo $isActive ? 'bg-[#003580] text-white shadow-lg shadow-[#003580]/20' : 'bg-white border border-neutral-200 text-neutral-700'; ?>">
                         <i
                             class="fas <?php echo $meta['icon']; ?> <?php echo $isActive ? 'text-white/80' : 'text-neutral-400'; ?>"></i>
@@ -399,6 +635,7 @@ try {
                 <input type="hidden" name="checkout" value="<?php echo htmlspecialchars($checkout); ?>">
                 <input type="hidden" name="adults" value="<?php echo htmlspecialchars($adults); ?>">
                 <input type="hidden" name="children" value="<?php echo htmlspecialchars($children); ?>">
+                <input type="hidden" name="destination" value="<?php echo htmlspecialchars($destination); ?>">
 
                 <div class="filter-box">
                     <div class="filter-title">Filter by:</div>
@@ -536,6 +773,31 @@ try {
                     </div>
                 </div>
             <?php endif; ?>
+
+            <!-- Results Header -->
+            <div class="flex items-center justify-between mb-6 px-4 md:px-0 mt-6 md:mt-0">
+                <div>
+                    <h2 class="text-xl font-black text-neutral-800">
+                        <?php echo count($properties); ?> Stay<?php echo count($properties) !== 1 ? 's' : ''; ?> Found
+                    </h2>
+                    <?php if (!empty($q) || !empty($destination) || !empty($checkin) || !empty($checkout) || $adults > 1): ?>
+                        <p class="text-xs md:text-sm text-neutral-500 mt-1 font-medium flex flex-wrap gap-1 items-center">
+                            <span>Showing results</span>
+                            <?php if (!empty($q)): ?><span>for "<span class="font-bold text-primary"><?php echo htmlspecialchars($q); ?></span>"</span><?php endif; ?>
+                            <?php if (!empty($destination)): 
+                                $loc_name = strpos($destination, 'district:') === 0 ? substr($destination, 9) : substr($destination, 5);
+                            ?><span>in <span class="font-bold text-primary"><?php echo htmlspecialchars($loc_name); ?></span></span><?php endif; ?>
+                            <?php if (!empty($checkin) && !empty($checkout)): ?><span>from <span class="font-bold text-primary"><?php echo htmlspecialchars($checkin); ?></span> to <span class="font-bold text-primary"><?php echo htmlspecialchars($checkout); ?></span></span><?php endif; ?>
+                            <?php if ($adults > 1): ?><span>for <span class="font-bold text-primary"><?php echo $adults; ?> guests</span></span><?php endif; ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+                <?php if (!empty($q) || !empty($destination) || !empty($checkin) || !empty($checkout) || $adults > 1): ?>
+                    <a href="hotels.php" class="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1.5 transition-colors">
+                        <i class="fas fa-times-circle"></i> Clear Filters
+                    </a>
+                <?php endif; ?>
+            </div>
 
             <?php
             if (empty($properties)): ?>
@@ -742,18 +1004,69 @@ try {
             <?php endif; ?>
 
             <!-- Pagination -->
-            <div class="hidden md:flex" style="justify-content:center; gap:5px; margin-top:20px;">
-                <button style="padding:8px 12px; border:1px solid #ddd; background:#fff; border-radius:4px;"><i
-                        class="fas fa-chevron-left"></i></button>
-                <button
-                    style="padding:8px 12px; border:1px solid #ddd; background:var(--primary); color:#fff; border-radius:4px;">1</button>
-                <button style="padding:8px 12px; border:1px solid #ddd; background:#fff; border-radius:4px;">2</button>
-                <button style="padding:8px 12px; border:1px solid #ddd; background:#fff; border-radius:4px;">3</button>
-                <span>...</span>
-                <button style="padding:8px 12px; border:1px solid #ddd; background:#fff; border-radius:4px;">24</button>
-                <button style="padding:8px 12px; border:1px solid #ddd; background:#fff; border-radius:4px;"><i
-                        class="fas fa-chevron-right"></i></button>
-            </div>
+            <?php if ($total_pages > 1): ?>
+                <?php
+                    // Build query string preserving active filters except 'page'
+                    $qp = $_GET;
+                    unset($qp['page']);
+                    $base_qs = http_build_query($qp);
+                    $base_url = 'hotels.php?' . ($base_qs ? $base_qs . '&' : '');
+                ?>
+                <div class="flex items-center justify-center gap-2 mt-10">
+                    <!-- Prev -->
+                    <?php if ($page > 1): ?>
+                        <a href="<?php echo $base_url; ?>page=<?php echo $page - 1; ?>" class="pagination-btn">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </a>
+                    <?php else: ?>
+                        <span class="pagination-btn opacity-40 cursor-not-allowed">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </span>
+                    <?php endif; ?>
+
+                    <!-- Page Numbers -->
+                    <?php
+                    $start_page = max(1, $page - 2);
+                    $end_page   = min($total_pages, $page + 2);
+                    if ($start_page > 1): ?>
+                        <a href="<?php echo $base_url; ?>page=1" class="pagination-btn">1</a>
+                        <?php if ($start_page > 2): ?>
+                            <span class="text-neutral-400 font-bold px-1">…</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                        <a href="<?php echo $base_url; ?>page=<?php echo $i; ?>"
+                           class="pagination-btn <?php echo ($i === $page) ? 'active' : ''; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($end_page < $total_pages): ?>
+                        <?php if ($end_page < $total_pages - 1): ?>
+                            <span class="text-neutral-400 font-bold px-1">…</span>
+                        <?php endif; ?>
+                        <a href="<?php echo $base_url; ?>page=<?php echo $total_pages; ?>" class="pagination-btn">
+                            <?php echo $total_pages; ?>
+                        </a>
+                    <?php endif; ?>
+
+                    <!-- Next -->
+                    <?php if ($page < $total_pages): ?>
+                        <a href="<?php echo $base_url; ?>page=<?php echo $page + 1; ?>" class="pagination-btn">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </a>
+                    <?php else: ?>
+                        <span class="pagination-btn opacity-40 cursor-not-allowed">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </span>
+                    <?php endif; ?>
+                </div>
+
+                <p class="text-center text-xs text-neutral-400 font-medium mt-3">
+                    Page <?php echo $page; ?> of <?php echo $total_pages; ?> &bull; <?php echo number_format($total_results); ?> total stays
+                </p>
+            <?php endif; ?>
 
             <!-- Mobile Authentication Promo (Hidden on Desktop) -->
             <?php if (!isset($_SESSION['user_id'])): ?>
@@ -781,89 +1094,33 @@ try {
         </section>
     </main>
 
-    <!-- Why Choose Us -->
-    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-20 mb-10">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="flex gap-4 items-start">
-                <div
-                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
-                    <i class="fas fa-shield-alt text-xl"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-neutral-800 mb-1">Secure Bookings</h3>
-                    <p class="text-sm text-text-secondary">Your data is safe with our 256-bit SSL encrypted payment
-                        gateway.</p>
-                </div>
-            </div>
-            <div class="flex gap-4 items-start">
-                <div
-                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
-                    <i class="fas fa-headset text-xl"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-neutral-800 mb-1">24/7 Support</h3>
-                    <p class="text-sm text-text-secondary">Our dedicated team is here to help you anytime, anywhere in
-                        Sri Lanka.</p>
-                </div>
-            </div>
-            <div class="flex gap-4 items-start">
-                <div
-                    class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0">
-                    <i class="fas fa-thumbs-up text-xl"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-neutral-800 mb-1">Best Price Guarantee</h3>
-                    <p class="text-sm text-text-secondary">Find a lower price? We'll match it and give you an extra 5%
-                        off.</p>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <?php if (isset($_SESSION['user_id']) && !$user_has_properties): ?>
-        <!-- Property Listing CTA for New/Propertyless Owners -->
-        <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16">
-            <div
-                class="relative overflow-hidden bg-primary rounded-[2.5rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 group">
-                <!-- Background Decoration -->
-                <div
-                    class="absolute -right-20 -top-20 w-96 h-96 bg-white/5 rounded-full blur-3xl transition-all group-hover:scale-110">
-                </div>
-                <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-[#10b981]/10 rounded-full blur-3xl"></div>
-
-                <div class="relative z-10 flex-1">
-                    <div
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981]/20 text-[#10b981] rounded-full text-xs font-black uppercase tracking-[0.2em] mb-6">
-                        <i class="fas fa-gift"></i> Limited Offer
+        <!-- Compact Property Listing CTA -->
+        <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-10 mb-6">
+            <div class="relative overflow-hidden bg-primary rounded-2xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                <!-- Background decoration -->
+                <div class="absolute -right-10 -top-10 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div class="relative z-10 max-w-2xl text-left">
+                    <div class="inline-block px-3 py-1 bg-[#10b981]/25 text-[#10b981] rounded-full text-[10px] font-black uppercase tracking-widest mb-3">
+                        Limited Offer
                     </div>
-                    <h2 class="text-3xl md:text-5xl font-black text-white leading-tight mb-6">List your property & get a
-                        <span class="text-[#10b981]">Free Management System</span>
+                    <h2 class="text-xl md:text-2xl font-black text-white leading-tight mb-2">
+                        List your property &amp; get a <span class="text-[#10b981]">Free Management System</span>
                     </h2>
-                    <p class="text-lg text-white/70 max-w-xl mb-8 leading-relaxed font-medium">Join thousands of property
-                        owners in Sri Lanka. Manage bookings, tracks expenses, and grow your business with our all-in-one
-                        platform.</p>
-
-                    <div class="flex flex-wrap gap-4">
-                        <a href="property_wizard.php"
-                            class="bg-[#10b981] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#059669] transition-all shadow-xl shadow-[#10b981]/20 flex items-center gap-3">
-                            <i class="fas fa-plus-circle"></i> Start Listing Now
-                        </a>
-                        <div
-                            class="flex items-center gap-3 px-6 py-4 bg-white/5 rounded-2xl border border-white/10 text-white/80 font-bold text-sm">
-                            <i class="fas fa-check text-[#10b981]"></i> No hidden fees
-                        </div>
-                    </div>
+                    <p class="text-xs md:text-sm text-white/75 leading-relaxed font-medium">
+                        Join thousands of property owners in Sri Lanka. Manage bookings, track expenses, and grow your business with our all-in-one platform.
+                    </p>
                 </div>
 
-                <div class="relative z-10 w-full md:w-1/3 flex justify-center">
-                    <div class="relative">
-                        <div class="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center animate-pulse">
-                            <i class="fas fa-hotel text-8xl text-white/20"></i>
-                        </div>
-                        <div
-                            class="absolute -bottom-4 -right-4 bg-[#febb02] p-6 rounded-3xl shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                            <i class="fas fa-chart-line text-4xl text-primary"></i>
-                        </div>
+                <div class="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0 w-full md:w-auto">
+                    <a href="property_wizard.php"
+                        class="bg-[#10b981] hover:bg-[#059669] text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all text-center whitespace-nowrap shadow-md">
+                        Start Listing Now
+                    </a>
+                    <div class="px-5 py-3 bg-white/5 rounded-xl border border-white/10 text-white/80 font-bold text-xs text-center whitespace-nowrap">
+                        No hidden fees
                     </div>
                 </div>
             </div>

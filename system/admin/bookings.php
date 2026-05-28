@@ -203,6 +203,7 @@ $payment_status_styles = [
 									<th class="px-6 py-4">Booking Details</th>
 									<th class="px-6 py-4">Booking Status</th>
 									<th class="px-6 py-4">Payment Stats</th>
+									<th class="px-6 py-4">Download</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-gray-100">
@@ -250,6 +251,18 @@ $payment_status_styles = [
 												<span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest <?php echo $payment_status_styles[$payment_status_value] ?? 'bg-gray-100 text-gray-600'; ?>">
 													<?php echo ucfirst($payment_status_value); ?>
 												</span>
+											</div>
+										</td>
+										<td class="px-6 py-5">
+											<div class="flex flex-wrap gap-2">
+												<a href="../shared/booking_download.php?booking_id=<?php echo (int)$booking['id']; ?>&view=1" target="_blank"
+													class="inline-flex items-center px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-[11px] font-bold uppercase tracking-widest hover:bg-gray-100 transition-colors">
+													View
+												</a>
+												<a href="../shared/booking_download.php?booking_id=<?php echo (int)$booking['id']; ?>"
+													class="inline-flex items-center px-3 py-2 rounded-lg border border-[#006ce4] text-[#006ce4] text-[11px] font-bold uppercase tracking-widest hover:bg-[#006ce4] hover:text-white transition-colors">
+													Download
+												</a>
 											</div>
 										</td>
 									</tr>

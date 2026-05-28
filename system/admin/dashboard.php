@@ -113,7 +113,7 @@ $type_counts = $pdo->query("SELECT business_type, COUNT(*) as count FROM propert
 
         <div class="p-4 lg:p-8">
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-9 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
                 <!-- Hotels -->
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 stat-card">
                     <div class="flex justify-between items-start mb-4">

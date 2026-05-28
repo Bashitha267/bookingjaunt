@@ -151,6 +151,24 @@ try {
     } catch (PDOException $e) {
         $popular_destinations = [];
     }
+
+    // Fetch vibe grid items (The Soul of Sri Lanka)
+    $vibe_items = [];
+    try {
+        $vibe_stmt = $pdo->query("SELECT * FROM homepage_vibe_grid WHERE is_active = 1 ORDER BY sort_order, id");
+        $vibe_items = $vibe_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $vibe_items = [];
+    }
+
+    // Fetch showcase items (Curated Island Experiences)
+    $showcase_items = [];
+    try {
+        $showcase_stmt = $pdo->query("SELECT * FROM homepage_showcase_items WHERE is_active = 1 ORDER BY sort_order, id");
+        $showcase_items = $showcase_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $showcase_items = [];
+    }
 } catch (PDOException $e) {
     error_log("Query failed: " . $e->getMessage());
 }
@@ -467,6 +485,102 @@ try {
         </div>
     </section>
     
+    <!-- ============================================================
+         THE SOUL OF SRI LANKA (Minimalist Vibe Grid)
+    ============================================================ -->
+    <?php if (!empty($vibe_items)): ?>
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-20 lg:mt-32">
+        <div class="text-center mb-16">
+            <span class="text-xs font-bold text-secondary uppercase tracking-[0.2em] mb-2 block">Curated Island Vibe</span>
+            <h2 class="text-3xl md:text-4xl font-black font-['Outfit'] text-neutral-800 tracking-tight leading-tight">
+                Immerse Yourself in the Wonders of Ceylon
+            </h2>
+            <p class="text-neutral-500 font-medium mt-3 max-w-xl mx-auto text-sm md:text-base">
+                A minimalist journey through the island's most breathtaking and diverse landscapes.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <?php foreach ($vibe_items as $item): 
+                $media_path = htmlspecialchars($item['media_path']);
+                // Handle relative paths for uploaded images
+                if (strpos($media_path, 'http') !== 0) {
+                    $media_path = $media_path;
+                }
+                $media_type = $item['media_type'] ?? 'image';
+                $accent_color = htmlspecialchars($item['accent_color'] ?: '#10b981');
+            ?>
+                <div class="group relative flex flex-col justify-end h-[480px] rounded-3xl overflow-hidden shadow-[0_10px_35px_rgba(0,0,0,0.03)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.08)] transition-all duration-500">
+                    <?php if ($media_type === 'video'): ?>
+                        <video class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" autoplay muted loop playsinline>
+                            <source src="<?php echo $media_path; ?>">
+                        </video>
+                    <?php else: ?>
+                        <img src="<?php echo $media_path; ?>" 
+                             alt="<?php echo htmlspecialchars($item['title']); ?>" 
+                             class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                             onerror="this.src='https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80'">
+                    <?php endif; ?>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                    <div class="relative z-10 p-8 text-left text-white">
+                        <span class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 block" style="color: <?php echo $accent_color; ?>;">
+                            <?php echo htmlspecialchars($item['badge']); ?>
+                        </span>
+                        <h3 class="text-xl font-bold mb-2"><?php echo htmlspecialchars($item['title']); ?></h3>
+                        <p class="text-xs text-white/80 leading-relaxed font-medium mb-4">
+                            <?php echo htmlspecialchars($item['description']); ?>
+                        </p>
+                        <a href="<?php echo htmlspecialchars($item['link_url']); ?>" class="inline-flex items-center gap-1.5 text-xs font-bold hover:underline uppercase tracking-wider" style="color: <?php echo $accent_color; ?>;">
+                            Explore More <i class="fas fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- ============================================================
+         CURATED ISLAND EXPERIENCES (Alternating Showcase)
+    ============================================================ -->
+    <?php if (!empty($showcase_items)): ?>
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-24 lg:mt-36 mb-12">
+        <?php foreach ($showcase_items as $index => $item): 
+            $is_even = ($index % 2 === 1);
+            $media_path = htmlspecialchars($item['media_path']);
+            $media_type = $item['media_type'] ?? 'image';
+            $accent_color = htmlspecialchars($item['accent_color'] ?: '#10b981');
+        ?>
+            <div class="flex flex-col <?php echo $is_even ? 'lg:flex-row-reverse' : 'lg:flex-row'; ?> items-center gap-12 lg:gap-16 mb-20 lg:mb-28">
+                <div class="w-full lg:w-1/2 overflow-hidden rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-neutral-100">
+                    <?php if ($media_type === 'video'): ?>
+                        <video class="w-full h-[400px] object-cover hover:scale-102 transition-transform duration-700" autoplay muted loop playsinline>
+                            <source src="<?php echo $media_path; ?>">
+                        </video>
+                    <?php else: ?>
+                        <img src="<?php echo $media_path; ?>" 
+                             alt="<?php echo htmlspecialchars($item['title']); ?>" 
+                             class="w-full h-[400px] object-cover hover:scale-102 transition-transform duration-700"
+                             onerror="this.src='https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80'">
+                    <?php endif; ?>
+                </div>
+                <div class="w-full lg:w-1/2 text-left">
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] mb-3 block" style="color: <?php echo $accent_color; ?>;"><?php echo htmlspecialchars($item['subtitle']); ?></span>
+                    <h3 class="text-2xl md:text-3xl font-black font-['Outfit'] text-neutral-800 tracking-tight leading-tight mb-4">
+                        <?php echo htmlspecialchars($item['title']); ?>
+                    </h3>
+                    <p class="text-neutral-500 text-sm md:text-base leading-relaxed font-medium mb-8 max-w-lg">
+                        <?php echo htmlspecialchars($item['description']); ?>
+                    </p>
+                    <a href="<?php echo htmlspecialchars($item['link_url']); ?>" class="inline-flex items-center justify-center text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-md hover:bg-opacity-90" style="background-color: <?php echo $accent_color; ?>;">
+                        Explore Now
+                    </a>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </section>
+    <?php endif; ?>
+
     <!-- Featured Hotels Section -->
     <?php if (!empty($featured_hotels)): ?>
     <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-12 mb-16">
@@ -666,47 +780,25 @@ try {
     <?php if (isset($_SESSION['user_id']) && !$user_has_properties): ?>
         <!-- Property Listing CTA for New/Propertyless Owners -->
         <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16">
-            <div
-                class="relative overflow-hidden bg-primary rounded-[2.5rem] p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 group">
-                <!-- Background Decoration -->
-                <div
-                    class="absolute -right-20 -top-20 w-96 h-96 bg-white/5 rounded-full blur-3xl transition-all group-hover:scale-110">
-                </div>
-                <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-[#10b981]/10 rounded-full blur-3xl"></div>
-
-                <div class="relative z-10 flex-1">
-                    <div
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981]/20 text-[#10b981] rounded-full text-xs font-black uppercase tracking-[0.2em] mb-6">
-                        <i class="fas fa-gift"></i> Limited Offer
-                    </div>
-                    <h2 class="text-3xl md:text-5xl font-black text-white leading-tight mb-6">List your property & get a
-                        <span class="text-[#10b981]">Free Management System</span>
+            <div class="bg-white border border-neutral-200/80 rounded-[2rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
+                <div class="max-w-2xl text-left">
+                    <span class="inline-block px-3.5 py-1.5 bg-emerald-50 text-[#059669] border border-emerald-100 rounded-full text-xs font-black uppercase tracking-wider mb-4">
+                        Limited Partner Offer
+                    </span>
+                    <h2 class="text-2xl md:text-3xl font-black text-neutral-800 tracking-tight leading-tight mb-3">
+                        List your property &amp; get a <span class="text-[#059669]">Free Management System</span>
                     </h2>
-                    <p class="text-lg text-white/70 max-w-xl mb-8 leading-relaxed font-medium">Join thousands of property
-                        owners in Sri Lanka. Manage bookings, tracks expenses, and grow your business with our all-in-one
-                        platform.</p>
-
-                    <div class="flex flex-wrap gap-4">
-                        <a href="property_wizard.php"
-                            class="bg-[#10b981] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#059669] transition-all shadow-xl shadow-[#10b981]/20 flex items-center gap-3">
-                            <i class="fas fa-plus-circle"></i> Start Listing Now
-                        </a>
-                        <div
-                            class="flex items-center gap-3 px-6 py-4 bg-white/5 rounded-2xl border border-white/10 text-white/80 font-bold text-sm">
-                            <i class="fas fa-check text-[#10b981]"></i> No hidden fees
-                        </div>
-                    </div>
+                    <p class="text-sm md:text-base text-neutral-500 font-medium leading-relaxed">
+                        Join thousands of property owners in Sri Lanka. Manage bookings, track expenses, and grow your business with our all-in-one platform.
+                    </p>
                 </div>
-
-                <div class="relative z-10 w-full md:w-1/3 flex justify-center">
-                    <div class="relative">
-                        <div class="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center animate-pulse">
-                            <i class="fas fa-hotel text-8xl text-white/20"></i>
-                        </div>
-                        <div
-                            class="absolute -bottom-4 -right-4 bg-[#febb02] p-6 rounded-3xl shadow-2xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                            <i class="fas fa-chart-line text-4xl text-primary"></i>
-                        </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0 w-full md:w-auto">
+                    <a href="property_wizard.php"
+                        class="bg-[#10b981] hover:bg-[#059669] text-white px-7 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all text-center whitespace-nowrap shadow-md shadow-[#10b981]/15">
+                        Start Listing Now
+                    </a>
+                    <div class="px-6 py-4 bg-neutral-50 border border-neutral-200/80 rounded-xl text-neutral-600 font-bold text-sm text-center whitespace-nowrap">
+                        No hidden fees
                     </div>
                 </div>
             </div>
@@ -714,27 +806,26 @@ try {
     <?php endif; ?>
 
     <!-- Publish Advertisements CTA -->
-    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 my-24">
-        <div class="bg-[#0b5cce] rounded-[1.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-10 shadow-xl border border-blue-600/30">
-            
-            <div class="flex-1 max-w-xl text-white">
-                <h2 class="text-3xl md:text-4xl font-black font-['Outfit'] leading-tight mb-4 tracking-tight">Publish your advertisements with us</h2>
-                <p class="text-white/90 text-[15px] md:text-[17px] font-medium leading-relaxed mb-8 max-w-[480px]">
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 my-20">
+        <div class="bg-white border border-neutral-200/80 rounded-[2rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
+            <div class="max-w-2xl text-left">
+                <span class="inline-block px-3.5 py-1.5 bg-blue-50 text-[#006ce4] border border-blue-100 rounded-full text-xs font-black uppercase tracking-wider mb-4">
+                    Advertising &amp; Promotion
+                </span>
+                <h2 class="text-2xl md:text-3xl font-black text-neutral-800 tracking-tight leading-tight mb-3">
+                    Publish your advertisements with us
+                </h2>
+                <p class="text-sm md:text-base text-neutral-500 font-medium leading-relaxed">
                     Reach thousands of travelers across Sri Lanka. Boost your visibility and grow your tourism business with our premium advertising spots.
                 </p>
-                <div class="flex flex-wrap items-center gap-4">
-                    <a href="addnewadd.php" class="inline-flex items-center justify-center bg-[#ffc107] text-[#1a1a1a] px-6 py-3 rounded-xl font-bold text-[15px] hover:bg-[#e0a800] transition-colors shadow-sm no-underline">
-                        Get Started Now
-                    </a>
-                    
-                </div>
             </div>
-            
-            <div class="flex-1 w-full max-w-[600px] relative">
-                <div class="aspect-[16/9] md:aspect-[5/3] w-full rounded-2xl overflow-hidden shadow-2xl relative border border-white/10 bg-white/5">
-                    <img src="assets/ads_marketing_illustration.png" alt="Digital Marketing and Advertising" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition-all duration-500">
-                    <!-- Subtle overlay to ensure it matches the vibe -->
-                    <div class="absolute inset-0 bg-blue-900/20 mix-blend-overlay"></div>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0 w-full md:w-auto">
+                <a href="addnewadd.php"
+                    class="bg-[#006ce4] hover:bg-[#003580] text-white px-7 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all text-center whitespace-nowrap shadow-md shadow-[#006ce4]/15">
+                    Get Started Now
+                </a>
+                <div class="px-6 py-4 bg-neutral-50 border border-neutral-200/80 rounded-xl text-neutral-600 font-bold text-sm text-center whitespace-nowrap">
+                    Premium Placement
                 </div>
             </div>
         </div>

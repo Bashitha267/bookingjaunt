@@ -55,8 +55,77 @@ $boosts = $pdo->query("
     JOIN properties p ON pb.property_id = p.id
     JOIN users u ON p.owner_id = u.id
     LEFT JOIN boost_packages bp ON pb.package_id = bp.id
+    WHERE pb.status IN ('active', 'pending')
     ORDER BY pb.created_at DESC
 ")->fetchAll();
+
+$history_month = trim($_GET['history_month'] ?? '');
+$history_from = trim($_GET['history_from'] ?? '');
+$history_to = trim($_GET['history_to'] ?? '');
+$history_defaulted = false;
+if ($history_month === '' && $history_from === '' && $history_to === '') {
+    $history_month = date('Y-m');
+    $history_defaulted = true;
+}
+$history_page = max(1, (int)($_GET['history_page'] ?? 1));
+$history_page_size = 10;
+$history_offset = ($history_page - 1) * $history_page_size;
+
+$history_where = [];
+$history_params = [];
+
+if ($history_month !== '') {
+    $start = $history_month . '-01';
+    $end = (new DateTime($start))->modify('last day of this month')->format('Y-m-d');
+    $history_where[] = 'DATE(pb.created_at) BETWEEN ? AND ?';
+    $history_params[] = $start;
+    $history_params[] = $end;
+} elseif ($history_from !== '' || $history_to !== '') {
+    $from_month = $history_from !== '' ? $history_from : $history_to;
+    $to_month = $history_to !== '' ? $history_to : $history_from;
+    if ($from_month !== '' && $to_month !== '') {
+        $start = $from_month . '-01';
+        $end = (new DateTime($to_month . '-01'))->modify('last day of this month')->format('Y-m-d');
+        $history_where[] = 'DATE(pb.created_at) BETWEEN ? AND ?';
+        $history_params[] = $start;
+        $history_params[] = $end;
+    }
+}
+
+$history_where_sql = $history_where ? 'WHERE ' . implode(' AND ', $history_where) : '';
+
+$history_count_stmt = $pdo->prepare("
+    SELECT COUNT(*)
+    FROM property_boosts pb
+    $history_where_sql
+");
+$history_count_stmt->execute($history_params);
+$history_total = (int)$history_count_stmt->fetchColumn();
+$history_pages = max(1, (int)ceil($history_total / $history_page_size));
+$history_page = min($history_page, $history_pages);
+$history_offset = ($history_page - 1) * $history_page_size;
+
+$history_stmt = $pdo->prepare("
+    SELECT pb.*, p.property_name, u.first_name, u.last_name, bp.name as package_name
+    FROM property_boosts pb
+    JOIN properties p ON pb.property_id = p.id
+    JOIN users u ON p.owner_id = u.id
+    LEFT JOIN boost_packages bp ON pb.package_id = bp.id
+    $history_where_sql
+    ORDER BY pb.created_at DESC
+    LIMIT $history_page_size OFFSET $history_offset
+");
+$history_stmt->execute($history_params);
+$history_boosts = $history_stmt->fetchAll();
+
+$history_query_params = [
+    'history_month' => $history_month,
+    'history_from' => $history_from,
+    'history_to' => $history_to
+];
+$history_query_params = array_filter($history_query_params, static function ($value) {
+    return $value !== '' && $value !== null;
+});
 
 ?>
 <!DOCTYPE html>
@@ -230,6 +299,92 @@ $boosts = $pdo->query("
                             <?php endif; ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-8">
+                <div class="p-6 border-b border-gray-100 flex flex-col gap-4 bg-gray-50/50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-[#003580]">Boost History</h3>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Showing <?php echo (int)$history_total; ?></span>
+                    </div>
+                    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Month</label>
+                            <input type="month" name="history_month" value="<?php echo htmlspecialchars($history_month); ?>" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">From Month</label>
+                            <input type="month" name="history_from" value="<?php echo htmlspecialchars($history_from); ?>" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">To Month</label>
+                            <input type="month" name="history_to" value="<?php echo htmlspecialchars($history_to); ?>" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="submit" class="bg-[#003580] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-[#002560] transition-colors">Apply</button>
+                            <a href="boosts.php" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest">Reset</a>
+                        </div>
+                    </form>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-4">Property / Owner</th>
+                                <th class="px-6 py-4">Package</th>
+                                <th class="px-6 py-4">Amount</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Payment</th>
+                                <th class="px-6 py-4">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php if (empty($history_boosts)): ?>
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-400 font-medium">No boost history found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($history_boosts as $history): ?>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="font-bold text-gray-800 text-sm"><?php echo htmlspecialchars($history['property_name']); ?></div>
+                                            <div class="text-[11px] text-gray-500 mt-0.5"><?php echo htmlspecialchars($history['first_name'] . ' ' . $history['last_name']); ?></div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="font-semibold text-gray-700 text-sm"><?php echo htmlspecialchars($history['package_name'] ?? 'Custom Package'); ?></div>
+                                            <div class="text-[11px] text-gray-500 mt-0.5"><?php echo (int)$history['duration_days']; ?> days</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-[11px] font-bold text-orange-600">LKR <?php echo number_format($history['amount']); ?></div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"><?php echo htmlspecialchars($history['status']); ?></span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"><?php echo htmlspecialchars($history['payment_status']); ?></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-xs text-gray-500">
+                                            <?php echo date('M d, Y', strtotime($history['created_at'])); ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                    <span>Page <?php echo (int)$history_page; ?> of <?php echo (int)$history_pages; ?></span>
+                    <div class="flex gap-2">
+                        <?php if ($history_page > 1): ?>
+                            <?php $prev_params = array_merge($history_query_params, ['history_page' => $history_page - 1]); ?>
+                            <a href="boosts.php?<?php echo htmlspecialchars(http_build_query($prev_params)); ?>" class="px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Prev</a>
+                        <?php endif; ?>
+                        <?php if ($history_page < $history_pages): ?>
+                            <?php $next_params = array_merge($history_query_params, ['history_page' => $history_page + 1]); ?>
+                            <a href="boosts.php?<?php echo htmlspecialchars(http_build_query($next_params)); ?>" class="px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Next</a>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>

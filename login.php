@@ -25,6 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             if ($user['role'] === 'admin') {
                 header("Location: system/admin/dashboard.php");
+            } elseif ($user['role'] === 'manager') {
+                header("Location: system/manager/dashboard.php");
+            } elseif ($user['role'] === 'site_staff' || $user['role'] === 'staff') {
+                header("Location: system/staff/dashboard.php");
             } elseif ($has_property) {
                 header("Location: system/hotel/dashboard.php");
             } else {

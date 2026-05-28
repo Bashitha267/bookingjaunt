@@ -316,7 +316,7 @@ foreach ($vehicle_bookings_raw as $vb) {
                 <?php endif; ?>
 
                 <!-- Stats Grid -->
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                     <div class="glass-card p-5 flex flex-col anim-up">
                         <div class="stat-icon mb-4" style="background:rgba(96,165,250,0.15);"><i class="fas fa-calendar-check" style="color:#93c5fd;"></i></div>
                         <p class="stat-label">Total Bookings</p>

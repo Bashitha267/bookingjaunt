@@ -12,6 +12,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $uid = $_SESSION['user_id'];
 
     if (isset($_FILES['bg_image']) && $_FILES['bg_image']['error'] === UPLOAD_ERR_OK) {
+        if ($_FILES['bg_image']['size'] > 10 * 1024 * 1024) {
+            header("Location: ?view=$view&error=size_limit");
+            exit();
+        }
         $ext = strtolower(pathinfo($_FILES['bg_image']['name'], PATHINFO_EXTENSION));
         $allowed = ['jpg', 'jpeg', 'png', 'webp'];
         if (in_array($ext, $allowed)) {
@@ -157,11 +161,11 @@ $bg_url = $bg_path ? '../../' . htmlspecialchars($bg_path) : null;
 
     /* Glassmorphism for Cards */
     .glass-card, .glass-table {
-        background: rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(2px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(2px) saturate(180%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25) !important;
+        background: rgba(10, 18, 36, 0.82) !important;
+        backdrop-filter: blur(12px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35) !important;
         border-radius: 1.5rem !important;
         color: #f8fafc !important;
     }
@@ -198,6 +202,12 @@ $bg_url = $bg_path ? '../../' . htmlspecialchars($bg_path) : null;
     /* Tables Styling */
     .glass-table {
         overflow: hidden;
+    }
+
+    /* Style native select options to match the dark glassmorphism theme */
+    select option {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
     }
     
     .glass-table table {
@@ -336,10 +346,10 @@ $bg_url = $bg_path ? '../../' . htmlspecialchars($bg_path) : null;
 
     /* FullCalendar overrides */
     .fc {
-        background: rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(2px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(2px) saturate(180%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        background: rgba(10, 18, 36, 0.82) !important;
+        backdrop-filter: blur(12px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
         padding: 20px;
         border-radius: 1.5rem;
     }

@@ -35,7 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Change Background
         if ($_POST['action'] === 'change_background') {
             if (isset($_FILES['background']) && $_FILES['background']['error'] === UPLOAD_ERR_OK) {
-                $upload_dir = '../../uploads/manager_bg/';
+                if ($_FILES['background']['size'] > 10 * 1024 * 1024) {
+                    $error_msg = "Image size exceeds the maximum limit of 10MB.";
+                } else {
+                    $upload_dir = '../../uploads/manager_bg/';
                 if (!file_exists($upload_dir)) {
                     mkdir($upload_dir, 0777, true);
                 }
@@ -69,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $error_msg = "Invalid file type. Only JPG, PNG, and WEBP are allowed.";
                 }
+                } // closes size limit else block
             } else {
                 $error_msg = "Please select an image file.";
             }

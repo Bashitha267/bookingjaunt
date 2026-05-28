@@ -55,6 +55,13 @@ $commission_total = ($commission_row['total_price'] ?? 0) * $commission_rate;
 $commission_paid = ($commission_row['total_paid'] ?? 0) * $commission_rate;
 $commission_due = max(0, $commission_total - $commission_paid);
 
+$download_params = [];
+if ($day !== '') { $download_params['day'] = $day; }
+if ($month !== '') { $download_params['month'] = $month; }
+if ($year !== '') { $download_params['year'] = $year; }
+$download_query = http_build_query($download_params);
+$download_url = 'admin_report_download.php' . ($download_query ? '?' . $download_query : '');
+
 // 2. FIXED: Generate Keys for JAN to DEC of the SELECTED YEAR
 $chart_keys = [];
 $chart_labels = [];
@@ -129,6 +136,12 @@ foreach ($chart_keys as $key) {
 					<button class="px-5 py-2 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest">Filter Year</button>
 					<a href="reports.php" class="px-5 py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-widest">Reset</a>
 				</form>
+				<a href="<?php echo $download_url . ($download_query ? '&' : '?') . 'view=1'; ?>" target="_blank" class="ml-auto px-5 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-bold uppercase tracking-widest">
+					View Report
+				</a>
+				<a href="<?php echo $download_url; ?>" class="px-5 py-2 rounded-xl bg-[#0f172a] text-white text-xs font-bold uppercase tracking-widest">
+					Download Report
+				</a>
 				<button id="download-pdf" class="ml-auto px-5 py-2 rounded-xl bg-[#003580] text-white text-xs font-bold uppercase tracking-widest">
 					Download PDF
 				</button>
@@ -158,7 +171,9 @@ foreach ($chart_keys as $key) {
 			<div class="w-full">
 				<div class="bg-white rounded-2xl border border-gray-100 p-6">
 					<h3 class="font-bold text-[#003580] mb-4">Growth Trends (Last 12 Months)</h3>
-					<canvas id="growthChart" height="220"></canvas>
+					<div style="position: relative; height: 350px; width: 100%;">
+						<canvas id="growthChart"></canvas>
+					</div>
 				</div>
 				<div class="bg-white rounded-2xl border border-gray-100 p-6">
 					<h3 class="font-bold text-[#003580] mb-4">Snapshot</h3>

@@ -12,8 +12,8 @@ $per_page = 20;
 $current_page_num = max(1, (int)($_GET['page'] ?? 1));
 $offset = ($current_page_num - 1) * $per_page;
 
-// Status filter
 $status = trim($_GET['status'] ?? '');
+$search = trim($_GET['search'] ?? '');
 
 $where = ["b.booking_category = 'vehicle'"];
 $params = [];
@@ -21,6 +21,12 @@ $params = [];
 if ($status !== '') {
 	$where[] = "b.status = ?";
 	$params[] = $status;
+}
+
+if ($search !== '') {
+	$where[] = "(b.guest_name LIKE ? OR b.guest_phone LIKE ? OR p.contact_number LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR p.property_name LIKE ?)";
+	$like = "%$search%";
+	$params = array_merge($params, [$like, $like, $like, $like, $like, $like]);
 }
 
 $where_sql = 'WHERE ' . implode(' AND ', $where);
@@ -130,15 +136,29 @@ $status_pill_styles = [
 
 			<!-- Status Filter Pills -->
 			<div class="bg-white rounded-2xl border border-gray-100 p-4">
+				<form method="GET" class="flex flex-wrap gap-4 items-center mb-4">
+					<div class="flex-1 min-w-[200px]">
+						<input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search by User Name, Contact No, Vehicle Contact..." class="w-full px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#003580]">
+					</div>
+					<div class="w-full sm:w-auto flex gap-2 items-center">
+						<button type="submit" class="px-4 py-2 bg-[#003580] text-white rounded-xl text-sm font-bold hover:bg-[#002b66] transition-colors">
+							<i class="fas fa-search mr-2"></i>Search
+						</button>
+						<?php if($search !== ''): ?>
+						<a href="vehicle_bookings.php?status=<?php echo urlencode($status); ?>" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-300 transition-colors">Clear</a>
+						<?php endif; ?>
+					</div>
+				</form>
+				
 				<p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Filter by Status</p>
 				<div class="flex flex-wrap gap-2">
-					<a href="vehicle_bookings.php"
+					<a href="vehicle_bookings.php<?php echo $search !== '' ? '?search='.urlencode($search) : ''; ?>"
 					   class="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-all
 					          <?php echo $status === '' ? 'bg-[#003580] text-white border-[#003580]' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'; ?>">
 						All
 					</a>
 					<?php foreach ($all_statuses as $s): ?>
-						<a href="vehicle_bookings.php?status=<?php echo urlencode($s); ?><?php echo $current_page_num > 1 ? '&page=' . $current_page_num : ''; ?>"
+						<a href="vehicle_bookings.php?status=<?php echo urlencode($s); ?><?php echo $search !== '' ? '&search='.urlencode($search) : ''; ?><?php echo $current_page_num > 1 ? '&page=' . $current_page_num : ''; ?>"
 						   class="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-all
 						          <?php echo $status === $s ? ($status_pill_styles[$s] ?? 'bg-gray-100 text-gray-600 border-gray-200') . ' font-black' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'; ?>">
 							<?php echo ucfirst($s); ?>
@@ -273,7 +293,10 @@ $status_pill_styles = [
 							</p>
 							<div class="flex items-center gap-2">
 								<?php
-								$base_url = 'vehicle_bookings.php?' . ($status !== '' ? 'status=' . urlencode($status) . '&' : '');
+								$base_url = 'vehicle_bookings.php?';
+								if ($search !== '') $base_url .= 'search=' . urlencode($search) . '&';
+								if ($status !== '') $base_url .= 'status=' . urlencode($status) . '&';
+								
 								$prev_page = max(1, $current_page_num - 1);
 								$next_page = min($total_pages, $current_page_num + 1);
 								?>

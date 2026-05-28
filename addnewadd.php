@@ -21,17 +21,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // Handle image upload
     $image_path = '';
     if (isset($_FILES['ad_image']) && $_FILES['ad_image']['error'] == 0) {
-        $upload_dir = 'uploads/ads/';
-        if (!file_exists($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
-        $file_name = time() . '_' . basename($_FILES['ad_image']['name']);
-        $target_path = $upload_dir . $file_name;
-        
-        if (move_uploaded_file($_FILES['ad_image']['tmp_name'], $target_path)) {
-            $image_path = $target_path;
+        if ($_FILES['ad_image']['size'] > 10 * 1024 * 1024) {
+            $error_msg = "Image size exceeds the maximum limit of 10MB.";
         } else {
-            $error_msg = "Failed to upload image.";
+            $upload_dir = 'uploads/ads/';
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+            $file_name = time() . '_' . basename($_FILES['ad_image']['name']);
+            $target_path = $upload_dir . $file_name;
+            
+            if (move_uploaded_file($_FILES['ad_image']['tmp_name'], $target_path)) {
+                $image_path = $target_path;
+            } else {
+                $error_msg = "Failed to upload image.";
+            }
         }
     } else {
         $error_msg = "Please upload an advertisement image.";

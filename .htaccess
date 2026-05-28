@@ -1,18 +1,17 @@
+Options -MultiViews
 RewriteEngine On
+RewriteBase /bookingjaunt/
 
-# 1. Redirect .php GET requests to clean URL — only on original client requests (not internal rewrites)
-#    THE_REQUEST captures the full original path, %1 = path without .php
-RewriteCond %{REQUEST_METHOD} !POST
-RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
-RewriteRule ^ /%1 [R=301,L,NE]
+# Fix double bookingjaunt path caused by cached redirects
+RewriteCond %{REQUEST_URI} ^/bookingjaunt/bookingjaunt/(.*)$
+RewriteRule ^bookingjaunt/(.*)$ /bookingjaunt/$1 [R=302,L]
 
-# 2. Add trailing slash for real directories
+# Add trailing slash for directories
 RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^(.+[^/])$ $1/ [R=301,L]
+RewriteRule ^(.*[^/])$ $1/ [R=302,L]
 
-# 3. Resolve clean URLs to .php
-#    Uses %{REQUEST_URI} (absolute path) — works on BOTH localhost subdirectory and production root
+# Rewrite clean URLs to .php (this fixes the 404s for extensionless links)
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^(.+)$ %{REQUEST_URI}.php [L,QSA]
+RewriteRule ^(.*)$ $1.php [L,QSA]

@@ -122,6 +122,19 @@ $commission_total = $revenue_online * 0.2;
 $summary_commission = ($summary['online_paid'] ?? 0) * 0.2;
 
 $status_styles = ['pending' => 'badge-pending', 'confirmed' => 'badge-confirmed', 'checked_in' => 'badge-checked_in', 'checked_out' => 'badge-checked_out', 'cancelled' => 'badge-cancelled'];
+
+$download_params = [
+    'property_id' => $property_id,
+    'from' => $from,
+    'to' => $to,
+    'type' => $type,
+    'status' => $status
+];
+$download_params = array_filter($download_params, static function ($value) {
+    return $value !== '' && $value !== null;
+});
+$download_query = http_build_query($download_params);
+$download_url = 'hotel_report_download.php' . ($download_query ? '?' . $download_query : '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -158,7 +171,11 @@ $status_styles = ['pending' => 'badge-pending', 'confirmed' => 'badge-confirmed'
                     </select>
                 </form>
             </div>
-            <a href="../../index.php" target="_blank" class="btn-glass hidden xl:flex"><i class="fas fa-external-link-alt"></i> Visit Site</a>
+            <div class="hidden xl:flex items-center gap-3">
+                <a href="<?php echo $download_url . ($download_query ? '&' : '?') . 'view=1'; ?>" target="_blank" class="btn-glass"><i class="fas fa-eye"></i> View Report</a>
+                <a href="<?php echo $download_url; ?>" class="btn-primary"><i class="fas fa-download"></i> Download Report</a>
+                <a href="../../index.php" target="_blank" class="btn-glass"><i class="fas fa-external-link-alt"></i> Visit Site</a>
+            </div>
         </header>
 
         <div class="py-4 px-2 lg:py-8 lg:px-4 space-y-8">

@@ -172,11 +172,17 @@ if (isset($pdo)) {
         color: #f8fafc !important;
     }
 
-    /* Force transparency on the main content container */
     main {
         background-color: transparent !important;
         background: transparent !important;
     }
+
+    /* Style native select options to match the dark glassmorphism theme */
+    select option {
+        background-color: #0f172a !important; /* Slate 900 */
+        color: #ffffff !important;
+    }
+
 
     /* Glassmorphism for Headers */
     header {
@@ -194,11 +200,11 @@ if (isset($pdo)) {
     main .bg-white,
     main div.bg-white,
     .glass-card {
-        background: rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(2px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(2px) saturate(180%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25) !important;
+        background: rgba(10, 18, 36, 0.82) !important;
+        backdrop-filter: blur(12px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35) !important;
         border-radius: 1.5rem !important;
         color: #f8fafc !important;
     }

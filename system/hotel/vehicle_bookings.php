@@ -52,7 +52,7 @@ $offset = ($page - 1) * $per_page;
 
 // Fetch vehicle bookings
 $bookings_stmt = $pdo->prepare("
-    SELECT b.*, p.property_name, p.vehicle_category, p.cover_image, p.district
+    SELECT b.*, p.property_name, p.vehicle_category, p.cover_image, p.district, p.contact_number
     FROM bookings b
     JOIN properties p ON b.property_id = p.id
     WHERE p.owner_id = ? AND b.booking_category = 'vehicle'
@@ -219,7 +219,7 @@ $stats = $stats_stmt->fetch();
                             <?php foreach ($bookings as $b): ?>
                             <tr class="glass-tr booking-row"
                                 data-status="<?php echo $b['status']; ?>"
-                                data-search="<?php echo strtolower(htmlspecialchars($b['guest_name'] . ' ' . $b['guest_phone'] . ' ' . $b['property_name'])); ?>"
+                                data-search="<?php echo strtolower(htmlspecialchars($b['guest_name'] . ' ' . $b['guest_phone'] . ' ' . $b['property_name'] . ' ' . $b['contact_number'])); ?>"
                                 onclick="if(!event.target.closest('select,button,a,form')) window.location='booking_details.php?id=<?php echo $b['id']; ?>'">
 
                                 <!-- Booking ID -->

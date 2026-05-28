@@ -109,7 +109,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $data['bank_branch'] ?? null,
                 $data['bank_account_name'] ?? null,
                 $data['bank_account_number'] ?? null,
-                $data['commission_rate'] ?? 80
+                $data['commission_rate'] ?? 80,
+                !empty($data['tourist_attractions']) ? json_encode(array_values(array_filter($data['tourist_attractions']))) : null,
+                $data['closest_fuel_station'] ?? null
             ]);
 
             $property_id = $pdo->lastInsertId();

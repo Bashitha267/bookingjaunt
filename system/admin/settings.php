@@ -16,6 +16,12 @@ $upload_web_path = 'uploads/hero/';
 $dest_upload_dir = __DIR__ . '/../../uploads/destinations/';
 $dest_upload_web_path = 'uploads/destinations/';
 
+$vibe_upload_dir = __DIR__ . '/../../uploads/vibe/';
+$vibe_upload_web_path = 'uploads/vibe/';
+
+$showcase_upload_dir = __DIR__ . '/../../uploads/showcase/';
+$showcase_upload_web_path = 'uploads/showcase/';
+
 if (!is_dir($upload_dir)) {
 	mkdir($upload_dir, 0755, true);
 }
@@ -24,12 +30,22 @@ if (!is_dir($dest_upload_dir)) {
 	mkdir($dest_upload_dir, 0755, true);
 }
 
+if (!is_dir($vibe_upload_dir)) {
+	mkdir($vibe_upload_dir, 0755, true);
+}
+
+if (!is_dir($showcase_upload_dir)) {
+	mkdir($showcase_upload_dir, 0755, true);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	$action = $_POST['action'];
 
 	if ($action === 'upload_bg') {
 		if (!isset($_FILES['bg_image']) || $_FILES['bg_image']['error'] !== UPLOAD_ERR_OK) {
 			$error = 'Please select a valid image file.';
+		} elseif ($_FILES['bg_image']['size'] > 10 * 1024 * 1024) {
+			$error = 'Image size exceeds the 10MB limit.';
 		} else {
 			$file = $_FILES['bg_image'];
 			$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -87,6 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	if ($action === 'upload') {
 		if (!isset($_FILES['media']) || $_FILES['media']['error'] !== UPLOAD_ERR_OK) {
 			$error = 'Please select a valid image or video file.';
+		} elseif ($_FILES['media']['size'] > 10 * 1024 * 1024) {
+			$error = 'File size exceeds the 10MB limit.';
 		} else {
 			$file = $_FILES['media'];
 			$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -155,6 +173,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 	if ($action === 'dest_upload') {
 		if (!isset($_FILES['dest_media']) || $_FILES['dest_media']['error'] !== UPLOAD_ERR_OK) {
 			$error = 'Please select a valid destination image or video file.';
+		} elseif ($_FILES['dest_media']['size'] > 10 * 1024 * 1024) {
+			$error = 'File size exceeds the 10MB limit.';
 		} else {
 			$file = $_FILES['dest_media'];
 			$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -231,6 +251,179 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 			$feedback = 'Destination deleted.';
 		}
 	}
+	// Vibe Grid handlers (The Soul of Sri Lanka)
+	if ($action === 'vibe_upload') {
+		if (!isset($_FILES['vibe_media']) || $_FILES['vibe_media']['error'] !== UPLOAD_ERR_OK) {
+			$error = 'Please select a valid image or video file.';
+		} elseif ($_FILES['vibe_media']['size'] > 10 * 1024 * 1024) {
+			$error = 'File size exceeds the 10MB limit.';
+		} else {
+			$file = $_FILES['vibe_media'];
+			$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+			$allowed_images = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+			$allowed_videos = ['mp4', 'webm', 'ogg'];
+
+			$media_type = '';
+			if (in_array($ext, $allowed_images, true)) {
+				$media_type = 'image';
+			} elseif (in_array($ext, $allowed_videos, true)) {
+				$media_type = 'video';
+			}
+
+			if ($media_type === '') {
+				$error = 'Unsupported file type. Use JPG, PNG, WEBP, GIF, MP4, WEBM, or OGG.';
+			} else {
+				$filename = 'vibe_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+				$target_path = $vibe_upload_dir . $filename;
+
+				if (move_uploaded_file($file['tmp_name'], $target_path)) {
+					$title = trim($_POST['title'] ?? '');
+					$badge = trim($_POST['badge'] ?? '');
+					$description = trim($_POST['description'] ?? '');
+					$link_url = trim($_POST['link_url'] ?? '');
+					$accent_color = trim($_POST['accent_color'] ?? '#10b981');
+					$sort_order = (int)$pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM homepage_vibe_grid")->fetchColumn();
+					$is_active = isset($_POST['vibe_is_active']) ? 1 : 0;
+
+					$stmt = $pdo->prepare("INSERT INTO homepage_vibe_grid (title, badge, description, media_path, media_type, link_url, accent_color, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+					$stmt->execute([
+						$title,
+						$badge,
+						$description,
+						$vibe_upload_web_path . $filename,
+						$media_type,
+						$link_url,
+						$accent_color,
+						$sort_order,
+						$is_active
+					]);
+					$feedback = 'Vibe grid item added.';
+				} else {
+					$error = 'Upload failed. Please try again.';
+				}
+			}
+		}
+	}
+
+	if ($action === 'vibe_toggle' && isset($_POST['item_id'], $_POST['is_active'])) {
+		$item_id = (int)$_POST['item_id'];
+		$is_active = (int)$_POST['is_active'] === 1 ? 1 : 0;
+		$stmt = $pdo->prepare("UPDATE homepage_vibe_grid SET is_active = ? WHERE id = ?");
+		$stmt->execute([$is_active, $item_id]);
+		$feedback = 'Vibe item status updated.';
+	}
+
+	if ($action === 'vibe_sort' && isset($_POST['item_id'], $_POST['sort_order'])) {
+		$item_id = (int)$_POST['item_id'];
+		$sort_order = (int)$_POST['sort_order'];
+		$stmt = $pdo->prepare("UPDATE homepage_vibe_grid SET sort_order = ? WHERE id = ?");
+		$stmt->execute([$sort_order, $item_id]);
+		$feedback = 'Vibe item order updated.';
+	}
+
+	if ($action === 'vibe_delete' && isset($_POST['item_id'])) {
+		$item_id = (int)$_POST['item_id'];
+		$stmt = $pdo->prepare("SELECT media_path FROM homepage_vibe_grid WHERE id = ?");
+		$stmt->execute([$item_id]);
+		$item = $stmt->fetch();
+
+		if ($item) {
+			$file_path = __DIR__ . '/../../' . $item['media_path'];
+			if (is_file($file_path)) {
+				unlink($file_path);
+			}
+			$del = $pdo->prepare("DELETE FROM homepage_vibe_grid WHERE id = ?");
+			$del->execute([$item_id]);
+			$feedback = 'Vibe item deleted.';
+		}
+	}
+
+	// Showcase Item handlers (Curated Island Experiences)
+	if ($action === 'showcase_upload') {
+		if (!isset($_FILES['showcase_media']) || $_FILES['showcase_media']['error'] !== UPLOAD_ERR_OK) {
+			$error = 'Please select a valid image or video file.';
+		} elseif ($_FILES['showcase_media']['size'] > 10 * 1024 * 1024) {
+			$error = 'File size exceeds the 10MB limit.';
+		} else {
+			$file = $_FILES['showcase_media'];
+			$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+			$allowed_images = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+			$allowed_videos = ['mp4', 'webm', 'ogg'];
+
+			$media_type = '';
+			if (in_array($ext, $allowed_images, true)) {
+				$media_type = 'image';
+			} elseif (in_array($ext, $allowed_videos, true)) {
+				$media_type = 'video';
+			}
+
+			if ($media_type === '') {
+				$error = 'Unsupported file type. Use JPG, PNG, WEBP, GIF, MP4, WEBM, or OGG.';
+			} else {
+				$filename = 'showcase_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+				$target_path = $showcase_upload_dir . $filename;
+
+				if (move_uploaded_file($file['tmp_name'], $target_path)) {
+					$title = trim($_POST['title'] ?? '');
+					$subtitle = trim($_POST['subtitle'] ?? '');
+					$description = trim($_POST['description'] ?? '');
+					$link_url = trim($_POST['link_url'] ?? '');
+					$accent_color = trim($_POST['accent_color'] ?? '#10b981');
+					$sort_order = (int)$pdo->query("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM homepage_showcase_items")->fetchColumn();
+					$is_active = isset($_POST['showcase_is_active']) ? 1 : 0;
+
+					$stmt = $pdo->prepare("INSERT INTO homepage_showcase_items (title, subtitle, description, media_path, media_type, link_url, accent_color, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+					$stmt->execute([
+						$title,
+						$subtitle,
+						$description,
+						$showcase_upload_web_path . $filename,
+						$media_type,
+						$link_url,
+						$accent_color,
+						$sort_order,
+						$is_active
+					]);
+					$feedback = 'Showcase item added.';
+				} else {
+					$error = 'Upload failed. Please try again.';
+				}
+			}
+		}
+	}
+
+	if ($action === 'showcase_toggle' && isset($_POST['item_id'], $_POST['is_active'])) {
+		$item_id = (int)$_POST['item_id'];
+		$is_active = (int)$_POST['is_active'] === 1 ? 1 : 0;
+		$stmt = $pdo->prepare("UPDATE homepage_showcase_items SET is_active = ? WHERE id = ?");
+		$stmt->execute([$is_active, $item_id]);
+		$feedback = 'Showcase item status updated.';
+	}
+
+	if ($action === 'showcase_sort' && isset($_POST['item_id'], $_POST['sort_order'])) {
+		$item_id = (int)$_POST['item_id'];
+		$sort_order = (int)$_POST['sort_order'];
+		$stmt = $pdo->prepare("UPDATE homepage_showcase_items SET sort_order = ? WHERE id = ?");
+		$stmt->execute([$sort_order, $item_id]);
+		$feedback = 'Showcase item order updated.';
+	}
+
+	if ($action === 'showcase_delete' && isset($_POST['item_id'])) {
+		$item_id = (int)$_POST['item_id'];
+		$stmt = $pdo->prepare("SELECT media_path FROM homepage_showcase_items WHERE id = ?");
+		$stmt->execute([$item_id]);
+		$item = $stmt->fetch();
+
+		if ($item) {
+			$file_path = __DIR__ . '/../../' . $item['media_path'];
+			if (is_file($file_path)) {
+				unlink($file_path);
+			}
+			$del = $pdo->prepare("DELETE FROM homepage_showcase_items WHERE id = ?");
+			$del->execute([$item_id]);
+			$feedback = 'Showcase item deleted.';
+		}
+	}
 }
 
 $slides = [];
@@ -246,6 +439,24 @@ try {
 } catch (PDOException $e) {
 	if ($error === '') {
 		$error = 'Popular destinations table is missing. Please add it to the database.';
+	}
+}
+
+$vibe_items = [];
+try {
+	$vibe_items = $pdo->query("SELECT * FROM homepage_vibe_grid ORDER BY sort_order, id")->fetchAll();
+} catch (PDOException $e) {
+	if ($error === '') {
+		$error = 'Homepage vibe grid table is missing. Please add it to the database.';
+	}
+}
+
+$showcase_items = [];
+try {
+	$showcase_items = $pdo->query("SELECT * FROM homepage_showcase_items ORDER BY sort_order, id")->fetchAll();
+} catch (PDOException $e) {
+	if ($error === '') {
+		$error = 'Homepage showcase items table is missing. Please add it to the database.';
 	}
 }
 
@@ -511,6 +722,217 @@ function h($value) {
 									<form method="POST" onsubmit="return confirm('Delete this destination?');">
 										<input type="hidden" name="action" value="dest_delete">
 										<input type="hidden" name="destination_id" value="<?php echo (int)$destination['id']; ?>">
+										<button class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+									</form>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<!-- VIBE GRID SECTION (The Soul of Sri Lanka) -->
+			<div class="bg-white rounded-2xl border border-gray-100 p-6">
+				<h2 class="text-lg font-bold text-[#003580] mb-4">Add Vibe Grid Item (The Soul of Sri Lanka)</h2>
+				<form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+					<input type="hidden" name="action" value="vibe_upload">
+					<div class="md:col-span-2">
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Media (Image or Video, Max 10MB)</label>
+						<input type="file" name="vibe_media" accept="image/*,video/*" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Title</label>
+						<input type="text" name="title" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. Coastal Serenity" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Badge (E.g. 01 / Beaches)</label>
+						<input type="text" name="badge" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. 01 / Beaches" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Link URL</label>
+						<input type="text" name="link_url" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. hotels.php?q=galle" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Accent Color</label>
+						<input type="text" name="accent_color" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. #10b981" value="#10b981" required>
+					</div>
+					<div class="md:col-span-2">
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Short Description</label>
+						<input type="text" name="description" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. Swaying palm trees, golden sun-kissed beaches..." required>
+					</div>
+					<div class="flex items-center gap-2">
+						<input type="checkbox" name="vibe_is_active" id="vibeActive" checked>
+						<label for="vibeActive" class="text-sm text-gray-600">Active</label>
+					</div>
+					<div>
+						<button class="px-5 py-2 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest">Add Item</button>
+					</div>
+				</form>
+			</div>
+
+			<div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+				<div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+					<h2 class="font-bold text-[#003580]">Vibe Grid Items (The Soul of Sri Lanka)</h2>
+					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total <?php echo count($vibe_items); ?></span>
+				</div>
+
+				<?php if (empty($vibe_items)): ?>
+					<div class="p-10 text-center">
+						<h3 class="text-lg font-bold text-gray-700">No items found</h3>
+						<p class="text-xs text-gray-400 mt-2">Upload media to show vibe grid items on the homepage.</p>
+					</div>
+				<?php else: ?>
+					<div class="divide-y divide-gray-100">
+						<?php foreach ($vibe_items as $item): ?>
+							<div class="p-6 flex flex-col lg:flex-row gap-6">
+								<div class="w-full lg:w-64">
+									<?php if ($item['media_type'] === 'video'): ?>
+										<video class="w-full h-40 object-cover rounded-xl border border-gray-100" muted playsinline controls>
+											<source src="../../<?php echo h($item['media_path']); ?>">
+										</video>
+									<?php else: ?>
+										<img src="../../<?php echo h($item['media_path']); ?>" class="w-full h-40 object-cover rounded-xl border border-gray-100" alt="Vibe media">
+									<?php endif; ?>
+								</div>
+								<div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+									<div>
+										<p class="text-xs font-bold uppercase tracking-widest text-gray-400">Title</p>
+										<p class="text-sm font-semibold text-gray-700"><?php echo h($item['title']); ?></p>
+										<span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-bold uppercase rounded" style="color: <?php echo h($item['accent_color']); ?>; background-color: <?php echo h($item['accent_color']); ?>15;">
+											<?php echo h($item['badge']); ?>
+										</span>
+									</div>
+									<div>
+										<p class="text-xs font-bold uppercase tracking-widest text-gray-400">Description & Link</p>
+										<p class="text-xs text-gray-700 truncate max-w-[200px]"><?php echo h($item['description']); ?></p>
+										<p class="text-[10px] text-blue-600 truncate max-w-[200px] mt-1 font-semibold"><?php echo h($item['link_url']); ?></p>
+									</div>
+									<div>
+										<p class="text-xs font-bold uppercase tracking-widest text-gray-400">Status</p>
+										<p class="text-sm font-semibold text-gray-700"><?php echo (int)$item['is_active'] === 1 ? 'Active' : 'Hidden'; ?></p>
+									</div>
+								</div>
+								<div class="flex flex-wrap items-center gap-2">
+									<div class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border border-gray-200 text-gray-600">
+										Order <?php echo (int)$item['sort_order']; ?>
+									</div>
+									<form method="POST">
+										<input type="hidden" name="action" value="vibe_toggle">
+										<input type="hidden" name="item_id" value="<?php echo (int)$item['id']; ?>">
+										<input type="hidden" name="is_active" value="<?php echo (int)$item['is_active'] === 1 ? 0 : 1; ?>">
+										<button class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border border-blue-200 text-blue-600 hover:bg-blue-50">
+											<?php echo (int)$item['is_active'] === 1 ? 'Hide' : 'Show'; ?>
+										</button>
+									</form>
+									<form method="POST" onsubmit="return confirm('Delete this item?');">
+										<input type="hidden" name="action" value="vibe_delete">
+										<input type="hidden" name="item_id" value="<?php echo (int)$item['id']; ?>">
+										<button class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+									</form>
+								</div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
+			</div>
+
+
+			<!-- SHOWCASE ITEMS SECTION (Curated Island Experiences) -->
+			<div class="bg-white rounded-2xl border border-gray-100 p-6">
+				<h2 class="text-lg font-bold text-[#003580] mb-4">Add Showcase Item (Curated Island Experiences)</h2>
+				<form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+					<input type="hidden" name="action" value="showcase_upload">
+					<div class="md:col-span-2">
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Media (Image or Video, Max 10MB)</label>
+						<input type="file" name="showcase_media" accept="image/*,video/*" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Title</label>
+						<input type="text" name="title" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. Encounter the Majestic Wild" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Subtitle (E.g. Wildlife & Conservation)</label>
+						<input type="text" name="subtitle" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. Wildlife & Conservation" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Link URL</label>
+						<input type="text" name="link_url" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. hotels.php?q=safari" required>
+					</div>
+					<div>
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Accent Color</label>
+						<input type="text" name="accent_color" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. #10b981" value="#10b981" required>
+					</div>
+					<div class="md:col-span-2">
+						<label class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Short Description</label>
+						<input type="text" name="description" class="mt-2 w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 text-sm" placeholder="E.g. Sri Lanka hosts one of the highest rates of biological endemism..." required>
+					</div>
+					<div class="flex items-center gap-2">
+						<input type="checkbox" name="showcase_is_active" id="showcaseActive" checked>
+						<label for="showcaseActive" class="text-sm text-gray-600">Active</label>
+					</div>
+					<div>
+						<button class="px-5 py-2 rounded-xl bg-[#006ce4] text-white text-xs font-bold uppercase tracking-widest">Add Item</button>
+					</div>
+				</form>
+			</div>
+
+			<div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+				<div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+					<h2 class="font-bold text-[#003580]">Showcase Items (Curated Island Experiences)</h2>
+					<span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Total <?php echo count($showcase_items); ?></span>
+				</div>
+
+				<?php if (empty($showcase_items)): ?>
+					<div class="p-10 text-center">
+						<h3 class="text-lg font-bold text-gray-700">No items found</h3>
+						<p class="text-xs text-gray-400 mt-2">Upload media to show showcase items on the homepage.</p>
+					</div>
+				<?php else: ?>
+					<div class="divide-y divide-gray-100">
+						<?php foreach ($showcase_items as $item): ?>
+							<div class="p-6 flex flex-col lg:flex-row gap-6">
+								<div class="w-full lg:w-64">
+									<?php if ($item['media_type'] === 'video'): ?>
+										<video class="w-full h-40 object-cover rounded-xl border border-gray-100" muted playsinline controls>
+											<source src="../../<?php echo h($item['media_path']); ?>">
+										</video>
+									<?php else: ?>
+										<img src="../../<?php echo h($item['media_path']); ?>" class="w-full h-40 object-cover rounded-xl border border-gray-100" alt="Showcase media">
+									<?php endif; ?>
+								</div>
+								<div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+									<div>
+										<p class="text-xs font-bold uppercase tracking-widest text-gray-400">Title</p>
+										<p class="text-sm font-semibold text-gray-700"><?php echo h($item['title']); ?></p>
+										<span class="inline-block mt-1 px-2 py-0.5 text-[9px] font-bold uppercase rounded" style="color: <?php echo h($item['accent_color']); ?>; background-color: <?php echo h($item['accent_color']); ?>15;">
+											<?php echo h($item['subtitle']); ?>
+										</span>
+									</div>
+									<div>
+										<p class="text-xs font-bold uppercase tracking-widest text-gray-400">Description & Link</p>
+										<p class="text-xs text-gray-700 truncate max-w-[200px]"><?php echo h($item['description']); ?></p>
+										<p class="text-[10px] text-blue-600 truncate max-w-[200px] mt-1 font-semibold"><?php echo h($item['link_url']); ?></p>
+									</div>
+									<div>
+										<p class="text-xs font-bold uppercase tracking-widest text-gray-400">Status</p>
+										<p class="text-sm font-semibold text-gray-700"><?php echo (int)$item['is_active'] === 1 ? 'Active' : 'Hidden'; ?></p>
+									</div>
+								</div>
+								<div class="flex flex-wrap items-center gap-2">
+									<div class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border border-gray-200 text-gray-600">
+										Order <?php echo (int)$item['sort_order']; ?>
+									</div>
+									<form method="POST">
+										<input type="hidden" name="action" value="showcase_toggle">
+										<input type="hidden" name="item_id" value="<?php echo (int)$item['id']; ?>">
+										<input type="hidden" name="is_active" value="<?php echo (int)$item['is_active'] === 1 ? 0 : 1; ?>">
+										<button class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border border-blue-200 text-blue-600 hover:bg-blue-50">
+											<?php echo (int)$item['is_active'] === 1 ? 'Hide' : 'Show'; ?>
+										</button>
+									</form>
+									<form method="POST" onsubmit="return confirm('Delete this item?');">
+										<input type="hidden" name="action" value="showcase_delete">
+										<input type="hidden" name="item_id" value="<?php echo (int)$item['id']; ?>">
 										<button class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
 									</form>
 								</div>

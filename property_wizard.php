@@ -521,10 +521,14 @@ if ($edit_id) {
                         </div>
                     </div>
                     
-                    <div>
+                    <div id="tourist-attractions-container">
                         <label class="block text-xs font-bold text-gray-600 mb-2 ml-1 uppercase tracking-wide">Near Tourist Attractions</label>
-                        <textarea name="tourist_attractions" rows="3" placeholder="- Yala National Park&#10;- Temple of the Tooth&#10;- Sigiriya Rock"
-                            class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+                        <div id="attractions-list" class="space-y-3">
+                            <!-- JS will populate at least 2 inputs here initially -->
+                        </div>
+                        <button type="button" onclick="addAttraction()" class="mt-3 text-xs font-bold text-[#006ce4] hover:text-[#003580] flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+                            <i class="fas fa-plus"></i> Add More Attraction
+                        </button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2082,7 +2086,7 @@ if ($edit_id) {
                     'street_address','city','district','province','country',
                     'google_map_location','fixed_telephone','mobile_telephone',
                     'closest_police_station','closest_hospital','airport_distance',
-                    'closest_main_town','postal_code','closest_fuel_station', 'tourist_attractions',
+                    'closest_main_town','postal_code','closest_fuel_station',
                     'manager_name','manager_phone','manager_nic',
                     'contact_number','business_email',
                     'bank_name','bank_branch','bank_account_name','bank_account_number',
@@ -2139,6 +2143,30 @@ if ($edit_id) {
                         if (cb) cb.checked = true;
                     });
                 } catch(e) { console.warn('rules_json parse error', e); }
+
+                // Handle tourist_attractions json array
+                if (editData.tourist_attractions) {
+                    try {
+                        const attrs = JSON.parse(editData.tourist_attractions);
+                        if (Array.isArray(attrs) && attrs.length > 0) {
+                            const container = document.getElementById('attractions-list');
+                            if(container) container.innerHTML = '';
+                            attrs.forEach(val => addAttraction(val));
+                        } else {
+                            if (document.getElementById('attractions-list') && document.getElementById('attractions-list').children.length === 0) {
+                                addAttraction(); addAttraction();
+                            }
+                        }
+                    } catch (e) {
+                        if (document.getElementById('attractions-list') && document.getElementById('attractions-list').children.length === 0) {
+                            addAttraction(editData.tourist_attractions); addAttraction();
+                        }
+                    }
+                } else {
+                    if (document.getElementById('attractions-list') && document.getElementById('attractions-list').children.length === 0) {
+                        addAttraction(); addAttraction();
+                    }
+                }
 
                 // --- STEP 6: Rooms ---
                 if (editData.rooms && editData.rooms.length > 0) {
@@ -2466,8 +2494,6 @@ if ($edit_id) {
             saveFormData(); // Save the structure change
         });
 
-        // Staff initialization is handled inside loadFormData() at the bottom.
-
         // Image Upload Logic
         document.querySelectorAll('.upload-trigger').forEach(trigger => {
             trigger.addEventListener('click', () => {
@@ -2516,13 +2542,20 @@ if ($edit_id) {
             });
         });
 
+
         document.querySelectorAll('.remove-image').forEach(button => {
             button.addEventListener('click', async (e) => {
+                e.stopPropagation();
                 const container = button.closest('.upload-container');
                 const hiddenInput = container.querySelector('input[type="hidden"]');
                 const filepath = hiddenInput.value;
 
-                if (!filepath) return;
+                if (!filepath) {
+                    hidePreview(container.id);
+                    hiddenInput.value = '';
+                    saveFormData();
+                    return;
+                }
 
                 const formData = new FormData();
                 formData.append('filepath', filepath);

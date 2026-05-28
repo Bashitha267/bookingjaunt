@@ -57,6 +57,13 @@ a {
     transition: var(--transition);
 }
 
+select,
+select option,
+option {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
 /* Legacy Navbar Styles - Disabling as we moved to Tailwind
 .navbar {
     background: rgba(0, 53, 128, 0.85);

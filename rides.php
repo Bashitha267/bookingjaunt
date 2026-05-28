@@ -126,7 +126,7 @@ $vehicle_categories = [
     'suv'      => ['label' => 'SUV',      'icon' => 'fa-truck-pickup'],
     'jeep'     => ['label' => 'Jeep',     'icon' => 'fa-truck-monster'],
     'bus'      => ['label' => 'Bus',      'icon' => 'fa-bus'],
-    'tuk_tuk'  => ['label' => 'Tuk-Tuk', 'icon' => 'fa-motorcycle'],
+    'tuk_tuk'  => ['label' => 'Tuk-Tuk', 'icon' => 'assets/rickshaw.png'],
     'motorbike'=> ['label' => 'Motorbike','icon' => 'fa-motorcycle'],
 ];
 ?>
@@ -388,7 +388,11 @@ $vehicle_categories = [
             ?>
             <a href="rides.php?vehicle_type=<?php echo urlencode($val); ?>&q=<?php echo urlencode($q); ?>&district=<?php echo urlencode($district); ?>&driver_option=<?php echo urlencode($driver_option); ?>"
                class="category-pill flex items-center gap-2 px-5 py-2.5 rounded-full border border-neutral-200 bg-white text-neutral-700 text-sm font-bold whitespace-nowrap flex-shrink-0 <?php echo $isActive ? 'active' : ''; ?>">
-                <i class="fas <?php echo $cat['icon']; ?> <?php echo $isActive ? 'text-gold' : 'text-neutral-400'; ?>"></i>
+                <?php if (strpos($cat['icon'], 'assets/') === 0): ?>
+                    <img src="<?php echo $cat['icon']; ?>" alt="<?php echo htmlspecialchars($cat['label']); ?>" class="w-5 h-5 object-contain inline-block <?php echo !$isActive ? 'opacity-70' : ''; ?>">
+                <?php else: ?>
+                    <i class="fas <?php echo $cat['icon']; ?> <?php echo $isActive ? 'text-gold' : 'text-neutral-400'; ?>"></i>
+                <?php endif; ?>
                 <?php echo htmlspecialchars($cat['label']); ?>
             </a>
             <?php endforeach; ?>
@@ -459,7 +463,11 @@ $vehicle_categories = [
                             <label class="filter-option">
                                 <input type="radio" name="vehicle_type" value="<?php echo $val; ?>" onchange="this.form.submit()"
                                     <?php echo ($vehicle_type === $val) ? 'checked' : ''; ?>>
-                                <i class="fas <?php echo $cat['icon']; ?> text-neutral-400 text-xs"></i>
+                                <?php if (strpos($cat['icon'], 'assets/') === 0): ?>
+                                    <img src="<?php echo $cat['icon']; ?>" alt="<?php echo htmlspecialchars($cat['label']); ?>" class="w-4 h-4 object-contain inline-block opacity-70">
+                                <?php else: ?>
+                                    <i class="fas <?php echo $cat['icon']; ?> text-neutral-400 text-xs"></i>
+                                <?php endif; ?>
                                 <?php echo htmlspecialchars($cat['label']); ?>
                             </label>
                         <?php endforeach; ?>
@@ -651,9 +659,14 @@ $vehicle_categories = [
                             <?php endif; ?>
 
                             <!-- Category Badge -->
-                            <div class="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
-                                <i class="fas <?php echo $cat_icon; ?>"></i>
-                                <?php echo htmlspecialchars($cat_label); ?>
+                             <div class="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                                 <?php if (strpos($cat_icon, 'assets/') === 0): ?>
+                                     <img src="<?php echo $cat_icon; ?>" alt="<?php echo htmlspecialchars($cat_label); ?>" class="w-3.5 h-3.5 object-contain inline-block">
+                                 <?php else: ?>
+                                     <i class="fas <?php echo $cat_icon; ?>"></i>
+                                 <?php endif; ?>
+                                 <?php echo htmlspecialchars($cat_label); ?>
+                             </div>
                             </div>
 
                             <!-- WhatsApp Button -->

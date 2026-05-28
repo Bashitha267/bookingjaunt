@@ -11,43 +11,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         $action = $_POST['action'];
 
-        // Generate Invite Link
-        if ($action === 'generate_invite') {
-            $token = bin2hex(random_bytes(32));
-            $stmt = $pdo->prepare("INSERT INTO manager_invite_tokens (token, created_by) VALUES (?, ?)");
-            if ($stmt->execute([$token, $_SESSION['user_id']])) {
-                $invite_link = "http://" . $_SERVER['HTTP_HOST'] . "/bookingjaunt/manager_register.php?token=" . $token;
-                $message = "Invite link generated successfully.";
-            } else {
-                $error = "Failed to generate invite link.";
-            }
-        }
-
-        // Add Staff & Assign to Manager
-        if ($action === 'add_staff') {
+        // Add Manager directly under Admin (No tokens needed)
+        if ($action === 'add_manager') {
             $first_name = trim($_POST['first_name']);
             $last_name = trim($_POST['last_name']);
             $email = trim($_POST['email']);
+            $phone_number = trim($_POST['phone_number'] ?? '');
+            $whatsapp_number = trim($_POST['whatsapp_number'] ?? '');
+            $nic_passport = trim($_POST['nic_passport'] ?? '');
+            $username = trim($_POST['username'] ?? '');
             $password = $_POST['password'];
-            $manager_id = $_POST['manager_id'] !== '' ? $_POST['manager_id'] : null;
+            $address = trim($_POST['address'] ?? '');
 
-            if (empty($first_name) || empty($last_name) || empty($email) || empty($password)) {
-                $error = "All fields are required to add staff.";
+            if (empty($first_name) || empty($last_name) || empty($email) || empty($password) || empty($username)) {
+                $error = "First Name, Last Name, Email, Username, and Password are required.";
             } else {
+                // Check email
                 $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
                 $stmt->execute([$email]);
                 if ($stmt->fetch()) {
                     $error = "Email already exists.";
                 } else {
-                    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, 'site_staff')");
-                    if ($stmt->execute([$first_name, $last_name, $email, $hashed_password])) {
-                        $staff_id = $pdo->lastInsertId();
-                        $stmt = $pdo->prepare("INSERT INTO staff_manager (staff_id, manager_id) VALUES (?, ?)");
-                        $stmt->execute([$staff_id, $manager_id]);
-                        $message = "Staff added successfully.";
+                    // Check username
+                    $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+                    $stmt->execute([$username]);
+                    if ($stmt->fetch()) {
+                        $error = "Username already exists.";
                     } else {
-                        $error = "Failed to add staff.";
+                        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                        $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, phone_number, whatsapp_number, nic_passport, username, password, address, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'manager')");
+                        if ($stmt->execute([$first_name, $last_name, $email, $phone_number, $whatsapp_number, $nic_passport, $username, $hashed_password, $address])) {
+                            $message = "Manager added successfully.";
+                        } else {
+                            $error = "Failed to add manager.";
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add Staff & Assign to Manager (Manager required)
+        if ($action === 'add_staff') {
+            $first_name = trim($_POST['first_name']);
+            $last_name = trim($_POST['last_name']);
+            $email = trim($_POST['email']);
+            $phone_number = trim($_POST['phone_number'] ?? '');
+            $whatsapp_number = trim($_POST['whatsapp_number'] ?? '');
+            $nic_passport = trim($_POST['nic_passport'] ?? '');
+            $username = trim($_POST['username'] ?? '');
+            $password = $_POST['password'];
+            $address = trim($_POST['address'] ?? '');
+            $manager_id = !empty($_POST['manager_id']) ? $_POST['manager_id'] : null;
+
+            if (empty($first_name) || empty($last_name) || empty($email) || empty($password) || empty($username)) {
+                $error = "First Name, Last Name, Email, Username, and Password are required.";
+            } elseif (empty($manager_id)) {
+                $error = "Staff must be assigned under a manager.";
+            } else {
+                // Check email
+                $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+                $stmt->execute([$email]);
+                if ($stmt->fetch()) {
+                    $error = "Email already exists.";
+                } else {
+                    // Check username
+                    $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+                    $stmt->execute([$username]);
+                    if ($stmt->fetch()) {
+                        $error = "Username already exists.";
+                    } else {
+                        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                        $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, phone_number, whatsapp_number, nic_passport, username, password, address, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'site_staff')");
+                        if ($stmt->execute([$first_name, $last_name, $email, $phone_number, $whatsapp_number, $nic_passport, $username, $hashed_password, $address])) {
+                            $staff_id = $pdo->lastInsertId();
+                            $stmt = $pdo->prepare("INSERT INTO staff_manager (staff_id, manager_id) VALUES (?, ?)");
+                            $stmt->execute([$staff_id, $manager_id]);
+                            $message = "Staff added successfully.";
+                        } else {
+                            $error = "Failed to add staff.";
+                        }
                     }
                 }
             }
@@ -116,6 +158,14 @@ foreach ($staff_members as $staff) {
                     <p class="text-xs text-blue-300 font-medium hidden lg:block uppercase tracking-wider">Manage Managers & Staff</p>
                 </div>
             </div>
+            <div class="flex items-center gap-3">
+                <button onclick="openModal('addManagerModal')" class="bg-[#006ce4] hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                    <i class="fas fa-user-tie"></i> <span class="hidden sm:inline">Add Manager</span><span class="inline sm:hidden">Manager</span>
+                </button>
+                <button onclick="openModal('addStaffModal')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                    <i class="fas fa-user-plus"></i> <span class="hidden sm:inline">Add Staff</span><span class="inline sm:hidden">Staff</span>
+                </button>
+            </div>
         </header>
 
         <div class="p-4 lg:p-8">
@@ -151,133 +201,264 @@ foreach ($staff_members as $staff) {
                 </script>
             <?php endif; ?>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Actions Column -->
-                <div class="space-y-6">
-                    <!-- Generate Invite -->
-                    <div class="bg-white p-6 rounded-2xl glass-card">
-                        <h3 class="font-bold text-white mb-4">Invite Manager</h3>
-                        <p class="text-xs text-gray-300 mb-4">Generate a unique, one-time link to invite a new manager.</p>
-                        <form method="POST">
-                            <input type="hidden" name="action" value="generate_invite">
-                            <button type="submit" class="w-full bg-[#006ce4] hover:bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg transition-all">
-                                Generate Invite Link
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Add Staff -->
-                    <div class="bg-white p-6 rounded-2xl glass-card">
-                        <h3 class="font-bold text-white mb-4">Add Site Staff</h3>
-                        <form method="POST" class="space-y-4">
-                            <input type="hidden" name="action" value="add_staff">
-                            <div class="grid grid-cols-2 gap-4">
-                                <input type="text" name="first_name" placeholder="First Name" required class="w-full px-4 py-2 bg-black/20 border border-white/20 rounded-lg text-white placeholder-gray-400 outline-none focus:border-blue-500">
-                                <input type="text" name="last_name" placeholder="Last Name" required class="w-full px-4 py-2 bg-black/20 border border-white/20 rounded-lg text-white placeholder-gray-400 outline-none focus:border-blue-500">
-                            </div>
-                            <input type="email" name="email" placeholder="Email Address" required class="w-full px-4 py-2 bg-black/20 border border-white/20 rounded-lg text-white placeholder-gray-400 outline-none focus:border-blue-500">
-                            <input type="password" name="password" placeholder="Password" required class="w-full px-4 py-2 bg-black/20 border border-white/20 rounded-lg text-white placeholder-gray-400 outline-none focus:border-blue-500">
-                            
-                            <select name="manager_id" class="w-full px-4 py-2 bg-black/20 border border-white/20 rounded-lg text-white outline-none focus:border-blue-500">
-                                <option value="" class="text-black">No Manager (Direct Admin)</option>
-                                <?php foreach ($managers as $mgr): ?>
-                                    <option value="<?php echo $mgr['id']; ?>" class="text-black"><?php echo htmlspecialchars($mgr['first_name'] . ' ' . $mgr['last_name']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-
-                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition-all">
-                                Create Staff Account
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Hierarchy View Column -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white p-6 rounded-2xl glass-card">
-                        <h3 class="font-bold text-white mb-6 text-lg">Team Structure</h3>
-                        
-                        <!-- Unassigned Staff (Admin's direct reports) -->
-                        <?php if (count($unassigned_staff) > 0): ?>
-                            <div class="mb-8">
-                                <h4 class="font-bold text-blue-300 mb-3 border-b border-white/10 pb-2">Admin's Direct Staff</h4>
-                                <div class="space-y-3">
-                                    <?php foreach ($unassigned_staff as $staff): ?>
-                                        <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 bg-purple-500/20 text-purple-300 rounded-lg flex items-center justify-center font-bold">
-                                                    S
-                                                </div>
-                                                <div>
-                                                    <p class="font-bold text-white text-sm"><?php echo htmlspecialchars($staff['first_name'] . ' ' . $staff['last_name']); ?></p>
-                                                    <p class="text-xs text-gray-400"><?php echo htmlspecialchars($staff['email']); ?></p>
-                                                </div>
-                                            </div>
-                                            <form method="POST" onsubmit="return confirm('Delete this staff member?');">
-                                                <input type="hidden" name="action" value="delete_user">
-                                                <input type="hidden" name="user_id" value="<?php echo $staff['id']; ?>">
-                                                <button class="text-red-400 hover:text-red-300 px-3 py-1 bg-red-500/10 rounded-lg text-xs font-bold transition-colors">Delete</button>
-                                            </form>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-
-                        <!-- Managers and their staff -->
-                        <div class="space-y-6">
-                            <?php foreach ($managers as $mgr): ?>
-                                <div class="bg-black/20 rounded-xl border border-white/10 p-4">
-                                    <!-- Manager Row -->
-                                    <div class="flex items-center justify-between mb-4">
+            <div class="w-full">
+                <div class="bg-white p-6 rounded-2xl glass-card">
+                    <h3 class="font-bold text-white mb-6 text-lg">Team Structure</h3>
+                    
+                    <!-- Unassigned Staff (Admin's direct reports) -->
+                    <?php if (count($unassigned_staff) > 0): ?>
+                        <div class="mb-8">
+                            <h4 class="font-bold text-blue-300 mb-3 border-b border-white/10 pb-2">Admin's Direct Staff</h4>
+                            <div class="space-y-3">
+                                <?php foreach ($unassigned_staff as $staff): ?>
+                                    <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-12 h-12 bg-blue-500/20 text-blue-300 rounded-lg flex items-center justify-center font-bold text-xl shadow-inner border border-blue-500/30">
-                                                M
+                                            <div class="w-10 h-10 bg-purple-500/20 text-purple-300 rounded-lg flex items-center justify-center font-bold">
+                                                S
                                             </div>
                                             <div>
-                                                <p class="font-bold text-white text-base"><?php echo htmlspecialchars($mgr['first_name'] . ' ' . $mgr['last_name']); ?></p>
-                                                <p class="text-xs text-blue-300 uppercase tracking-widest font-bold">Manager &bull; <?php echo htmlspecialchars($mgr['email']); ?></p>
+                                                <p class="font-bold text-white text-sm"><?php echo htmlspecialchars($staff['first_name'] . ' ' . $staff['last_name']); ?></p>
+                                                <p class="text-xs text-gray-400"><?php echo htmlspecialchars($staff['email']); ?></p>
                                             </div>
                                         </div>
-                                        <form method="POST" onsubmit="return confirm('Delete this manager and orphan their staff?');">
+                                        <form method="POST" onsubmit="return confirm('Delete this staff member?');">
                                             <input type="hidden" name="action" value="delete_user">
-                                            <input type="hidden" name="user_id" value="<?php echo $mgr['id']; ?>">
-                                            <button class="text-red-400 hover:text-red-300 px-3 py-1 bg-red-500/10 rounded-lg text-xs font-bold transition-colors"><i class="fas fa-trash-alt"></i></button>
+                                            <input type="hidden" name="user_id" value="<?php echo $staff['id']; ?>">
+                                            <button class="text-red-400 hover:text-red-300 px-3 py-1 bg-red-500/10 rounded-lg text-xs font-bold transition-colors">Delete</button>
                                         </form>
                                     </div>
-                                    
-                                    <!-- Staff List -->
-                                    <div class="pl-8 space-y-2 border-l-2 border-white/10 ml-6">
-                                        <?php if (isset($staff_by_manager[$mgr['id']])): ?>
-                                            <?php foreach ($staff_by_manager[$mgr['id']] as $staff): ?>
-                                                <div class="flex items-center justify-between bg-black/10 p-2 rounded-lg border border-white/5 relative before:absolute before:w-4 before:border-b-2 before:border-white/10 before:-left-6 before:top-1/2">
-                                                    <div class="flex items-center gap-2">
-                                                        <div class="w-8 h-8 bg-purple-500/20 text-purple-300 rounded-md flex items-center justify-center font-bold text-xs">
-                                                            S
-                                                        </div>
-                                                        <div>
-                                                            <p class="font-bold text-white text-xs"><?php echo htmlspecialchars($staff['first_name'] . ' ' . $staff['last_name']); ?></p>
-                                                        </div>
-                                                    </div>
-                                                    <form method="POST" onsubmit="return confirm('Delete this staff member?');">
-                                                        <input type="hidden" name="action" value="delete_user">
-                                                        <input type="hidden" name="user_id" value="<?php echo $staff['id']; ?>">
-                                                        <button class="text-red-400 hover:text-red-300 px-2 py-1 bg-red-500/10 rounded text-[10px] font-bold transition-colors">Remove</button>
-                                                    </form>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <p class="text-xs text-gray-500 italic relative before:absolute before:w-4 before:border-b-2 before:border-white/10 before:-left-6 before:top-1/2">No staff assigned</p>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
+                    <?php endif; ?>
 
+                    <!-- Managers and their staff -->
+                    <div class="space-y-6">
+                        <?php foreach ($managers as $mgr): ?>
+                            <div class="bg-black/20 rounded-xl border border-white/10 p-4">
+                                <!-- Manager Row -->
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-blue-500/20 text-blue-300 rounded-lg flex items-center justify-center font-bold text-xl shadow-inner border border-blue-500/30">
+                                            M
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-white text-base"><?php echo htmlspecialchars($mgr['first_name'] . ' ' . $mgr['last_name']); ?></p>
+                                            <p class="text-xs text-blue-300 uppercase tracking-widest font-bold">Manager &bull; <?php echo htmlspecialchars($mgr['email']); ?></p>
+                                        </div>
+                                    </div>
+                                    <form method="POST" onsubmit="return confirm('Delete this manager and orphan their staff?');">
+                                        <input type="hidden" name="action" value="delete_user">
+                                        <input type="hidden" name="user_id" value="<?php echo $mgr['id']; ?>">
+                                        <button class="text-red-400 hover:text-red-300 px-3 py-1 bg-red-500/10 rounded-lg text-xs font-bold transition-colors"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Staff List -->
+                                <div class="pl-8 space-y-2 border-l-2 border-white/10 ml-6">
+                                    <?php if (isset($staff_by_manager[$mgr['id']])): ?>
+                                        <?php foreach ($staff_by_manager[$mgr['id']] as $staff): ?>
+                                            <div class="flex items-center justify-between bg-black/10 p-2 rounded-lg border border-white/5 relative before:absolute before:w-4 before:border-b-2 before:border-white/10 before:-left-6 before:top-1/2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-8 h-8 bg-purple-500/20 text-purple-300 rounded-md flex items-center justify-center font-bold text-xs">
+                                                        S
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-bold text-white text-xs"><?php echo htmlspecialchars($staff['first_name'] . ' ' . $staff['last_name']); ?></p>
+                                                    </div>
+                                                </div>
+                                                <form method="POST" onsubmit="return confirm('Delete this staff member?');">
+                                                    <input type="hidden" name="action" value="delete_user">
+                                                    <input type="hidden" name="user_id" value="<?php echo $staff['id']; ?>">
+                                                    <button class="text-red-400 hover:text-red-300 px-2 py-1 bg-red-500/10 rounded text-[10px] font-bold transition-colors">Remove</button>
+                                                </form>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <p class="text-xs text-gray-500 italic relative before:absolute before:w-4 before:border-b-2 before:border-white/10 before:-left-6 before:top-1/2">No staff assigned</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
+
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Add Manager Modal -->
+    <div id="addManagerModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-md" onclick="closeModal('addManagerModal')"></div>
+            <div class="relative w-full max-w-2xl my-8 rounded-[2rem] overflow-hidden glass-card border p-8" style="background: rgba(10, 18, 36, 0.90) !important;">
+                <div class="flex justify-between items-center pb-4 mb-6 border-b border-white/10">
+                    <div>
+                        <h3 class="text-lg font-black text-white">Add New Manager</h3>
+                        <p class="text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1">Direct Administrator Assignment</p>
+                    </div>
+                    <button onclick="closeModal('addManagerModal')" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-all">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="action" value="add_manager">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">First Name</label>
+                            <input type="text" name="first_name" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Last Name</label>
+                            <input type="text" name="last_name" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
+                            <input type="email" name="email" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Username</label>
+                            <input type="text" name="username" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Phone Number</label>
+                            <input type="text" name="phone_number" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">WhatsApp Number</label>
+                            <input type="text" name="whatsapp_number" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">NIC / Passport</label>
+                            <input type="text" name="nic_passport" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Password</label>
+                            <input type="password" name="password" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Address</label>
+                        <textarea name="address" rows="2" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs resize-none"></textarea>
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                        <button type="button" onclick="closeModal('addManagerModal')" class="flex-1 py-3 bg-white/10 hover:bg-white/15 rounded-xl text-xs font-bold text-white transition-all uppercase tracking-widest">Cancel</button>
+                        <button type="submit" class="flex-[2] py-3 bg-[#006ce4] hover:bg-blue-600 rounded-xl text-xs font-bold text-white transition-all uppercase tracking-widest shadow-lg shadow-blue-900/20">Add Manager</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Staff Modal -->
+    <div id="addStaffModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-md" onclick="closeModal('addStaffModal')"></div>
+            <div class="relative w-full max-w-2xl my-8 rounded-[2rem] overflow-hidden glass-card border p-8" style="background: rgba(10, 18, 36, 0.90) !important;">
+                <div class="flex justify-between items-center pb-4 mb-6 border-b border-white/10">
+                    <div>
+                        <h3 class="text-lg font-black text-white">Add Site Staff</h3>
+                        <p class="text-[10px] font-bold text-blue-300 uppercase tracking-widest mt-1">Assign Under Selected Manager</p>
+                    </div>
+                    <button onclick="closeModal('addStaffModal')" class="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-all">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="action" value="add_staff">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">First Name</label>
+                            <input type="text" name="first_name" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Last Name</label>
+                            <input type="text" name="last_name" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
+                            <input type="email" name="email" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Username</label>
+                            <input type="text" name="username" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Phone Number</label>
+                            <input type="text" name="phone_number" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">WhatsApp Number</label>
+                            <input type="text" name="whatsapp_number" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">NIC / Passport</label>
+                            <input type="text" name="nic_passport" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Password</label>
+                            <input type="password" name="password" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Assign Manager</label>
+                        <select name="manager_id" required class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white outline-none focus:border-blue-500 text-xs">
+                            <option value="" disabled selected class="text-black">Select a Manager</option>
+                            <?php foreach ($managers as $mgr): ?>
+                                <option value="<?php echo $mgr['id']; ?>" class="text-black"><?php echo htmlspecialchars($mgr['first_name'] . ' ' . $mgr['last_name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1.5 ml-1">Address</label>
+                        <textarea name="address" rows="2" class="w-full px-4 py-2.5 bg-black/30 border border-white/15 rounded-xl text-white placeholder-gray-500 outline-none focus:border-blue-500 text-xs resize-none"></textarea>
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                        <button type="button" onclick="closeModal('addStaffModal')" class="flex-1 py-3 bg-white/10 hover:bg-white/15 rounded-xl text-xs font-bold text-white transition-all uppercase tracking-widest">Cancel</button>
+                        <button type="submit" class="flex-[2] py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white transition-all uppercase tracking-widest shadow-lg shadow-emerald-900/20">Create Staff</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Scripts -->
+    <script>
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    </script>
 </body>
 </html>
+
+

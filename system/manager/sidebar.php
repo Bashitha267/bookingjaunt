@@ -125,6 +125,12 @@ if (isset($pdo)) {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
+    /* Style native select options to match the dark glassmorphism theme */
+    select option {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
+    }
+
     main {
         background: transparent !important;
     }
@@ -193,7 +199,7 @@ if (isset($pdo)) {
     table tr:hover { background: rgba(255,255,255,0.05); }
     
     #sidebar.show { transform: translateX(0); }
-</script>
+</style>
 <script>
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');

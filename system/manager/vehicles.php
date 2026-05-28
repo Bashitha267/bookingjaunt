@@ -4,12 +4,35 @@ require_once '../auth_guard.php';
 requireRole(['manager']);
 
 // Fetch all vehicles with owner info
+$search = $_GET['search'] ?? '';
+$category = $_GET['category'] ?? '';
+
+$where = ["p.business_type = 'vehicle'"];
+$params = [];
+
+if ($search !== '') {
+    $where[] = "(p.property_name LIKE ? OR p.city LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+}
+
+if ($category !== '') {
+    $where[] = "p.vehicle_category = ?";
+    $params[] = $category;
+}
+
+$whereClause = implode(' AND ', $where);
+
 $sql = "SELECT p.*, u.first_name, u.last_name
         FROM properties p
         JOIN users u ON p.owner_id = u.id
-        WHERE p.business_type = 'vehicle'
+        WHERE $whereClause
         ORDER BY p.created_at DESC";
-$stmt = $pdo->query($sql);
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $vehicles = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -50,6 +73,36 @@ $vehicles = $stmt->fetchAll();
                 <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                     <h2 class="font-bold text-white">Vehicle Directory</h2>
                     <span class="text-[10px] font-bold uppercase tracking-widest text-sky-300"><?php echo count($vehicles); ?> Vehicles Listed</span>
+                </div>
+
+                <!-- Search and Filter Form -->
+                <div class="px-6 py-4 border-b border-white/10 bg-white/5">
+                    <form method="GET" class="flex flex-wrap gap-4 items-center">
+                        <div class="flex-1 min-w-[200px]">
+                            <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search vehicles, city, or owner..." class="w-full px-4 py-2 custom-input text-sm">
+                        </div>
+                        <div class="w-full sm:w-auto">
+                            <select name="category" class="w-full sm:w-auto px-4 py-2 custom-input text-sm">
+                                <option value="">All Vehicle Types</option>
+                                <option value="car" <?php echo $category === 'car' ? 'selected' : ''; ?>>Car</option>
+                                <option value="van" <?php echo $category === 'van' ? 'selected' : ''; ?>>Van</option>
+                                <option value="suv" <?php echo $category === 'suv' ? 'selected' : ''; ?>>SUV</option>
+                                <option value="bus" <?php echo $category === 'bus' ? 'selected' : ''; ?>>Bus</option>
+                                <option value="tuk_tuk" <?php echo $category === 'tuk_tuk' ? 'selected' : ''; ?>>Tuk Tuk</option>
+                                <option value="motorcycle" <?php echo $category === 'motorcycle' ? 'selected' : ''; ?>>Motorcycle</option>
+                            </select>
+                        </div>
+                        <div class="w-full sm:w-auto flex gap-2">
+                            <button type="submit" class="px-4 py-2 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-xl text-sm font-bold hover:bg-sky-500/30 transition-colors">
+                                <i class="fas fa-search mr-2"></i>Search
+                            </button>
+                            <?php if($search !== '' || $category !== ''): ?>
+                            <a href="vehicles.php" class="px-4 py-2 bg-white/10 text-gray-300 border border-white/20 rounded-xl text-sm font-bold hover:bg-white/20 transition-colors flex items-center">
+                                Clear
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
                 </div>
 
                 <?php if (empty($vehicles)): ?>
@@ -130,9 +183,14 @@ $vehicles = $stmt->fetchAll();
                                             ?>
                                         </td>
                                         <td class="px-6 py-4 text-right">
-                                            <a href="../../property_wizard.php?edit=<?php echo (int)$vehicle['id']; ?>&type=vehicle" class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white transition-all">
-                                                Manage
-                                            </a>
+                                            <div class="flex flex-wrap justify-end gap-2">
+                                                <a href="../admin/property_details.php?id=<?php echo (int)$vehicle['id']; ?>" target="_blank" class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white transition-all">
+                                                    Report
+                                                </a>
+                                                <a href="../../property_wizard.php?edit=<?php echo (int)$vehicle['id']; ?>&type=vehicle" class="px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white transition-all">
+                                                    Manage
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
