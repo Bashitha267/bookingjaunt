@@ -99,16 +99,18 @@ require_once 'mail_helper.php';
                 } else {
                     echo '<p class="text-slate-500 mb-2">Initiating SMTP delivery to: <strong>' . htmlspecialchars($recipient) . '</strong>...</p>';
                     
-                    // Simple template
-                    $testHtml = '
+                    // Simple template content wrapped in the base template
+                    $testContent = '
                     <h2>Bookingjaunt SMTP Diagnostic Successful!</h2>
                     <p>This is a diagnostic email sent by the Bookingjaunt email subsystem. If you are reading this message, it means your SMTP server configurations are correct and working perfectly.</p>
-                    <div style="background:#f0f7ff; padding:15px; border-left:4px solid #006ce4; margin:15px 0; border-radius:0 10px 10px 0;">
+                    <div class="highlight-box">
                         <strong>Diagnostic Information:</strong><br>
                         Timestamp: ' . date('Y-m-d H:i:s') . '<br>
                         Server Host: ' . htmlspecialchars(MAIL_SMTP_HOST) . ' (Port ' . htmlspecialchars(MAIL_SMTP_PORT) . ')
                     </div>
                     <p>Best regards,<br>Mail Diagnostic Agent</p>';
+
+                    $testHtml = MailSender::getEmailBaseTemplate("Bookingjaunt Mail Test Success", $testContent);
 
                     $sent = MailSender::send($recipient, "Diagnostic Tester", "Bookingjaunt Mail Test Success", $testHtml);
 

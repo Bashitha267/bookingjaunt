@@ -144,7 +144,18 @@ class MailSender {
     /**
      * Email wrapper template for consistent luxury styling.
      */
-    private static function getEmailBaseTemplate($title, $contentHtml) {
+    public static function getEmailBaseTemplate($title, $contentHtml) {
+        $logoHtml = '';
+        if (defined('MAIL_LOGO_URL') && !empty(MAIL_LOGO_URL)) {
+            $logoHtml = '
+            <div style="display: inline-block; text-align: center; vertical-align: middle;">
+                <img src="' . htmlspecialchars(MAIL_LOGO_URL) . '" alt="Logo" style="height: 40px; vertical-align: middle; margin-right: 12px; display: inline-block;">
+                <span style="color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; vertical-align: middle; display: inline-block; font-family: \'Plus Jakarta Sans\', \'Inter\', sans-serif;">Bookingjaunt</span>
+            </div>';
+        } else {
+            $logoHtml = '<h1>Bookingjaunt</h1>';
+        }
+
         return '
         <!DOCTYPE html>
         <html>
@@ -175,8 +186,10 @@ class MailSender {
                     text-align: center;
                 }
                 .header img {
-                    height: 50px;
-                    margin-bottom: 15px;
+                    height: 40px;
+                    vertical-align: middle;
+                    margin-right: 12px;
+                    display: inline-block;
                 }
                 .header h1 {
                     color: #ffffff;
@@ -275,7 +288,7 @@ class MailSender {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>Bookingjaunt</h1>
+                    ' . $logoHtml . '
                 </div>
                 <div class="content">
                     ' . $contentHtml . '

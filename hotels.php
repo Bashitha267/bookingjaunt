@@ -259,6 +259,39 @@ try {
     $stmt_featured = $pdo->query($featured_query);
     $featured_properties = $stmt_featured->fetchAll();
 
+    // Deals of the Day overrides
+    $deal_stmt = $pdo->prepare("SELECT deal_price FROM deals_of_the_day WHERE property_id = ? AND is_active = 1 AND valid_from <= CURDATE() AND valid_until >= CURDATE() LIMIT 1");
+    if (!empty($properties)) {
+        foreach ($properties as &$property) {
+            $deal_stmt->execute([$property['id']]);
+            $deal = $deal_stmt->fetch();
+            if ($deal) {
+                $property['original_price_lkr'] = $property['price_lkr'];
+                $property['price_lkr'] = $deal['deal_price'];
+                $property['is_deal'] = true;
+            } else {
+                $property['is_deal'] = false;
+            }
+        }
+        unset($property);
+    }
+    if (!empty($featured_properties)) {
+        foreach ($featured_properties as &$feat) {
+            $deal_stmt->execute([$feat['id']]);
+            $deal = $deal_stmt->fetch();
+            if ($deal) {
+                $feat['original_price_lkr'] = $feat['price_lkr'];
+                $feat['price_lkr'] = $deal['deal_price'];
+                $feat['is_deal'] = true;
+                $feat['max_price'] = $deal['deal_price'];
+            } else {
+                $feat['is_deal'] = false;
+            }
+        }
+        unset($feat);
+    }
+
+
     // Check if logged-in user has properties
     $user_has_properties = false;
     if (isset($_SESSION['user_id'])) {
@@ -941,16 +974,24 @@ try {
                                         if ($currency === 'USD') {
                                             $display_price = ceil($price / $exchange_rate);
                                             $currency_symbol = 'USD';
+                                            $display_orig = !empty($property['is_deal']) ? ceil($property['original_price_lkr'] / $exchange_rate) : 0;
                                         } else {
                                             $display_price = $price;
                                             $currency_symbol = 'LKR';
+                                            $display_orig = $property['original_price_lkr'] ?? 0;
                                         }
                                         ?>
+                                        <?php if (!empty($property['is_deal'])): ?>
+                                             <div class="flex items-center gap-1.5 justify-end">
+                                                 <span class="text-xs text-red-500 line-through font-semibold"><?php echo $currency_symbol; ?> <?php echo number_format($display_orig); ?></span>
+                                                 <span class="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">DEAL</span>
+                                             </div>
+                                         <?php endif; ?>
                                         <div class="text-[9px] md:text-[11px] text-text-secondary mt-1 md:mt-0">Starting from
                                         </div>
                                         <div
                                             class="text-[18px] md:text-[22px] font-black text-primary tracking-tight leading-none mb-1">
-                                            <?php echo $currency_symbol; ?>         <?php echo number_format($display_price); ?>
+                                            <?php echo $currency_symbol; ?> <?php echo number_format($display_price); ?>
                                         </div>
                                         <div
                                             class="text-[8px] md:text-[10px] text-text-secondary uppercase font-bold tracking-wider mb-2">

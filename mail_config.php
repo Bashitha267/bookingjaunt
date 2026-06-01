@@ -45,3 +45,4 @@ define('MAIL_SMTP_SECURE', getenv('SMTP_SECURE') ?: 'tls'); // 'tls' or 'ssl'
 define('MAIL_SENDER_EMAIL', getenv('SMTP_SENDER_EMAIL') ?: 'noreply@bookingjaunt.com');
 define('MAIL_SENDER_NAME', getenv('SMTP_SENDER_NAME') ?: 'Bookingjaunt');
 define('MAIL_SMTP_DEBUG', getenv('SMTP_DEBUG') !== false ? (int)getenv('SMTP_DEBUG') : 0); // 0 = off, 1 = client, 2 = client + server
+define('MAIL_LOGO_URL', getenv('MAIL_LOGO_URL') ?: 'https://bookingjaunt.com/assets/white_logo.png');

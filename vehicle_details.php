@@ -21,6 +21,106 @@ $is_featured = $pdo->prepare("SELECT id FROM property_boosts WHERE property_id =
 $is_featured->execute([$id]);
 $featured = $is_featured->fetch();
 
+// Fetch real reviews for this vehicle
+$reviews_stmt = $pdo->prepare("
+    SELECT r.*, CONCAT(u.first_name, ' ', u.last_name) as user_name 
+    FROM reviews r 
+    JOIN users u ON r.user_id = u.id 
+    WHERE r.property_id = ? 
+    ORDER BY r.created_at DESC
+");
+$reviews_stmt->execute([$id]);
+$reviews = $reviews_stmt->fetchAll();
+
+// Calculate average rating
+$avg_rating_stmt = $pdo->prepare("SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM reviews WHERE property_id = ?");
+$avg_rating_stmt->execute([$id]);
+$rating_stats = $avg_rating_stmt->fetch();
+$avg_rating = round($rating_stats['avg_rating'], 1) ?: 'New';
+$review_count = $rating_stats['review_count'];
+
+$exchange_rate = 300;
+
+// Fetch Rides Near Me (same city first, then district)
+$rides_near = [];
+$current_city = $v['city'] ?? '';
+$current_district = $v['district'] ?? '';
+if (!empty($current_city) || !empty($current_district)) {
+    try {
+        $rides_near_stmt = $pdo->prepare("
+            SELECT *
+            FROM properties
+            WHERE business_type = 'vehicle'
+              AND approval_status = 'approved'
+              AND id != ?
+              AND (
+                  (? != '' AND LOWER(city) = LOWER(?))
+                  OR (? != '' AND LOWER(district) = LOWER(?))
+              )
+            ORDER BY 
+              CASE WHEN (? != '' AND LOWER(city) = LOWER(?)) THEN 1 ELSE 2 END ASC,
+              id DESC
+            LIMIT 10
+        ");
+        $rides_near_stmt->execute([
+            $id,
+            $current_city, $current_city,
+            $current_district, $current_district,
+            $current_city, $current_city
+        ]);
+        $rides_near = $rides_near_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $rides_near = [];
+    }
+}
+
+// Fetch Hotels Near Me (same city first, then district)
+$hotels_near = [];
+if (!empty($current_city) || !empty($current_district)) {
+    try {
+        $hotels_near_stmt = $pdo->prepare("
+            SELECT p.*, MIN(pr.price_lkr) as price_lkr
+            FROM properties p
+            LEFT JOIN property_rooms pr ON pr.property_id = p.id
+            WHERE p.business_type != 'vehicle'
+              AND p.approval_status = 'approved'
+              AND (
+                  (? != '' AND LOWER(p.city) = LOWER(?))
+                  OR (? != '' AND LOWER(p.district) = LOWER(?))
+              )
+            GROUP BY p.id
+            ORDER BY 
+              CASE WHEN (? != '' AND LOWER(p.city) = LOWER(?)) THEN 1 ELSE 2 END ASC,
+              p.id DESC
+            LIMIT 10
+        ");
+        $hotels_near_stmt->execute([
+            $current_city, $current_city,
+            $current_district, $current_district,
+            $current_city, $current_city
+        ]);
+        $hotels_near = $hotels_near_stmt->fetchAll();
+
+        // Check for active deals
+        $deal_stmt = $pdo->prepare("SELECT deal_price FROM deals_of_the_day WHERE property_id = ? AND is_active = 1 AND valid_from <= CURDATE() AND valid_until >= CURDATE() LIMIT 1");
+        foreach ($hotels_near as &$h) {
+            $deal_stmt->execute([$h['id']]);
+            $deal = $deal_stmt->fetch();
+            if ($deal) {
+                $h['original_price_lkr'] = $h['price_lkr'];
+                $h['price_lkr'] = $deal['deal_price'];
+                $h['is_deal'] = true;
+            } else {
+                $h['is_deal'] = false;
+            }
+        }
+        unset($h);
+    } catch (PDOException $e) {
+        $hotels_near = [];
+    }
+}
+
+
 // Handle booking form POST
 $booking_success = false;
 $booking_error = '';
@@ -80,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_vehicle'])) {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #dbeafe; }
     </style>
     <script>
         tailwind.config = {
@@ -453,6 +553,233 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_vehicle'])) {
                 </div>
             </div>
         </div>
+        <!-- Guest Reviews Section -->
+        <div class="mt-20 pt-12 border-t border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 font-display">Guest reviews</h3>
+                    <div class="flex items-center gap-3 mt-2">
+                        <div class="bg-primary text-white font-black px-3 py-1.5 rounded-lg text-lg"><?php echo $avg_rating; ?></div>
+                        <div>
+                            <p class="font-bold text-gray-850 leading-none">Overall Score</p>
+                            <p class="text-[12px] text-gray-500 mt-1"><?php echo $review_count; ?> real reviews from our guests</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (empty($reviews)): ?>
+                <div class="bg-white rounded-3xl p-10 text-center border border-gray-150 shadow-sm">
+                    <p class="text-gray-500 font-medium">No reviews yet for this vehicle. Be the first to share your experience after your ride!</p>
+                </div>
+            <?php else: ?>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <?php foreach ($reviews as $review): ?>
+                        <div class="bg-white p-6 rounded-3xl border border-gray-150 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-bold text-primary">
+                                            <?php echo strtoupper(substr($review['user_name'], 0, 1)); ?>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-sm text-gray-800 leading-tight"><?php echo htmlspecialchars($review['user_name']); ?></p>
+                                            <p class="text-[11px] text-gray-500">Guest</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex text-gold text-[10px]">
+                                        <?php for($i=1; $i<=5; $i++): ?>
+                                            <i class="<?php echo $i <= $review['rating'] ? 'fas' : 'far'; ?> fa-star"></i>
+                                        <?php endfor; ?>
+                                    </div>
+                                </div>
+                                <p class="text-[14px] text-gray-700 leading-relaxed italic">"<?php echo nl2br(htmlspecialchars($review['comment'])); ?>"</p>
+                            </div>
+                            <p class="text-[10px] text-gray-400 font-bold mt-4 uppercase tracking-tighter"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Rides Near Me Section -->
+        <?php if (!empty($rides_near)): ?>
+        <div class="mt-20 pt-12 border-t border-gray-200 relative">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-secondary border border-blue-100 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
+                        <i class="fas fa-car"></i> Rides Near Me
+                    </span>
+                    <h3 class="text-2xl font-bold font-display text-primary">Rides Near Me</h3>
+                    <p class="text-xs text-gray-500 mt-1 font-medium">Explore other transport options nearby in <?php echo htmlspecialchars($v['city'] ?: $v['district']); ?></p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="rides-near-prev" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm bg-white" aria-label="Previous rides">
+                        <i class="fas fa-chevron-left text-gray-600 text-xs"></i>
+                    </button>
+                    <button id="rides-near-next" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm bg-white" aria-label="Next rides">
+                        <i class="fas fa-chevron-right text-gray-600 text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative overflow-hidden">
+                <div id="rides-near-slider" class="flex overflow-x-auto no-scrollbar gap-5 pb-4 snap-x snap-mandatory scroll-smooth w-full">
+                    <?php foreach ($rides_near as $rn):
+                        $rn_cover = $rn['cover_image'] ?: 'assets/placeholder-vehicle.png';
+                        
+                        $pricing_type = $rn['pricing_type'] ?? 'day_wise';
+                        if ($pricing_type === 'day_wise') {
+                            $rn_price_val = $rn['price_per_day'];
+                            $rn_price_label = '/day';
+                        } else {
+                            $rn_price_val = $rn['price_per_km'];
+                            $rn_price_label = '/km';
+                        }
+                        $rn_price = ($currency === 'USD') ? ($rn_price_val / $exchange_rate) : $rn_price_val;
+                    ?>
+                    <a href="vehicle_details.php?id=<?php echo $rn['id']; ?>" class="flex-none w-[280px] sm:w-[300px] snap-start group" style="text-decoration:none;">
+                        <div class="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-400 border border-gray-200 bg-white">
+                            <div class="relative h-44 overflow-hidden">
+                                <img src="<?php echo htmlspecialchars($rn_cover); ?>" alt="<?php echo htmlspecialchars($rn['property_name']); ?>"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                     onerror="this.src='assets/placeholder-vehicle.png'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute top-3 left-3 bg-black/55 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                                    <i class="fas fa-car mr-1"></i><?php echo htmlspecialchars(ucfirst($rn['vehicle_category'] ?? 'Vehicle')); ?>
+                                </div>
+                                <div class="absolute bottom-3 left-3 right-3">
+                                    <h4 class="text-white font-bold text-sm leading-tight truncate"><?php echo htmlspecialchars($rn['property_name']); ?></h4>
+                                    <p class="text-white/80 text-xs mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i><?php echo htmlspecialchars($rn['city']); ?>, <?php echo htmlspecialchars($rn['district']); ?></p>
+                                </div>
+                            </div>
+                            <div class="p-4 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Starting from</p>
+                                    <p class="text-base font-black text-neutral-900"><?php echo $currency; ?> <?php echo number_format($rn_price, ($currency === 'USD' ? 2 : 0)); ?><span class="text-xs text-neutral-500 font-medium"><?php echo $rn_price_label; ?></span></p>
+                                </div>
+                                <div class="bg-secondary text-white text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-primary transition-colors">Select</div>
+                            </div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Hotels Near Me Section -->
+        <?php if (!empty($hotels_near)): ?>
+        <div class="mt-20 pt-12 border-t border-gray-200 relative">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-secondary border border-blue-100 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
+                        <i class="fas fa-hotel"></i> Stays Near Me
+                    </span>
+                    <h3 class="text-2xl font-bold font-display text-primary">Hotels Near Me</h3>
+                    <p class="text-xs text-gray-500 mt-1 font-medium">Explore stays nearby in <?php echo htmlspecialchars($v['city'] ?: $v['district']); ?></p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="hotels-near-prev" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm bg-white" aria-label="Previous stays">
+                        <i class="fas fa-chevron-left text-gray-600 text-xs"></i>
+                    </button>
+                    <button id="hotels-near-next" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm bg-white" aria-label="Next stays">
+                        <i class="fas fa-chevron-right text-gray-600 text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative overflow-hidden">
+                <div id="hotels-near-slider" class="flex overflow-x-auto no-scrollbar gap-5 pb-4 snap-x snap-mandatory scroll-smooth w-full">
+                    <?php foreach ($hotels_near as $hn):
+                        $hn_cover = $hn['cover_image'] ?: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
+                        $hn_price = ($currency === 'USD') ? ($hn['price_lkr'] / $exchange_rate) : $hn['price_lkr'];
+                    ?>
+                    <a href="hotel_info.php?id=<?php echo $hn['id']; ?>" class="flex-none w-[280px] sm:w-[300px] snap-start group" style="text-decoration:none;">
+                        <div class="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-400 border border-gray-200 bg-white">
+                            <div class="relative h-44 overflow-hidden">
+                                <img src="<?php echo htmlspecialchars($hn_cover); ?>" alt="<?php echo htmlspecialchars($hn['property_name']); ?>"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <?php if (isset($hn['is_deal']) && $hn['is_deal']): ?>
+                                <div class="absolute top-3 left-3">
+                                    <span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">DEAL</span>
+                                </div>
+                                <?php endif; ?>
+                                <div class="absolute bottom-3 left-3 right-3">
+                                    <h4 class="text-white font-bold text-sm leading-tight truncate"><?php echo htmlspecialchars($hn['property_name']); ?></h4>
+                                    <p class="text-white/80 text-xs mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i><?php echo htmlspecialchars($hn['city']); ?>, <?php echo htmlspecialchars($hn['district']); ?></p>
+                                </div>
+                            </div>
+                            <div class="p-4 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Starting from</p>
+                                    <p class="text-base font-black text-neutral-900"><?php echo $currency; ?> <?php echo number_format($hn_price, ($currency === 'USD' ? 2 : 0)); ?><span class="text-xs text-neutral-500 font-medium">/night</span></p>
+                                </div>
+                                <div class="bg-secondary text-white text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-primary transition-colors">Book</div>
+                            </div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Slider Styles -->
+        <style>
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        </style>
+
+        <!-- Sliders JavaScript -->
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const initSlider = (sliderId, prevId, nextId) => {
+                const slider = document.getElementById(sliderId);
+                const prev = document.getElementById(prevId);
+                const next = document.getElementById(nextId);
+                if (!slider) return;
+
+                let autoScrollInterval;
+                const startAutoScroll = () => {
+                    autoScrollInterval = setInterval(() => {
+                        const card = slider.querySelector('.snap-start');
+                        const cardWidth = card ? card.offsetWidth : 300;
+                        slider.scrollBy({ left: cardWidth + 20, behavior: 'smooth' });
+                        // Reset to start if end reached
+                        if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 10) {
+                            setTimeout(() => { slider.scrollTo({ left: 0, behavior: 'smooth' }); }, 1000);
+                        }
+                    }, 4000);
+                };
+
+                const stopAutoScroll = () => clearInterval(autoScrollInterval);
+
+                startAutoScroll();
+                slider.addEventListener('mouseenter', stopAutoScroll);
+                slider.addEventListener('mouseleave', startAutoScroll);
+
+                if (prev) {
+                    prev.addEventListener('click', () => {
+                        const card = slider.querySelector('.snap-start');
+                        const cardWidth = card ? card.offsetWidth : 300;
+                        slider.scrollBy({ left: -(cardWidth + 20), behavior: 'smooth' });
+                    });
+                }
+                if (next) {
+                    next.addEventListener('click', () => {
+                        const card = slider.querySelector('.snap-start');
+                        const cardWidth = card ? card.offsetWidth : 300;
+                        slider.scrollBy({ left: cardWidth + 20, behavior: 'smooth' });
+                    });
+                }
+            };
+
+            initSlider('rides-near-slider', 'rides-near-prev', 'rides-near-next');
+            initSlider('hotels-near-slider', 'hotels-near-prev', 'hotels-near-next');
+        });
+        </script>
     </div>
 
     <?php include 'footer.php'; ?>

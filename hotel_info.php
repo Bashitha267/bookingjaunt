@@ -156,6 +156,85 @@ if (!empty($property['district']) || !empty($property['city'])) {
         $nearest_destinations = [];
     }
 }
+
+// Fetch Hotels Near Me (same city first, then district)
+$hotels_near = [];
+$current_city = $property['city'] ?? '';
+$current_district = $property['district'] ?? '';
+if (!empty($current_city) || !empty($current_district)) {
+    try {
+        $hotels_near_stmt = $pdo->prepare("
+            SELECT p.*, MIN(pr.price_lkr) as price_lkr
+            FROM properties p
+            LEFT JOIN property_rooms pr ON pr.property_id = p.id
+            WHERE p.business_type != 'vehicle'
+              AND p.approval_status = 'approved'
+              AND p.id != ?
+              AND (
+                  (? != '' AND LOWER(p.city) = LOWER(?))
+                  OR (? != '' AND LOWER(p.district) = LOWER(?))
+              )
+            GROUP BY p.id
+            ORDER BY 
+              CASE WHEN (? != '' AND LOWER(p.city) = LOWER(?)) THEN 1 ELSE 2 END ASC,
+              p.id DESC
+            LIMIT 10
+        ");
+        $hotels_near_stmt->execute([
+            $property_id,
+            $current_city, $current_city,
+            $current_district, $current_district,
+            $current_city, $current_city
+        ]);
+        $hotels_near = $hotels_near_stmt->fetchAll();
+
+        // Check for active deals
+        $deal_stmt = $pdo->prepare("SELECT deal_price FROM deals_of_the_day WHERE property_id = ? AND is_active = 1 AND valid_from <= CURDATE() AND valid_until >= CURDATE() LIMIT 1");
+        foreach ($hotels_near as &$h) {
+            $deal_stmt->execute([$h['id']]);
+            $deal = $deal_stmt->fetch();
+            if ($deal) {
+                $h['original_price_lkr'] = $h['price_lkr'];
+                $h['price_lkr'] = $deal['deal_price'];
+                $h['is_deal'] = true;
+            } else {
+                $h['is_deal'] = false;
+            }
+        }
+        unset($h);
+    } catch (PDOException $e) {
+        $hotels_near = [];
+    }
+}
+
+// Fetch Rides Near Me (same city first, then district)
+$rides_near = [];
+if (!empty($current_city) || !empty($current_district)) {
+    try {
+        $rides_near_stmt = $pdo->prepare("
+            SELECT *
+            FROM properties
+            WHERE business_type = 'vehicle'
+              AND approval_status = 'approved'
+              AND (
+                  (? != '' AND LOWER(city) = LOWER(?))
+                  OR (? != '' AND LOWER(district) = LOWER(?))
+              )
+            ORDER BY 
+              CASE WHEN (? != '' AND LOWER(city) = LOWER(?)) THEN 1 ELSE 2 END ASC,
+              id DESC
+            LIMIT 10
+        ");
+        $rides_near_stmt->execute([
+            $current_city, $current_city,
+            $current_district, $current_district,
+            $current_city, $current_city
+        ]);
+        $rides_near = $rides_near_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $rides_near = [];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -188,7 +267,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        body { font-family: 'Inter', sans-serif; color: #1a1a1a; }
+        body { font-family: 'Inter', sans-serif; color: #1a1a1a; background-color: #dbeafe; }
         .font-display { font-family: 'Outfit', sans-serif; }
         .lightbox-modal { display: none; position: fixed; z-index: 9999; padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
         .lightbox-content { margin: auto; display: block; max-width: 90%; max-height: 80vh; border-radius: 8px; }
@@ -243,7 +322,12 @@ if (!empty($property['district']) || !empty($property['city'])) {
                 </div>
             </div>
             <div class="hidden md:flex items-center gap-3">
-                <button onclick="document.getElementById('availability').scrollIntoView({ behavior: 'smooth' })" class="bg-brand-600 text-white px-8 py-2.5 rounded-lg font-bold">Reserve</button>
+                <?php if (!empty($property['google_map_location'])): ?>
+                    <a href="<?php echo htmlspecialchars($property['google_map_location']); ?>" target="_blank" class="bg-white hover:bg-blue-50 text-brand-600 border border-blue-200 px-6 py-2.5 rounded-lg font-bold transition-all flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-map-marked-alt"></i> View Map
+                    </a>
+                <?php endif; ?>
+                <button onclick="document.getElementById('availability').scrollIntoView({ behavior: 'smooth' })" class="bg-brand-600 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-brand-700 transition-colors">Reserve</button>
             </div>
         </div>
 
@@ -261,7 +345,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
         <!-- Desktop: Premium Mosaic Gallery -->
         <div class="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[480px] mb-10 rounded-xl overflow-hidden shadow-sm relative">
             <!-- Large Main Image -->
-            <div class="col-span-2 row-span-2 relative group overflow-hidden border border-neutral-100">
+            <div class="col-span-2 row-span-2 relative group overflow-hidden border border-blue-200/20">
                 <img src="<?php echo htmlspecialchars($images[0]); ?>" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-700" onclick="openLightbox(this.src)">
             </div>
 
@@ -271,7 +355,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
             foreach ($smallImages as $index => $img): 
                 $isLast = ($index === 3 && $totalImages > 5);
             ?>
-                <div class="relative group overflow-hidden border border-neutral-100 <?php echo $isLast ? 'bg-neutral-900' : ''; ?>">
+                <div class="relative group overflow-hidden border border-blue-200/20 <?php echo $isLast ? 'bg-neutral-900' : ''; ?>">
                     <img src="<?php echo htmlspecialchars($img); ?>" 
                          class="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-700 <?php echo $isLast ? 'opacity-50' : ''; ?>" 
                          onclick="openLightbox(this.src)">
@@ -287,11 +371,11 @@ if (!empty($property['district']) || !empty($property['city'])) {
 
             <!-- Fallback placeholders if fewer than 5 images -->
             <?php for($i = count($smallImages); $i < 4; $i++): ?>
-                <div class="bg-white border border-neutral-100"></div>
+                <div class="bg-[#dbeafe]"></div>
             <?php endfor; ?>
 
             <?php if ($totalImages > 5): ?>
-                <button onclick="openGallery()" class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md text-brand-900 border border-neutral-200 rounded-full px-5 py-2 text-[12px] font-bold shadow-xl hover:bg-white transition-all flex items-center gap-2 z-20">
+                <button onclick="openGallery()" class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md text-brand-900 border border-blue-200 rounded-full px-5 py-2 text-[12px] font-bold shadow-xl hover:bg-white transition-all flex items-center gap-2 z-20">
                     <i class="fas fa-th-large text-brand-600"></i>
                     <span>See all <?php echo $totalImages; ?> photos</span>
                 </button>
@@ -315,44 +399,6 @@ if (!empty($property['district']) || !empty($property['city'])) {
                     </div>
                 </div>
 
-                <?php if (!empty($property['closest_police_station']) || !empty($property['closest_hospital']) || !empty($property['closest_fuel_station'])): ?>
-                <!-- Logistics & Proximity -->
-                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
-                    <h3 class="text-xl font-bold font-display mb-6">Location & Proximity</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <?php if (!empty($property['closest_police_station'])): ?>
-                            <div class="flex items-center gap-4 text-[14px] text-neutral-600">
-                                <div class="w-12 h-12 shrink-0 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg"><i class="fas fa-shield-alt"></i></div>
-                                <div>
-                                    <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Police Station</p>
-                                    <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_police_station']); ?></p>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <?php if (!empty($property['closest_hospital'])): ?>
-                            <div class="flex items-center gap-4 text-[14px] text-neutral-600">
-                                <div class="w-12 h-12 shrink-0 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-lg"><i class="fas fa-hospital"></i></div>
-                                <div>
-                                    <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Hospital</p>
-                                    <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_hospital']); ?></p>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <?php if (!empty($property['closest_fuel_station'])): ?>
-                            <div class="flex items-center gap-4 text-[14px] text-neutral-600">
-                                <div class="w-12 h-12 shrink-0 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-lg"><i class="fas fa-gas-pump"></i></div>
-                                <div>
-                                    <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Fuel Station</p>
-                                    <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_fuel_station']); ?></p>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
                 <?php 
                 // Parse tourist attractions robustly (JSON array or newline string)
                 $attractions = [];
@@ -370,71 +416,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                         }
                     }
                 }
-                ?>
 
-                <?php if (!empty($attractions) || !empty($nearest_destinations)): ?>
-                <!-- Tourist Attractions & Nearest Destinations -->
-                <div class="mb-10 border-t border-neutral-200 pt-8">
-                    <h3 class="text-xl font-bold font-display mb-6">Explore the Area</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <?php if (!empty($attractions)): ?>
-                        <!-- Property Nearby Attractions -->
-                        <div>
-                            <h4 class="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <i class="fas fa-map-marked-alt text-brand-600"></i>
-                                <span>Nearby Attractions</span>
-                            </h4>
-                            <ul class="space-y-3">
-                                <?php foreach ($attractions as $attraction): ?>
-                                    <li class="flex items-start gap-3 text-[14px] text-neutral-700 bg-neutral-50 p-3 rounded-lg border border-neutral-100">
-                                        <i class="fas fa-location-arrow text-brand-600 mt-1"></i>
-                                        <span class="font-medium"><?php echo htmlspecialchars($attraction); ?></span>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                        <?php endif; ?>
-
-                        <?php if (!empty($nearest_destinations)): ?>
-                        <!-- Popular District Destinations -->
-                        <div class="<?php echo empty($attractions) ? 'col-span-2' : ''; ?>">
-                            <h4 class="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <i class="fas fa-compass text-brand-600"></i>
-                                <span>Nearest Tourist Destinations</span>
-                            </h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <?php foreach ($nearest_destinations as $destination): ?>
-                                    <?php 
-                                    $query_name = $destination['destination_name'] ?: $destination['district_name'];
-                                    $media_type = $destination['media_type'] ?? 'image';
-                                    ?>
-                                    <a href="hotels.php?q=<?php echo urlencode($query_name); ?>" class="group cursor-pointer block border border-neutral-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                                        <div class="relative h-[120px] overflow-hidden">
-                                            <?php if ($media_type === 'video'): ?>
-                                                <video class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" autoplay muted loop playsinline>
-                                                    <source src="<?php echo htmlspecialchars($destination['media_path']); ?>">
-                                                </video>
-                                            <?php else: ?>
-                                                <img src="<?php echo htmlspecialchars($destination['media_path']); ?>" alt="<?php echo htmlspecialchars($destination['destination_name']); ?>"
-                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                            <?php endif; ?>
-                                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                                            <div class="absolute bottom-2 left-3 text-white right-2">
-                                                <h5 class="font-bold text-sm tracking-tight leading-tight"><?php echo htmlspecialchars($destination['destination_name']); ?></h5>
-                                                <p class="text-[10px] opacity-85 truncate mt-0.5"><?php echo htmlspecialchars($destination['description']); ?></p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <?php
                 // Pre-process Payment, Food, and Security features
                 $accepted_methods = [];
                 if (!empty($property['pay_cash'])) $accepted_methods[] = ['label' => 'Cash Accepted', 'icon' => 'fa-money-bill-wave', 'color' => 'emerald'];
@@ -574,10 +556,156 @@ if (!empty($property['district']) || !empty($property['city'])) {
                         }
                     }
                 }
+
+                $has_more_info = !empty($property['closest_police_station']) || 
+                                 !empty($property['closest_hospital']) || 
+                                 !empty($property['closest_fuel_station']) || 
+                                 !empty($property['google_map_location']) || 
+                                 !empty($attractions) || 
+                                 !empty($nearest_destinations) || 
+                                 !empty($food_features) || 
+                                 !empty($accepted_methods) || 
+                                 !empty($security_features) || 
+                                 !empty($property['food_notes']) || 
+                                 !empty($property['payment_notes']) || 
+                                 !empty($property['sec_notes']);
+                if ($has_more_info):
                 ?>
+                <!-- View More Info Collapsible Accordion Button -->
+                <div class="mb-10 border-t border-blue-200 pt-8 mt-8">
+                    <button type="button" onclick="toggleMoreInfo()" class="w-full bg-brand-50 hover:bg-brand-100 text-brand-600 font-bold py-3.5 px-6 rounded-xl flex items-center justify-between transition-all border border-brand-100/50 shadow-sm outline-none focus:outline-none" id="toggle-more-info-btn">
+                        <span class="flex items-center gap-2 text-sm uppercase tracking-wider font-display">
+                            <i class="fas fa-info-circle"></i> View More Info (Foods, Security, Payments, Attractions, Map)
+                        </span>
+                        <i class="fas fa-chevron-down transition-transform duration-300" id="more-info-chevron"></i>
+                    </button>
+
+                    <!-- Collapsible Container -->
+                    <div id="more-info-container" class="hidden overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+                        <div class="pt-6 space-y-6">
+                            <?php if (!empty($property['closest_police_station']) || !empty($property['closest_hospital']) || !empty($property['closest_fuel_station'])): ?>
+                            <!-- Logistics & Proximity -->
+                            <div class="mb-4">
+                                <h3 class="text-xl font-bold font-display mb-6">Location & Proximity</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <?php if (!empty($property['closest_police_station'])): ?>
+                                        <div class="flex items-center gap-4 text-[14px] text-neutral-600">
+                                            <div class="w-12 h-12 shrink-0 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg"><i class="fas fa-shield-alt"></i></div>
+                                            <div>
+                                                <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Police Station</p>
+                                                <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_police_station']); ?></p>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!empty($property['closest_hospital'])): ?>
+                                        <div class="flex items-center gap-4 text-[14px] text-neutral-600">
+                                            <div class="w-12 h-12 shrink-0 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-lg"><i class="fas fa-hospital"></i></div>
+                                            <div>
+                                                <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Hospital</p>
+                                                <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_hospital']); ?></p>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!empty($property['closest_fuel_station'])): ?>
+                                        <div class="flex items-center gap-4 text-[14px] text-neutral-600">
+                                            <div class="w-12 h-12 shrink-0 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-lg"><i class="fas fa-gas-pump"></i></div>
+                                            <div>
+                                                <p class="font-bold text-neutral-800 text-xs uppercase tracking-wide">Closest Fuel Station</p>
+                                                <p class="font-medium text-neutral-600"><?php echo htmlspecialchars($property['closest_fuel_station']); ?></p>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($property['google_map_location'])): ?>
+                            <!-- Google Maps Card -->
+                            <div class="mb-4">
+                                <div class="bg-brand-50/60 border border-brand-100/50 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
+                                    <div class="flex items-center gap-4 text-left">
+                                        <div class="w-12 h-12 shrink-0 rounded-full bg-white text-brand-600 flex items-center justify-center text-xl shadow-sm border border-brand-100/30">
+                                            <i class="fas fa-map-marked-alt"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-neutral-800 text-sm">Open in Google Maps</h4>
+                                            <p class="text-xs text-neutral-500 mt-1">Get instant directions and check coordinates on Google Maps.</p>
+                                        </div>
+                                    </div>
+                                    <a href="<?php echo htmlspecialchars($property['google_map_location']); ?>" target="_blank" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all text-center flex items-center justify-center gap-2">
+                                        <i class="fas fa-location-arrow"></i> Directions
+                                    </a>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($attractions) || !empty($nearest_destinations)): ?>
+                            <!-- Tourist Attractions & Nearest Destinations -->
+                            <div class="mb-4">
+                                <h3 class="text-xl font-bold font-display mb-6">Explore the Area</h3>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <?php if (!empty($attractions)): ?>
+                                    <!-- Property Nearby Attractions -->
+                                    <div>
+                                        <h4 class="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                            <i class="fas fa-map-marked-alt text-brand-600"></i>
+                                            <span>Nearby Attractions</span>
+                                        </h4>
+                                        <ul class="space-y-3">
+                                            <?php foreach ($attractions as $attraction): ?>
+                                                <li class="flex items-start gap-3 text-[14px] text-neutral-700 bg-white/90 p-3 rounded-lg border border-blue-100">
+                                                    <i class="fas fa-location-arrow text-brand-600 mt-1"></i>
+                                                    <span class="font-medium"><?php echo htmlspecialchars($attraction); ?></span>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($nearest_destinations)): ?>
+                                    <!-- Popular District Destinations -->
+                                    <div class="<?php echo empty($attractions) ? 'col-span-2' : ''; ?>">
+                                        <h4 class="text-sm font-bold text-neutral-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                            <i class="fas fa-compass text-brand-600"></i>
+                                            <span>Nearest Tourist Destinations</span>
+                                        </h4>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <?php foreach ($nearest_destinations as $destination): ?>
+                                                <?php 
+                                                $query_name = $destination['destination_name'] ?: $destination['district_name'];
+                                                $media_type = $destination['media_type'] ?? 'image';
+                                                ?>
+                                                <a href="hotels.php?q=<?php echo urlencode($query_name); ?>" class="group cursor-pointer block border border-blue-200/40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                                                    <div class="relative h-[120px] overflow-hidden">
+                                                        <?php if ($media_type === 'video'): ?>
+                                                            <video class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" autoplay muted loop playsinline>
+                                                                <source src="<?php echo htmlspecialchars($destination['media_path']); ?>">
+                                                            </video>
+                                                        <?php else: ?>
+                                                            <img src="<?php echo htmlspecialchars($destination['media_path']); ?>" alt="<?php echo htmlspecialchars($destination['destination_name']); ?>"
+                                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                                        <?php endif; ?>
+                                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+                                                        <div class="absolute bottom-2 left-3 text-white right-2">
+                                                            <h5 class="font-bold text-sm tracking-tight leading-tight"><?php echo htmlspecialchars($destination['destination_name']); ?></h5>
+                                                            <p class="text-[10px] opacity-85 truncate mt-0.5"><?php echo htmlspecialchars($destination['description']); ?></p>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
 
                 <!-- Food & Dining -->
-                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
+                <div class="mb-10 border-t border-blue-200 pt-8 mt-8">
                     <h3 class="text-xl font-bold font-display mb-6">Food & Dining</h3>
                     <?php if (!empty($food_features)): ?>
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -598,7 +726,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                     <?php endif; ?>
                     
                     <?php if (!empty($property['food_notes'])): ?>
-                        <div class="mt-4 bg-neutral-50 p-4 rounded-xl border border-neutral-200">
+                        <div class="mt-4 bg-white/90 p-4 rounded-xl border border-blue-100">
                             <h4 class="text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
                                 <i class="fas fa-info-circle text-neutral-500"></i> Food & Dining Notes
                             </h4>
@@ -608,7 +736,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                 </div>
 
                 <!-- Payment Options & Policies -->
-                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
+                <div class="mb-10 border-t border-blue-200 pt-8 mt-8">
                     <h3 class="text-xl font-bold font-display mb-6">Payment Options & Policies</h3>
                     
                     <!-- Policy Cards -->
@@ -695,7 +823,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                     </div>
 
                     <?php if (!empty($property['payment_notes'])): ?>
-                        <div class="mt-4 bg-neutral-50 p-4 rounded-xl border border-neutral-200">
+                        <div class="mt-4 bg-white/90 p-4 rounded-xl border border-blue-100">
                             <h4 class="text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
                                 <i class="fas fa-info-circle text-neutral-500"></i> Payment Instructions
                             </h4>
@@ -705,7 +833,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                 </div>
 
                 <!-- Safety & Security -->
-                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
+                <div class="mb-10 border-t border-blue-200 pt-8 mt-8">
                     <h3 class="text-xl font-bold font-display mb-6">Safety & Security Features</h3>
                     <?php if (!empty($security_features)): ?>
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -726,7 +854,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                     <?php endif; ?>
                     
                     <?php if (!empty($property['sec_notes'])): ?>
-                        <div class="mt-4 bg-neutral-50 p-4 rounded-xl border border-neutral-200">
+                        <div class="mt-4 bg-white/90 p-4 rounded-xl border border-blue-100">
                             <h4 class="text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
                                 <i class="fas fa-info-circle text-neutral-500"></i> Safety Notes
                             </h4>
@@ -734,6 +862,39 @@ if (!empty($property['district']) || !empty($property['city'])) {
                         </div>
                     <?php endif; ?>
                 </div>
+
+                        </div> <!-- closes pt-6 space-y-6 -->
+                    </div> <!-- closes #more-info-container -->
+                </div> <!-- closes accordion container -->
+
+                <script>
+                function toggleMoreInfo() {
+                    const container = document.getElementById('more-info-container');
+                    const chevron = document.getElementById('more-info-chevron');
+                    
+                    if (container.classList.contains('hidden')) {
+                        container.classList.remove('hidden');
+                        container.style.maxHeight = '0px';
+                        container.style.opacity = '0';
+                        
+                        // Force layout reflow
+                        container.offsetHeight;
+                        
+                        container.style.maxHeight = container.scrollHeight + 100 + 'px';
+                        container.style.opacity = '1';
+                        chevron.classList.add('rotate-180');
+                    } else {
+                        container.style.maxHeight = '0px';
+                        container.style.opacity = '0';
+                        chevron.classList.remove('rotate-180');
+                        
+                        setTimeout(() => {
+                            container.classList.add('hidden');
+                        }, 500);
+                    }
+                }
+                </script>
+                <?php endif; ?>
 
             </div>
             <div class="hidden lg:block">
@@ -749,14 +910,14 @@ if (!empty($property['district']) || !empty($property['city'])) {
             <h3 class="text-2xl font-bold font-display mb-6">Availability</h3>
             
             <!-- Date Selection Form -->
-            <form method="GET" action="#availability" class="bg-white border border-neutral-200 rounded-xl p-4 mb-8 flex flex-col md:flex-row items-end gap-4 shadow-sm">
+            <form method="GET" action="#availability" class="bg-white border border-blue-200/70 rounded-xl p-4 mb-8 flex flex-col md:flex-row items-end gap-4 shadow-sm">
                 <input type="hidden" name="id" value="<?php echo $property_id; ?>">
                 <div class="flex-1 w-full">
                     <label class="block text-[11px] font-bold text-neutral-500 uppercase mb-1.5 ml-1">Check-in Date</label>
                     <div class="relative">
                         <i class="far fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
                            <input type="date" name="checkin" value="<?php echo htmlspecialchars($check_in); ?>" min="<?php echo date('Y-m-d'); ?>" 
-                               class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
+                               class="w-full pl-10 pr-4 py-2.5 bg-white border border-blue-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
                     </div>
                 </div>
                 <div class="flex-1 w-full">
@@ -764,15 +925,15 @@ if (!empty($property['district']) || !empty($property['city'])) {
                     <div class="relative">
                         <i class="far fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400"></i>
                            <input type="date" name="checkout" value="<?php echo htmlspecialchars($check_out); ?>" min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>"
-                               class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
+                               class="w-full pl-10 pr-4 py-2.5 bg-white border border-blue-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 font-medium text-sm">
                     </div>
                 </div>
                 <button type="submit" class="w-full md:w-auto bg-brand-600 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-brand-700 transition-colors">
                     Check Availability
                 </button>
             </form>
-            <div class="hidden md:block border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
-                <table class="w-full text-left border-collapse">
+            <div class="hidden md:block border border-blue-200/70 rounded-xl overflow-hidden shadow-sm">
+                <table class="w-full text-left border-collapse bg-white">
                     <thead class="bg-brand-900 text-white text-[11px] uppercase">
                         <tr>
                             <th class="p-4 w-[35%]"><?php echo $property['business_type'] == 'dayouts' ? 'Package Details' : 'Room Type'; ?></th>
@@ -785,11 +946,11 @@ if (!empty($property['district']) || !empty($property['city'])) {
                     </thead>
                     <tbody class="text-[13px]">
                         <?php foreach ($rooms as $room): ?>
-                            <tr class="border-t border-neutral-200 hover:bg-neutral-50/50 transition-colors">
+                            <tr class="border-t border-blue-100 hover:bg-blue-50/30 transition-colors">
                                 <td class="p-5 align-top">
                                     <div class="flex gap-4">
                                         <?php if (!empty($room['room_image'])): ?>
-                                            <div class="w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-neutral-100">
+                                            <div class="w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-blue-100">
                                                 <img src="<?php echo htmlspecialchars($room['room_image']); ?>" class="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform duration-500" onclick="openLightbox(this.src)">
                                             </div>
                                         <?php endif; ?>
@@ -807,7 +968,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                                                     <?php echo nl2br(htmlspecialchars($room['description'] ?? '')); ?>
                                                 </div>
                                                 <?php if (!empty($room['things_included'])): ?>
-                                                <div class="text-neutral-600 font-medium text-[11px] mt-2 bg-neutral-50 p-2 border border-neutral-100 rounded">
+                                                <div class="text-neutral-600 font-medium text-[11px] mt-2 bg-white/90 p-2 border border-blue-100 rounded">
                                                     <div class="font-bold mb-1 text-[10px] uppercase tracking-wider text-neutral-800">Includes:</div>
                                                     <?php echo nl2br(htmlspecialchars($room['things_included'])); ?>
                                                 </div>
@@ -874,7 +1035,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                                         <input type="hidden" name="checkin" value="<?php echo $check_in; ?>">
                                         <input type="hidden" name="checkout" value="<?php echo $check_out; ?>">
                                         
-                                        <select name="qty" class="w-full p-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 bg-white text-sm font-medium mb-3">
+                                        <select name="qty" class="w-full p-2 border border-blue-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-600/20 bg-white text-sm font-medium mb-3">
                                             <?php for($i = 1; $i <= $room['available_count']; $i++): ?>
                                                 <option value="<?php echo $i; ?>"><?php echo $i; ?> <?php echo $property['business_type'] == 'dayouts' ? 'package' : 'room'; ?><?php echo $i > 1 ? 's' : ''; ?> (<?php echo $currency; ?> <?php echo number_format($total_display_price * $i, ($currency == 'USD' ? 2 : 0)); ?>)</option>
                                             <?php endfor; ?>
@@ -896,8 +1057,8 @@ if (!empty($property['district']) || !empty($property['city'])) {
 
             <!-- Mobile Room Cards -->
             <div class="md:hidden space-y-5">
-                <?php foreach ($rooms as $room): ?>
-                    <div class="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
+                                <?php foreach ($rooms as $room): ?>
+                                    <div class="bg-white border border-blue-200/70 rounded-2xl overflow-hidden shadow-sm">
                         <?php if (!empty($room['room_image'])): ?>
                             <div class="h-48 overflow-hidden">
                                 <img src="<?php echo htmlspecialchars($room['room_image']); ?>" class="w-full h-full object-cover" onclick="openLightbox(this.src)">
@@ -920,7 +1081,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
                             <?php if ($property['business_type'] == 'dayouts'): ?>
                                 <p class="text-[13px] text-neutral-500 mb-2 font-medium"><?php echo nl2br(htmlspecialchars($room['description'] ?? '')); ?></p>
                                 <?php if (!empty($room['things_included'])): ?>
-                                    <div class="text-[12px] text-neutral-600 mb-4 bg-neutral-50 p-2 border border-neutral-100 rounded">
+                                    <div class="text-[12px] text-neutral-600 mb-4 bg-white/90 p-2 border border-blue-100 rounded">
                                         <strong class="block text-[10px] uppercase tracking-wider text-neutral-800 mb-1">Includes:</strong>
                                         <?php echo nl2br(htmlspecialchars($room['things_included'])); ?>
                                     </div>
@@ -967,7 +1128,7 @@ if (!empty($property['district']) || !empty($property['city'])) {
         </div>
 
         <!-- Guest Reviews Section -->
-        <div class="mt-20 pt-12 border-t border-neutral-200">
+        <div class="mt-20 pt-12 border-t border-blue-200">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
                 <div>
                     <h3 class="text-2xl font-bold font-display text-primary">Guest reviews</h3>
@@ -982,13 +1143,13 @@ if (!empty($property['district']) || !empty($property['city'])) {
             </div>
 
             <?php if (empty($reviews)): ?>
-                <div class="bg-neutral-50 rounded-2xl p-10 text-center border border-neutral-100">
+                <div class="bg-white/90 rounded-2xl p-10 text-center border border-blue-100">
                     <p class="text-neutral-500 font-medium">No reviews yet for this property. Be the first to share your experience after your stay!</p>
                 </div>
             <?php else: ?>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach ($reviews as $review): ?>
-                        <div class="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                        <div class="bg-white p-6 rounded-2xl border border-blue-200/50 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
                             <div>
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center gap-3">
@@ -1014,9 +1175,181 @@ if (!empty($property['district']) || !empty($property['city'])) {
                 </div>
             <?php endif; ?>
         </div>
+        <!-- Hotels Near Me Section -->
+        <?php if (!empty($hotels_near)): ?>
+        <div class="mt-20 pt-12 border-t border-blue-200 relative">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 border border-brand-100 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
+                        <i class="fas fa-hotel"></i> Stays Near Me
+                    </span>
+                    <h3 class="text-2xl font-bold font-display text-primary">Hotels Near Me</h3>
+                    <p class="text-xs text-neutral-500 mt-1 font-medium">Explore alternative stays nearby in <?php echo htmlspecialchars($property['city']); ?></p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="hotels-near-prev" class="w-10 h-10 rounded-full border border-blue-200 flex items-center justify-center hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm bg-white" aria-label="Previous stays">
+                        <i class="fas fa-chevron-left text-neutral-600 text-xs"></i>
+                    </button>
+                    <button id="hotels-near-next" class="w-10 h-10 rounded-full border border-blue-200 flex items-center justify-center hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm bg-white" aria-label="Next stays">
+                        <i class="fas fa-chevron-right text-neutral-600 text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative overflow-hidden">
+                <div id="hotels-near-slider" class="flex overflow-x-auto no-scrollbar gap-5 pb-4 snap-x snap-mandatory scroll-smooth w-full">
+                    <?php foreach ($hotels_near as $hn):
+                        $hn_cover = $hn['cover_image'] ?: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
+                        $hn_price = ($currency === 'USD') ? ($hn['price_lkr'] / $exchange_rate) : $hn['price_lkr'];
+                    ?>
+                    <a href="hotel_info.php?id=<?php echo $hn['id']; ?>" class="flex-none w-[280px] sm:w-[300px] snap-start group" style="text-decoration:none;">
+                        <div class="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-400 border border-blue-200/70 bg-white">
+                            <div class="relative h-44 overflow-hidden">
+                                <img src="<?php echo htmlspecialchars($hn_cover); ?>" alt="<?php echo htmlspecialchars($hn['property_name']); ?>"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <?php if (isset($hn['is_deal']) && $hn['is_deal']): ?>
+                                <div class="absolute top-3 left-3">
+                                    <span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">DEAL</span>
+                                </div>
+                                <?php endif; ?>
+                                <div class="absolute bottom-3 left-3 right-3">
+                                    <h4 class="text-white font-bold text-sm leading-tight truncate"><?php echo htmlspecialchars($hn['property_name']); ?></h4>
+                                    <p class="text-white/80 text-xs mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i><?php echo htmlspecialchars($hn['city']); ?>, <?php echo htmlspecialchars($hn['district']); ?></p>
+                                </div>
+                            </div>
+                            <div class="p-4 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Starting from</p>
+                                    <p class="text-base font-black text-neutral-900"><?php echo $currency; ?> <?php echo number_format($hn_price, ($currency === 'USD' ? 2 : 0)); ?><span class="text-xs text-neutral-500 font-medium">/night</span></p>
+                                </div>
+                                <div class="bg-brand-600 text-white text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-brand-700 transition-colors">Book</div>
+                            </div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Rides Near Me Section -->
+        <?php if (!empty($rides_near)): ?>
+        <div class="mt-20 pt-12 border-t border-blue-200 relative">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <span class="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 border border-brand-100 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
+                        <i class="fas fa-car"></i> Rides Near Me
+                    </span>
+                    <h3 class="text-2xl font-bold font-display text-primary">Rides Near Me</h3>
+                    <p class="text-xs text-neutral-500 mt-1 font-medium">Find convenient transport options nearby in <?php echo htmlspecialchars($property['city']); ?></p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="rides-near-prev" class="w-10 h-10 rounded-full border border-blue-200 flex items-center justify-center hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm bg-white" aria-label="Previous rides">
+                        <i class="fas fa-chevron-left text-neutral-600 text-xs"></i>
+                    </button>
+                    <button id="rides-near-next" class="w-10 h-10 rounded-full border border-blue-200 flex items-center justify-center hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm bg-white" aria-label="Next rides">
+                        <i class="fas fa-chevron-right text-neutral-600 text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative overflow-hidden">
+                <div id="rides-near-slider" class="flex overflow-x-auto no-scrollbar gap-5 pb-4 snap-x snap-mandatory scroll-smooth w-full">
+                    <?php foreach ($rides_near as $rn):
+                        $rn_cover = $rn['cover_image'] ?: 'assets/placeholder-vehicle.png';
+                        
+                        $pricing_type = $rn['pricing_type'] ?? 'day_wise';
+                        if ($pricing_type === 'day_wise') {
+                            $rn_price_val = $rn['price_per_day'];
+                            $rn_price_label = '/day';
+                        } else {
+                            $rn_price_val = $rn['price_per_km'];
+                            $rn_price_label = '/km';
+                        }
+                        $rn_price = ($currency === 'USD') ? ($rn_price_val / $exchange_rate) : $rn_price_val;
+                    ?>
+                    <a href="vehicle_details.php?id=<?php echo $rn['id']; ?>" class="flex-none w-[280px] sm:w-[300px] snap-start group" style="text-decoration:none;">
+                        <div class="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-400 border border-blue-200/70 bg-white">
+                            <div class="relative h-44 overflow-hidden">
+                                <img src="<?php echo htmlspecialchars($rn_cover); ?>" alt="<?php echo htmlspecialchars($rn['property_name']); ?>"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                     onerror="this.src='assets/placeholder-vehicle.png'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute top-3 left-3 bg-black/55 text-white text-[10px] font-black px-2 py-0.5 rounded shadow">
+                                    <i class="fas fa-car mr-1"></i><?php echo htmlspecialchars(ucfirst($rn['vehicle_category'] ?? 'Vehicle')); ?>
+                                </div>
+                                <div class="absolute bottom-3 left-3 right-3">
+                                    <h4 class="text-white font-bold text-sm leading-tight truncate"><?php echo htmlspecialchars($rn['property_name']); ?></h4>
+                                    <p class="text-white/80 text-xs mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i><?php echo htmlspecialchars($rn['city']); ?>, <?php echo htmlspecialchars($rn['district']); ?></p>
+                                </div>
+                            </div>
+                            <div class="p-4 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Starting from</p>
+                                    <p class="text-base font-black text-neutral-900"><?php echo $currency; ?> <?php echo number_format($rn_price, ($currency === 'USD' ? 2 : 0)); ?><span class="text-xs text-neutral-500 font-medium"><?php echo $rn_price_label; ?></span></p>
+                                </div>
+                                <div class="bg-brand-600 text-white text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-brand-700 transition-colors">Select</div>
+                            </div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Sliders JavaScript -->
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const initSlider = (sliderId, prevId, nextId) => {
+                const slider = document.getElementById(sliderId);
+                const prev = document.getElementById(prevId);
+                const next = document.getElementById(nextId);
+                if (!slider) return;
+
+                let autoScrollInterval;
+                const startAutoScroll = () => {
+                    autoScrollInterval = setInterval(() => {
+                        const card = slider.querySelector('.snap-start');
+                        const cardWidth = card ? card.offsetWidth : 300;
+                        slider.scrollBy({ left: cardWidth + 20, behavior: 'smooth' });
+                        // Reset to start if end reached
+                        if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 10) {
+                            setTimeout(() => { slider.scrollTo({ left: 0, behavior: 'smooth' }); }, 1000);
+                        }
+                    }, 4000);
+                };
+
+                const stopAutoScroll = () => clearInterval(autoScrollInterval);
+
+                startAutoScroll();
+                slider.addEventListener('mouseenter', stopAutoScroll);
+                slider.addEventListener('mouseleave', startAutoScroll);
+
+                if (prev) {
+                    prev.addEventListener('click', () => {
+                        const card = slider.querySelector('.snap-start');
+                        const cardWidth = card ? card.offsetWidth : 300;
+                        slider.scrollBy({ left: -(cardWidth + 20), behavior: 'smooth' });
+                    });
+                }
+                if (next) {
+                    next.addEventListener('click', () => {
+                        const card = slider.querySelector('.snap-start');
+                        const cardWidth = card ? card.offsetWidth : 300;
+                        slider.scrollBy({ left: cardWidth + 20, behavior: 'smooth' });
+                    });
+                }
+            };
+
+            initSlider('hotels-near-slider', 'hotels-near-prev', 'hotels-near-next');
+            initSlider('rides-near-slider', 'rides-near-prev', 'rides-near-next');
+        });
+        </script>
     </main>
 
-    <footer class="bg-neutral-50 border-t border-neutral-200 py-12 px-6 mt-16">
+    <footer class="bg-white/90 border-t border-blue-200 py-12 px-6 mt-16">
         <div class="max-w-[1150px] mx-auto text-center text-sm text-neutral-500">
             © 2026 Bookingjaunt.com All rights reserved.
         </div>
