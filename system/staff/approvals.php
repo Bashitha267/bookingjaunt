@@ -1,5 +1,6 @@
 <?php
 require_once '../../config.php';
+require_once '../../mail_helper.php';
 require_once '../auth_guard.php';
 requireRole(['site_staff']);
 
@@ -91,6 +92,30 @@ if (isset($_POST['action'])) {
         }
 
         $pdo->commit();
+
+        // Send Property Request Status Email (try-caught internally)
+        if ($request) {
+            $owner_stmt = $pdo->prepare("
+                SELECT u.first_name, u.email, p.property_name
+                FROM users u
+                JOIN properties p ON p.owner_id = u.id
+                WHERE p.id = ?
+                LIMIT 1
+            ");
+            $owner_stmt->execute([$request['property_id']]);
+            $owner = $owner_stmt->fetch();
+            if ($owner) {
+                MailSender::sendPropertyRequestStatusEmail(
+                    $owner['email'],
+                    $owner['first_name'],
+                    $owner['property_name'],
+                    $request['request_type'],
+                    $status,
+                    $notes
+                );
+            }
+        }
+
         header("Location: approvals.php?success=1");
         exit();
     } catch (Exception $e) {
@@ -184,7 +209,24 @@ $requests = $stmt->fetchAll();
                                                 }
                                             }
                                         ?>
-                                            <div class="bg-white/5 rounded-2xl p-6 border border-white/10 mb-4 max-w-3xl">
+                                                <div class="mb-4 flex flex-wrap gap-3">
+                                                    <button type="button" onclick="togglePropertyReport(<?php echo $req['id']; ?>)" class="inline-flex items-center gap-2 bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/30 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer">
+                                                        <i class="fas fa-eye mr-1"></i> <span id="toggle-text-<?php echo $req['id']; ?>">Show Proposed Property Report</span>
+                                                    </button>
+                                                    <a href="property_details.php?id=<?php echo $req['property_id']; ?>&request_id=<?php echo $req['id']; ?>" target="_blank" class="inline-flex items-center gap-2 bg-white/10 text-white hover:bg-white/20 border border-white/10 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all shadow-md">
+                                                        <i class="fas fa-external-link-alt"></i> Open in New Tab
+                                                    </a>
+                                                </div>
+                                                
+                                                <!-- Inline Property Report Preview -->
+                                                <div id="report-container-<?php echo $req['id']; ?>" class="hidden mb-4 w-full bg-white rounded-2xl overflow-hidden border border-white/10 shadow-lg max-w-4xl">
+                                                    <div class="bg-gray-100 px-4 py-2.5 border-b border-gray-200 flex justify-between items-center">
+                                                        <span class="text-[10px] font-bold text-gray-700 uppercase tracking-widest"><i class="fas fa-file-contract mr-2"></i>Proposed Property Report Preview</span>
+                                                        <button type="button" onclick="togglePropertyReport(<?php echo $req['id']; ?>)" class="text-gray-500 hover:text-gray-700 font-bold text-sm">&times; Close</button>
+                                                    </div>
+                                                    <iframe id="iframe-report-<?php echo $req['id']; ?>" data-src="property_details.php?id=<?php echo $req['property_id']; ?>&request_id=<?php echo $req['id']; ?>&iframe=1" class="w-full h-[550px] border-0 bg-white"></iframe>
+                                                </div>
+                                                <div class="bg-white/5 rounded-2xl p-6 border border-white/10 mb-4 max-w-3xl">
                                                 <div class="flex items-center justify-between mb-4">
                                                     <p class="text-[10px] font-black text-sky-300 uppercase tracking-widest">Change Comparison</p>
                                                     <span class="bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-black px-2 py-0.5 rounded-full uppercase"><?php echo count($changes); ?> Fields Changed</span>
@@ -248,6 +290,23 @@ $requests = $stmt->fetchAll();
                 this.closest('form').querySelector('input[name="status"]').value = status;
             });
         });
+
+        function togglePropertyReport(id) {
+            const container = document.getElementById('report-container-' + id);
+            const iframe = document.getElementById('iframe-report-' + id);
+            const toggleText = document.getElementById('toggle-text-' + id);
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                toggleText.textContent = 'Hide Proposed Property Report';
+                if (!iframe.src) {
+                    iframe.src = iframe.getAttribute('data-src');
+                }
+            } else {
+                container.classList.add('hidden');
+                toggleText.textContent = 'Show Proposed Property Report';
+            }
+        }
     </script>
 </body>
 </html>

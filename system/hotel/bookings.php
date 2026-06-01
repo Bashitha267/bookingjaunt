@@ -1,5 +1,6 @@
 <?php
 require_once '../../config.php';
+require_once '../../mail_helper.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
@@ -56,6 +57,10 @@ if (!$property_id && $_SESSION['role'] !== 'admin') {
 if (isset($_POST['update_status'])) {
     $stmt = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ? AND property_id = ?");
     $stmt->execute([$_POST['status'], $_POST['booking_id'], $property_id]);
+    
+    // Send Booking Status Update Email (try-caught internally)
+    MailSender::sendBookingStatusUpdateEmailById($pdo, $_POST['booking_id'], $_POST['status']);
+    
     header("Location: bookings.php?success=status_updated&property_id=$property_id");
     exit();
 }

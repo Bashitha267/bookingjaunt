@@ -85,6 +85,120 @@ if ($property) {
 	$stmt = $pdo->prepare("SELECT staff_name FROM property_staff_names WHERE property_id = ? ORDER BY id");
 	$stmt->execute([$property_id]);
 	$staff_names = $stmt->fetchAll();
+
+	// Proposed Request Overlay logic
+	$request_id = isset($_GET['request_id']) ? (int)$_GET['request_id'] : 0;
+	if ($request_id > 0) {
+		$req_stmt = $pdo->prepare("SELECT * FROM property_requests WHERE id = ?");
+		$req_stmt->execute([$request_id]);
+		$request = $req_stmt->fetch();
+		if ($request) {
+			$new_data = json_decode($request['new_data'], true);
+			if (is_array($new_data)) {
+				// Overlay simple fields on $property
+				foreach ($new_data as $k => $v) {
+					if (!in_array($k, ['rooms', 'property_photos', 'property_videos', 'popular_amenities', 'custom_rules', 'rules', 'tourist_attractions', 'custom_payments', 'custom_food', 'custom_security'])) {
+						$property[$k] = $v;
+					}
+				}
+				
+				// Handle boolean conversions
+				$booleans = ['smoking_allowed', 'pets_allowed', 'events_allowed', 'id_required',
+							 'pay_cash', 'pay_cc', 'pay_debit', 'pay_online', 'pay_bank', 'pay_installments',
+							 'food_breakfast_included', 'food_restaurant_available', 'food_room_service', 'food_room_service_247',
+							 'food_vegetarian', 'food_vegan', 'food_halal', 'food_buffet', 'food_delivery_allowed',
+							 'food_dietary_options', 'food_kitchen_in_room', 'food_minibar',
+							 'sec_staff_247', 'sec_cctv', 'sec_smoke_detectors', 'sec_fire_extinguishers', 'sec_fire_alarm',
+							 'sec_emergency_exit_plan', 'sec_key_card_access', 'sec_digital_lock', 'sec_biometric_access',
+							 'sec_safe_box', 'sec_luggage_storage', 'sec_female_floor', 'sec_panic_button', 'sec_first_aid',
+							 'sec_medical_support'];
+				foreach ($booleans as $bool_key) {
+					if (isset($new_data[$bool_key])) {
+						$property[$bool_key] = ($new_data[$bool_key] == '1' || $new_data[$bool_key] === 1) ? 1 : 0;
+					}
+				}
+
+				// Overlay custom json fields
+				if (isset($new_data['rules'])) {
+					$property['rules_json'] = json_encode($new_data['rules']);
+				}
+				if (isset($new_data['popular_amenities'])) {
+					$property['popular_amenities_json'] = json_encode($new_data['popular_amenities']);
+				}
+				if (isset($new_data['custom_rules'])) {
+					$property['custom_rules_json'] = json_encode($new_data['custom_rules']);
+				}
+				if (isset($new_data['tourist_attractions'])) {
+					$property['tourist_attractions'] = json_encode($new_data['tourist_attractions']);
+				}
+				if (isset($new_data['custom_payments'])) {
+					$property['custom_payments_json'] = json_encode($new_data['custom_payments']);
+				}
+				if (isset($new_data['custom_food'])) {
+					$property['custom_food_json'] = json_encode($new_data['custom_food']);
+				}
+				if (isset($new_data['custom_security'])) {
+					$property['custom_security_json'] = json_encode($new_data['custom_security']);
+				}
+
+				// Overlay Rooms
+				if (isset($new_data['rooms']) && is_array($new_data['rooms'])) {
+					$rooms = [];
+					foreach ($new_data['rooms'] as $r) {
+						if (!empty($r['name'])) {
+							$rooms[] = [
+								'room_name' => $r['name'],
+								'adults' => $r['adults'] ?? 2,
+								'children' => $r['children'] ?? 0,
+								'price_lkr' => $r['price_lkr'] ?? 0,
+								'price_usd' => $r['price_usd'] ?? 0,
+								'room_image' => $r['image'] ?? ''
+							];
+						}
+					}
+				}
+
+				// Overlay Media
+				$media_items = [];
+				if (isset($new_data['property_photos']) && is_array($new_data['property_photos'])) {
+					foreach ($new_data['property_photos'] as $idx => $photo) {
+						if (!empty($photo)) {
+							$media_items[] = [
+								'media_type' => 'image',
+								'media_path' => $photo,
+								'is_featured' => ($idx === 0) ? 1 : 0,
+								'sort_order' => $idx,
+								'created_at' => date('Y-m-d H:i:s')
+							];
+						}
+					}
+				}
+				if (isset($new_data['property_videos']) && is_array($new_data['property_videos'])) {
+					foreach ($new_data['property_videos'] as $idx => $video) {
+						if (!empty($video)) {
+							$media_items[] = [
+								'media_type' => 'video',
+								'media_path' => $video,
+								'is_featured' => 0,
+								'sort_order' => $idx + 100,
+								'created_at' => date('Y-m-d H:i:s')
+							];
+						}
+					}
+				}
+
+				// Overlay Amenities
+				if (isset($new_data['popular_amenities']) && is_array($new_data['popular_amenities'])) {
+					$amenities = [];
+					if (!empty($new_data['popular_amenities'])) {
+						$ids_str = implode(',', array_map('intval', $new_data['popular_amenities']));
+						$am_stmt = $pdo->query("SELECT category, amenity_name FROM amenities_master WHERE id IN ($ids_str) ORDER BY category, amenity_name");
+						$amenities = $am_stmt->fetchAll();
+					}
+				}
+			}
+		}
+	}
 }
 
 function h($value) {
@@ -273,7 +387,12 @@ foreach ($amenities as $item) {
 		<?php else: ?>
 			<div class="page-card">
 				<div class="title-row">
-					<h1><?php echo h($property['property_name']); ?> - Property Report</h1>
+					<h1>
+						<?php echo h($property['property_name']); ?> - Property Report
+						<?php if (isset($request_id) && $request_id > 0): ?>
+							<span style="color: #ea580c; background: #ffedd5; border: 1px solid #fed7aa; padding: 2px 10px; font-size: 12px; border-radius: 6px; margin-left: 10px; font-family: sans-serif; font-weight: bold; text-transform: uppercase; vertical-align: middle; display: inline-block;">Proposed Changes (Pending Approval)</span>
+						<?php endif; ?>
+					</h1>
 					<div class="meta">
 						<div>Property ID: <?php echo (int)$property['id']; ?></div>
 						<div>Business Type: <?php echo h(str_replace('_', ' ', $property['business_type'])); ?></div>
@@ -345,6 +464,118 @@ foreach ($amenities as $item) {
 					<tr><th>Smoking Allowed</th><td><?php echo format_bool($property['smoking_allowed']); ?></td></tr>
 					<tr><th>Pets Allowed</th><td><?php echo format_bool($property['pets_allowed']); ?></td></tr>
 					<tr><th>Events Allowed</th><td><?php echo format_bool($property['events_allowed']); ?></td></tr>
+				</table>
+			</div>
+
+			<div class="section">
+				<h2>Food & Dining Details</h2>
+				<table>
+					<tr><th>Breakfast Included</th><td><?php echo format_bool($property['food_breakfast_included']); ?></td></tr>
+					<?php if ($property['food_breakfast_included']): ?>
+						<tr><th>Breakfast Type</th><td><?php echo h($property['food_breakfast_type'] ?: 'N/A'); ?></td></tr>
+					<?php endif; ?>
+					<tr><th>Restaurant Available</th><td><?php echo format_bool($property['food_restaurant_available']); ?></td></tr>
+					<?php if ($property['food_restaurant_available']): ?>
+						<tr><th>Restaurant Count</th><td><?php echo h($property['food_restaurant_count'] ?: 'N/A'); ?></td></tr>
+					<?php endif; ?>
+					<tr><th>Room Service</th><td><?php echo format_bool($property['food_room_service']); ?></td></tr>
+					<?php if ($property['food_room_service']): ?>
+						<tr><th>24/7 Room Service</th><td><?php echo format_bool($property['food_room_service_247']); ?></td></tr>
+					<?php endif; ?>
+					<tr><th>Vegetarian Options</th><td><?php echo format_bool($property['food_vegetarian']); ?></td></tr>
+					<tr><th>Vegan Options</th><td><?php echo format_bool($property['food_vegan']); ?></td></tr>
+					<tr><th>Halal Food Available</th><td><?php echo format_bool($property['food_halal']); ?></td></tr>
+					<tr><th>Buffet Available</th><td><?php echo format_bool($property['food_buffet']); ?></td></tr>
+					<tr><th>Food Delivery Allowed</th><td><?php echo format_bool($property['food_delivery_allowed']); ?></td></tr>
+					<tr><th>Special Dietary Options</th><td><?php echo format_bool($property['food_dietary_options']); ?></td></tr>
+					<tr><th>Kitchen in Room</th><td><?php echo format_bool($property['food_kitchen_in_room']); ?></td></tr>
+					<tr><th>Mini Bar Available</th><td><?php echo format_bool($property['food_minibar']); ?></td></tr>
+					<?php 
+					$custom_food = [];
+					if (!empty($property['custom_food_json'])) {
+						$decoded = json_decode($property['custom_food_json'], true);
+						if (is_array($decoded)) {
+							$custom_food = array_filter(array_map('trim', $decoded));
+						}
+					}
+					if (!empty($custom_food)): ?>
+						<tr><th>Custom Dining Options</th><td><?php echo h(implode(', ', $custom_food)); ?></td></tr>
+					<?php endif; ?>
+					<tr><th>Food Notes</th><td><?php echo format_text_block($property['food_notes']); ?></td></tr>
+				</table>
+			</div>
+
+			<div class="section">
+				<h2>Payment Options & Policies</h2>
+				<table>
+					<tr><th>Cash Accepted</th><td><?php echo format_bool($property['pay_cash']); ?></td></tr>
+					<tr><th>Credit Card Accepted</th><td><?php echo format_bool($property['pay_cc']); ?></td></tr>
+					<tr><th>Debit Card Accepted</th><td><?php echo format_bool($property['pay_debit']); ?></td></tr>
+					<tr><th>Online Payment Support (UPI/Gateway)</th><td><?php echo format_bool($property['pay_online']); ?></td></tr>
+					<tr><th>Bank Transfer Support</th><td><?php echo format_bool($property['pay_bank']); ?></td></tr>
+					<tr><th>Installment Option</th><td><?php echo format_bool($property['pay_installments']); ?></td></tr>
+					<tr><th>Refund Supported</th><td><?php 
+						if ($property['refund_supported'] === 1) echo 'Yes';
+						elseif ($property['refund_supported'] === 0) echo 'No';
+						else echo 'N/A';
+					?></td></tr>
+					<tr><th>Advance Payment Required</th><td><?php 
+						if ($property['advance_payment_required'] === 1) echo 'Yes';
+						elseif ($property['advance_payment_required'] === 0) echo 'No';
+						else echo 'N/A';
+					?></td></tr>
+					<?php 
+					$custom_payments = [];
+					if (!empty($property['custom_payments_json'])) {
+						$decoded = json_decode($property['custom_payments_json'], true);
+						if (is_array($decoded)) {
+							$custom_payments = array_filter(array_map('trim', $decoded));
+						}
+					}
+					if (!empty($custom_payments)): ?>
+						<tr><th>Custom Payment Methods</th><td><?php echo h(implode(', ', $custom_payments)); ?></td></tr>
+					<?php endif; ?>
+					<tr><th>Payment Notes</th><td><?php echo format_text_block($property['payment_notes']); ?></td></tr>
+				</table>
+			</div>
+
+			<div class="section">
+				<h2>Safety & Security Features</h2>
+				<table>
+					<tr><th>24/7 Security Staff</th><td><?php echo format_bool($property['sec_staff_247']); ?></td></tr>
+					<tr><th>CCTV Available</th><td><?php echo format_bool($property['sec_cctv']); ?></td></tr>
+					<?php if ($property['sec_cctv']): ?>
+						<tr><th>CCTV Coverage Details</th><td><?php echo h($property['sec_cctv_coverage'] ?: 'N/A'); ?></td></tr>
+					<?php endif; ?>
+					<tr><th>Smoke Detectors</th><td><?php echo format_bool($property['sec_smoke_detectors']); ?></td></tr>
+					<tr><th>Fire Extinguishers</th><td><?php echo format_bool($property['sec_fire_extinguishers']); ?></td></tr>
+					<tr><th>Fire Alarm</th><td><?php echo format_bool($property['sec_fire_alarm']); ?></td></tr>
+					<tr><th>Emergency Exit Plan</th><td><?php echo format_bool($property['sec_emergency_exit_plan']); ?></td></tr>
+					<tr><th>Emergency Evac Instructions</th><td><?php echo format_text_block($property['sec_emergency_evac_instructions']); ?></td></tr>
+					<tr><th>Patrol Frequency</th><td><?php echo h($property['sec_patrol_frequency'] ?: 'N/A'); ?></td></tr>
+					<tr><th>Key Card Access</th><td><?php echo format_bool($property['sec_key_card_access']); ?></td></tr>
+					<tr><th>Digital Lock</th><td><?php echo format_bool($property['sec_digital_lock']); ?></td></tr>
+					<tr><th>Biometric Access</th><td><?php echo format_bool($property['sec_biometric_access']); ?></td></tr>
+					<tr><th>Safe Box</th><td><?php echo format_bool($property['sec_safe_box']); ?></td></tr>
+					<tr><th>Luggage Storage</th><td><?php echo format_bool($property['sec_luggage_storage']); ?></td></tr>
+					<tr><th>Parking Security</th><td><?php echo h($property['sec_parking_security'] ?: 'N/A'); ?></td></tr>
+					<tr><th>Female-only Floor</th><td><?php echo format_bool($property['sec_female_floor']); ?></td></tr>
+					<tr><th>Panic Button</th><td><?php echo format_bool($property['sec_panic_button']); ?></td></tr>
+					<tr><th>First Aid Kit</th><td><?php echo format_bool($property['sec_first_aid']); ?></td></tr>
+					<tr><th>Medical Support</th><td><?php echo format_bool($property['sec_medical_support']); ?></td></tr>
+					<tr><th>Hospital Distance</th><td><?php echo h($property['sec_hospital_distance'] ?: 'N/A'); ?></td></tr>
+					<?php 
+					$custom_security = [];
+					if (!empty($property['custom_security_json'])) {
+						$decoded = json_decode($property['custom_security_json'], true);
+						if (is_array($decoded)) {
+							$custom_security = array_filter(array_map('trim', $decoded));
+						}
+					}
+					if (!empty($custom_security)): ?>
+						<tr><th>Custom Security Features</th><td><?php echo h(implode(', ', $custom_security)); ?></td></tr>
+					<?php endif; ?>
+					<tr><th>Security Notes</th><td><?php echo format_text_block($property['sec_notes']); ?></td></tr>
 				</table>
 			</div>
 

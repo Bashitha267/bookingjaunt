@@ -1,5 +1,6 @@
 <?php
 require_once '../../config.php';
+require_once '../../mail_helper.php';
 require_once '../auth_guard.php';
 requireRole(['site_staff']);
 
@@ -14,6 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if ($stmt->execute([$booking_id])) {
             logBookingCancellation($pdo, $booking_id, $_SESSION['user_id'], $reason);
             notifyAdminsOfCancellation($pdo, $booking_id, $_SESSION['user_id'], $reason);
+            
+            // Send Booking Status Update Email (try-caught internally)
+            MailSender::sendBookingStatusUpdateEmailById($pdo, $booking_id, 'cancelled');
+            
             $success_msg = "Booking #$booking_id has been cancelled successfully.";
         } else {
             $error_msg = "Failed to cancel the booking.";

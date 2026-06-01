@@ -1,7 +1,17 @@
 <?php
 // Included by admin, manager, staff wrappers
+require_once __DIR__ . '/../../mail_helper.php';
 
 $property_id = (int)($_GET['id'] ?? 0);
+
+// Fetch property data first so we have details for email notifications and rendering
+$stmt = $pdo->prepare("SELECT p.*, u.first_name, u.last_name, u.email as owner_email, u.phone_number as owner_phone FROM properties p JOIN users u ON p.owner_id = u.id WHERE p.id = ?");
+$stmt->execute([$property_id]);
+$property = $stmt->fetch();
+
+if (!$property) {
+    die("Property not found.");
+}
 
 // Handle Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -12,24 +22,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'approve') {
         $stmt = $pdo->prepare("UPDATE properties SET approval_status = 'approved', approved_by = ?, approval_timestamp = NOW() WHERE id = ?");
         $stmt->execute([$user_id, $property_id]);
+        
+        // Send approval notification email (try-caught inside MailSender)
+        MailSender::sendPropertyApprovalStatusEmail($property['owner_email'], $property['first_name'], $property['property_name'], 'approved', $admin_notes);
+        
         header("Location: pending_properties.php?success=approved");
         exit();
     } elseif ($action === 'reject') {
         // We will just mark it as rejected. The user can see it in their dashboard maybe.
         $stmt = $pdo->prepare("UPDATE properties SET approval_status = 'rejected', approved_by = ?, approval_timestamp = NOW() WHERE id = ?");
         $stmt->execute([$user_id, $property_id]);
+        
+        // Send rejection notification email (try-caught inside MailSender)
+        MailSender::sendPropertyApprovalStatusEmail($property['owner_email'], $property['first_name'], $property['property_name'], 'rejected', $admin_notes);
+        
         header("Location: pending_properties.php?success=rejected");
         exit();
     }
-}
-
-// Fetch property data
-$stmt = $pdo->prepare("SELECT p.*, u.first_name, u.last_name, u.email as owner_email, u.phone_number as owner_phone FROM properties p JOIN users u ON p.owner_id = u.id WHERE p.id = ?");
-$stmt->execute([$property_id]);
-$property = $stmt->fetch();
-
-if (!$property) {
-    die("Property not found.");
 }
 
 // Function to render a detail row safely

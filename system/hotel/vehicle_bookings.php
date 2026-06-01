@@ -1,5 +1,6 @@
 <?php
 require_once '../../config.php';
+require_once '../../mail_helper.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
@@ -28,6 +29,10 @@ if (!in_array($status_filter, $allowed_statuses)) $status_filter = 'all';
 if (isset($_POST['update_status'])) {
     $upd = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ? AND property_id IN (SELECT id FROM properties WHERE owner_id = ?)");
     $upd->execute([$_POST['status'], $_POST['booking_id'], $user_id]);
+    
+    // Send Booking Status Update Email (try-caught internally)
+    MailSender::sendBookingStatusUpdateEmailById($pdo, $_POST['booking_id'], $_POST['status']);
+    
     $redirect_params = http_build_query(['status' => $status_filter, 'page' => $page, 'success' => 'status_updated']);
     header("Location: vehicle_bookings.php?$redirect_params");
     exit();

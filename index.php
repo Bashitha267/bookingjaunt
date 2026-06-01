@@ -169,6 +169,29 @@ try {
     } catch (PDOException $e) {
         $showcase_items = [];
     }
+
+    // Fetch Deals of the Day
+    $deals_of_day = [];
+    try {
+        $deals_day_stmt = $pdo->query("
+            SELECT d.*, p.property_name, p.cover_image, p.city, p.district, p.hotel_category, p.id as prop_id,
+                   COALESCE(AVG(rev.rating), 0) as avg_rating,
+                   COUNT(DISTINCT rev.id) as review_count
+            FROM deals_of_the_day d
+            JOIN properties p ON p.id = d.property_id
+            LEFT JOIN reviews rev ON rev.property_id = p.id
+            WHERE d.is_active = 1
+              AND d.valid_from <= CURDATE()
+              AND d.valid_until >= CURDATE()
+              AND p.approval_status = 'approved'
+            GROUP BY d.id
+            ORDER BY RAND()
+            LIMIT 12
+        ");
+        $deals_of_day = $deals_day_stmt->fetchAll();
+    } catch (PDOException $e) {
+        $deals_of_day = [];
+    }
 } catch (PDOException $e) {
     error_log("Query failed: " . $e->getMessage());
 }
@@ -484,11 +507,165 @@ try {
             <?php endforeach; ?>
         </div>
     </section>
-    
+
+    <?php if (!empty($deals_of_day)): ?>
+    <!-- ===== DEALS OF THE DAY SLIDER ===== -->
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16 mb-4" id="deals-section">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <span class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-xs font-black uppercase tracking-wider mb-3">
+                    <i class="fas fa-bolt"></i> Limited Time Offers
+                </span>
+                <h2 class="text-2xl md:text-3xl font-black text-neutral-800 tracking-tight">Deals of the Day</h2>
+                <p class="text-sm text-neutral-500 font-medium mt-1">Exclusive discounts from top properties &mdash; today only</p>
+            </div>
+            <div class="hidden md:flex gap-2">
+                <button id="dealsPrev" onclick="slideDeal(-1)" class="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-300 transition-all" aria-label="Previous deals">
+                    <i class="fas fa-chevron-left text-neutral-600 text-xs"></i>
+                </button>
+                <button id="dealsNext" onclick="slideDeal(1)" class="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-300 transition-all" aria-label="Next deals">
+                    <i class="fas fa-chevron-right text-neutral-600 text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="relative overflow-hidden">
+            <div id="dealsTrack" class="flex gap-5 transition-transform duration-500 ease-out">
+                <?php foreach ($deals_of_day as $idx => $deal):
+                    $cover = $deal['cover_image'] ?: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
+                    $disc = round((($deal['original_price'] - $deal['deal_price']) / $deal['original_price']) * 100);
+                    $deal_price_display = ($currency === 'USD') ? number_format($deal['deal_price'] / $exchange_rate, 2) : number_format($deal['deal_price']);
+                    $orig_price_display = ($currency === 'USD') ? number_format($deal['original_price'] / $exchange_rate, 2) : number_format($deal['original_price']);
+                    $rating = number_format($deal['avg_rating'], 1);
+                    $label = htmlspecialchars($deal['deal_label'] ?: 'Special Deal');
+                    $deal_url = "hotel_info.php?id={$deal['property_id']}&deal_room={$deal['room_id']}&deal_price={$deal['deal_price']}";
+                ?>
+                <a href="<?php echo $deal_url; ?>" class="flex-none w-[290px] md:w-[310px] group cursor-pointer" style="text-decoration:none;">
+                    <div class="relative rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)] transition-all duration-400 border border-neutral-100 bg-white">
+                        <!-- Cover Image -->
+                        <div class="relative h-48 overflow-hidden">
+                            <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($deal['property_name']); ?>"
+                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                 onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <!-- Discount Badge -->
+                            <div class="absolute top-3 left-3">
+                                <span class="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-lg">
+                                    -<?php echo $disc; ?>% OFF
+                                </span>
+                            </div>
+                            <!-- Deal Label -->
+                            <div class="absolute top-3 right-3">
+                                <span class="bg-amber-400 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-lg shadow">
+                                    <i class="fas fa-bolt mr-0.5"></i><?php echo $label; ?>
+                                </span>
+                            </div>
+                            <!-- Property Name on image -->
+                            <div class="absolute bottom-3 left-3 right-3">
+                                <h3 class="text-white font-black text-sm leading-tight truncate"><?php echo htmlspecialchars($deal['property_name']); ?></h3>
+                                <p class="text-white/75 text-xs mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i><?php echo htmlspecialchars($deal['city']); ?>, <?php echo htmlspecialchars($deal['district']); ?></p>
+                            </div>
+                        </div>
+                        <!-- Card Body -->
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs text-neutral-500 font-semibold bg-neutral-50 px-2.5 py-1 rounded-lg border border-neutral-100">
+                                    <?php echo htmlspecialchars($deal['room_name']); ?>
+                                </span>
+                                <?php if ($deal['avg_rating'] > 0): ?>
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-star text-amber-400 text-[10px]"></i>
+                                    <span class="text-xs font-bold text-neutral-700"><?php echo $rating; ?></span>
+                                    <span class="text-[10px] text-neutral-400">(<?php echo $deal['review_count']; ?>)</span>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex items-end justify-between">
+                                <div>
+                                    <div class="text-xs text-neutral-400 line-through font-medium"><?php echo $currency; ?> <?php echo $orig_price_display; ?>/night</div>
+                                    <div class="text-xl font-black text-neutral-900"><?php echo $currency; ?> <?php echo $deal_price_display; ?><span class="text-xs text-neutral-500 font-medium">/night</span></div>
+                                </div>
+                                <div class="bg-[#006ce4] hover:bg-[#003580] text-white text-xs font-bold px-3 py-2 rounded-xl transition-all group-hover:scale-105">
+                                    Book Now
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- Dots indicator -->
+        <?php $total_dots = max(0, count($deals_of_day) - 3); ?>
+        <?php if ($total_dots > 0): ?>
+        <div class="flex justify-center gap-2 mt-6" id="dealsDots">
+            <?php for ($i = 0; $i <= $total_dots; $i++): ?>
+            <button onclick="goToDeal(<?php echo $i; ?>)" class="deals-dot w-2 h-2 rounded-full transition-all <?php echo $i===0?'bg-[#006ce4] w-5':'bg-neutral-200'; ?>"></button>
+            <?php endfor; ?>
+        </div>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <?php if (!empty($featured_hotels)): ?>
+    <!-- ===== FEATURED HOTELS SLIDER ===== -->
+    <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-16 mb-4">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <span class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 text-[#006ce4] border border-blue-100 rounded-full text-xs font-black uppercase tracking-wider mb-3">
+                    <i class="fas fa-rocket"></i> Featured
+                </span>
+                <h2 class="text-2xl md:text-3xl font-black text-neutral-800 tracking-tight">Featured Properties</h2>
+                <p class="text-sm text-neutral-500 font-medium mt-1">Top-rated and boosted properties hand-picked for you</p>
+            </div>
+            <div class="hidden md:flex gap-2">
+                <button onclick="slideFeatured(-1)" class="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-all">
+                    <i class="fas fa-chevron-left text-neutral-600 text-xs"></i>
+                </button>
+                <button onclick="slideFeatured(1)" class="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-all">
+                    <i class="fas fa-chevron-right text-neutral-600 text-xs"></i>
+                </button>
+            </div>
+        </div>
+        <div class="relative overflow-hidden">
+            <div id="featuredTrack" class="flex gap-5 transition-transform duration-500 ease-out">
+                <?php foreach ($featured_hotels as $fh):
+                    $fh_price = ($currency === 'USD') ? number_format($fh['price_lkr'] / $exchange_rate, 2) : number_format($fh['price_lkr']);
+                    $fh_img = $fh['cover_image'] ?: ($fh['first_room_image'] ?: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80');
+                ?>
+                <a href="hotel_info.php?id=<?php echo $fh['id']; ?>" class="flex-none w-[290px] md:w-[310px] group" style="text-decoration:none;">
+                    <div class="relative rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)] transition-all duration-400 border border-neutral-100 bg-white">
+                        <div class="relative h-48 overflow-hidden">
+                            <img src="<?php echo htmlspecialchars($fh_img); ?>" alt="<?php echo htmlspecialchars($fh['property_name']); ?>"
+                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                 onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
+                            <div class="absolute top-3 left-3"><span class="bg-[#006ce4] text-white text-[10px] font-black px-2.5 py-1 rounded-lg"><i class="fas fa-rocket mr-1"></i>Featured</span></div>
+                            <div class="absolute bottom-3 left-3 right-3">
+                                <h3 class="text-white font-black text-sm leading-tight truncate"><?php echo htmlspecialchars($fh['property_name']); ?></h3>
+                                <p class="text-white/75 text-xs mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i><?php echo htmlspecialchars($fh['city'] ?? ''); ?></p>
+                            </div>
+                        </div>
+                        <div class="p-4 flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-neutral-500 font-medium">From</p>
+                                <p class="text-lg font-black text-neutral-900"><?php echo $currency; ?> <?php echo $fh_price; ?><span class="text-xs text-neutral-400 font-medium">/night</span></p>
+                            </div>
+                            <div class="bg-[#006ce4] text-white text-xs font-bold px-3 py-2 rounded-xl group-hover:bg-[#003580] transition-all">View</div>
+                        </div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if (!empty($vibe_items)): ?>
     <!-- ============================================================
          THE SOUL OF SRI LANKA (Minimalist Vibe Grid)
     ============================================================ -->
-    <?php if (!empty($vibe_items)): ?>
     <section class="max-w-[1400px] mx-auto px-4 lg:px-6 mt-20 lg:mt-32">
         <div class="text-center mb-16">
             <span class="text-xs font-bold text-secondary uppercase tracking-[0.2em] mb-2 block">Curated Island Vibe</span>
@@ -832,6 +1009,63 @@ try {
     </section>
 
     <script>
+        // ===== DEALS OF THE DAY SLIDER =====
+        let dealOffset = 0;
+        const dealCardWidth = window.innerWidth >= 768 ? 330 : 310;
+        const dealsTrack = document.getElementById('dealsTrack');
+        const dealCards = dealsTrack ? dealsTrack.children.length : 0;
+        const dealsVisible = window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 1;
+
+        function slideDeal(dir) {
+            if (!dealsTrack) return;
+            const maxOffset = Math.max(0, dealCards - dealsVisible);
+            dealOffset = Math.min(Math.max(dealOffset + dir, 0), maxOffset);
+            const gap = 20;
+            dealsTrack.style.transform = `translateX(-${dealOffset * (dealCardWidth + gap)}px)`;
+            updateDealDots();
+        }
+
+        function goToDeal(idx) {
+            if (!dealsTrack) return;
+            dealOffset = idx;
+            const gap = 20;
+            dealsTrack.style.transform = `translateX(-${dealOffset * (dealCardWidth + gap)}px)`;
+            updateDealDots();
+        }
+
+        function updateDealDots() {
+            const dots = document.querySelectorAll('.deals-dot');
+            dots.forEach((d, i) => {
+                d.classList.toggle('bg-[#006ce4]', i === dealOffset);
+                d.classList.toggle('bg-neutral-200', i !== dealOffset);
+                d.style.width = i === dealOffset ? '20px' : '8px';
+            });
+        }
+
+        // ===== FEATURED HOTELS SLIDER =====
+        let featuredOffset = 0;
+        const featuredTrack = document.getElementById('featuredTrack');
+        const featuredCards = featuredTrack ? featuredTrack.children.length : 0;
+
+        function slideFeatured(dir) {
+            if (!featuredTrack) return;
+            const fCardWidth = window.innerWidth >= 768 ? 330 : 310;
+            const fVisible = window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 1;
+            const maxOffset = Math.max(0, featuredCards - fVisible);
+            featuredOffset = Math.min(Math.max(featuredOffset + dir, 0), maxOffset);
+            featuredTrack.style.transform = `translateX(-${featuredOffset * (fCardWidth + 20)}px)`;
+        }
+
+        // Touch swipe for deals
+        let dealTouchStartX = 0;
+        if (dealsTrack) {
+            dealsTrack.addEventListener('touchstart', e => { dealTouchStartX = e.touches[0].clientX; });
+            dealsTrack.addEventListener('touchend', e => {
+                const diff = dealTouchStartX - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) slideDeal(diff > 0 ? 1 : -1);
+            });
+        }
+
         function toggleGuestDropdown() {
             const popup = document.getElementById('guestPopup');
             const chevron = document.getElementById('guestChevron');

@@ -1,6 +1,7 @@
 <?php
 ob_start(); // Buffer any stray output (warnings, notices) so they don't corrupt JSON
 require_once 'config.php';
+require_once 'mail_helper.php';
 session_start();
 
 // Handle AJAX requests for Email Check and Registration
@@ -40,6 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $_SESSION['user_name'] = $first_name . ' ' . $last_name;
             $_SESSION['role'] = $role;
 
+            // Send Welcome Email
+            MailSender::sendWelcomeEmail($email, $first_name);
+
             echo json_encode(['success' => true, 'redirect' => ($role == 'owner' ? 'list_your_property.php' : 'index.php')]);
             exit;
         } catch (PDOException $e) {
@@ -69,8 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 manager_name, manager_phone, manager_nic, manager_photo, contact_number, 
                 business_email, check_in_time, check_out_time, cancellation_policy, 
                 rules_json, popular_amenities_json, custom_rules_json,
-                bank_name, bank_branch, bank_account_name, bank_account_number, commission_rate, tourist_attractions, closest_fuel_station
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                bank_name, bank_branch, bank_account_name, bank_account_number, commission_rate, tourist_attractions, closest_fuel_station,
+                pay_cash, pay_cc, pay_debit, pay_online, pay_bank, pay_installments, refund_supported, advance_payment_required, payment_notes, custom_payments_json,
+                food_breakfast_included, food_breakfast_type, food_restaurant_available, food_restaurant_count, food_room_service, food_room_service_247, food_vegetarian, food_vegan, food_halal, food_buffet, food_delivery_allowed, food_dietary_options, food_kitchen_in_room, food_minibar, food_notes, custom_food_json,
+                sec_staff_247, sec_cctv, sec_cctv_coverage, sec_smoke_detectors, sec_fire_extinguishers, sec_fire_alarm, sec_emergency_exit_plan, sec_emergency_evac_instructions, sec_patrol_frequency, sec_key_card_access, sec_digital_lock, sec_biometric_access, sec_safe_box, sec_luggage_storage, sec_parking_security, sec_female_floor, sec_panic_button, sec_first_aid, sec_medical_support, sec_hospital_distance, sec_notes, custom_security_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
             $stmt->execute([
                 $owner_id,
@@ -111,7 +118,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $data['bank_account_number'] ?? null,
                 $data['commission_rate'] ?? 80,
                 !empty($data['tourist_attractions']) ? json_encode(array_values(array_filter($data['tourist_attractions']))) : null,
-                $data['closest_fuel_station'] ?? null
+                $data['closest_fuel_station'] ?? null,
+                // Payment Options
+                isset($data['pay_cash']) ? 1 : 0,
+                isset($data['pay_cc']) ? 1 : 0,
+                isset($data['pay_debit']) ? 1 : 0,
+                isset($data['pay_online']) ? 1 : 0,
+                isset($data['pay_bank']) ? 1 : 0,
+                isset($data['pay_installments']) ? 1 : 0,
+                isset($data['refund_supported']) && $data['refund_supported'] !== '' ? (int)$data['refund_supported'] : null,
+                isset($data['advance_payment_required']) && $data['advance_payment_required'] !== '' ? (int)$data['advance_payment_required'] : null,
+                $data['payment_notes'] ?? null,
+                !empty($data['custom_payments']) ? json_encode(array_values(array_filter($data['custom_payments']))) : null,
+                // Food & Dining
+                isset($data['food_breakfast_included']) ? 1 : 0,
+                $data['food_breakfast_type'] ?? null,
+                isset($data['food_restaurant_available']) ? 1 : 0,
+                isset($data['food_restaurant_count']) && $data['food_restaurant_count'] !== '' ? (int)$data['food_restaurant_count'] : null,
+                isset($data['food_room_service']) ? 1 : 0,
+                isset($data['food_room_service_247']) ? 1 : 0,
+                isset($data['food_vegetarian']) ? 1 : 0,
+                isset($data['food_vegan']) ? 1 : 0,
+                isset($data['food_halal']) ? 1 : 0,
+                isset($data['food_buffet']) ? 1 : 0,
+                isset($data['food_delivery_allowed']) ? 1 : 0,
+                isset($data['food_dietary_options']) ? 1 : 0,
+                isset($data['food_kitchen_in_room']) ? 1 : 0,
+                isset($data['food_minibar']) ? 1 : 0,
+                $data['food_notes'] ?? null,
+                !empty($data['custom_food']) ? json_encode(array_values(array_filter($data['custom_food']))) : null,
+                // Security
+                isset($data['sec_staff_247']) ? 1 : 0,
+                isset($data['sec_cctv']) ? 1 : 0,
+                $data['sec_cctv_coverage'] ?? null,
+                isset($data['sec_smoke_detectors']) ? 1 : 0,
+                isset($data['sec_fire_extinguishers']) ? 1 : 0,
+                isset($data['sec_fire_alarm']) ? 1 : 0,
+                isset($data['sec_emergency_exit_plan']) ? 1 : 0,
+                $data['sec_emergency_evac_instructions'] ?? null,
+                $data['sec_patrol_frequency'] ?? null,
+                isset($data['sec_key_card_access']) ? 1 : 0,
+                isset($data['sec_digital_lock']) ? 1 : 0,
+                isset($data['sec_biometric_access']) ? 1 : 0,
+                isset($data['sec_safe_box']) ? 1 : 0,
+                isset($data['sec_luggage_storage']) ? 1 : 0,
+                $data['sec_parking_security'] ?? null,
+                isset($data['sec_female_floor']) ? 1 : 0,
+                isset($data['sec_panic_button']) ? 1 : 0,
+                isset($data['sec_first_aid']) ? 1 : 0,
+                isset($data['sec_medical_support']) ? 1 : 0,
+                $data['sec_hospital_distance'] ?? null,
+                $data['sec_notes'] ?? null,
+                !empty($data['custom_security']) ? json_encode(array_values(array_filter($data['custom_security']))) : null
             ]);
 
             $property_id = $pdo->lastInsertId();
@@ -269,12 +327,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
 
             // 5. Insert Staff
-            if (isset($data['staff_name']) && is_array($data['staff_name'])) {
-                $stmt = $pdo->prepare("INSERT INTO property_staff_names (property_id, staff_name) VALUES (?, ?)");
-                foreach ($data['staff_name'] as $name) {
-                    if (!empty($name))
-                        $stmt->execute([$property_id, $name]);
+            $staff_names = [];
+            foreach ($data as $key => $value) {
+                if (preg_match('/^staff_(\d+)_first_name$/', $key, $matches)) {
+                    $index = $matches[1];
+                    $first = trim((string)$value);
+                    $last_key = 'staff_' . $index . '_last_name';
+                    $last = isset($data[$last_key]) ? trim((string)$data[$last_key]) : '';
+                    $full_name = trim($first . ' ' . $last);
+                    if ($full_name !== '') {
+                        $staff_names[] = $full_name;
+                    }
                 }
+            }
+
+            if (!empty($staff_names)) {
+                $stmt = $pdo->prepare("INSERT INTO property_staff_names (property_id, staff_name) VALUES (?, ?)");
+                foreach ($staff_names as $name) {
+                    $stmt->execute([$property_id, $name]);
+                }
+            }
+
+            // 5b. Insert Bank Details
+            $bank_name = trim((string)($data['bank_name'] ?? ''));
+            $bank_account_number = trim((string)($data['bank_account_number'] ?? ''));
+            $bank_account_name = trim((string)($data['bank_account_name'] ?? ''));
+            if ($bank_name !== '' || $bank_account_number !== '' || $bank_account_name !== '') {
+                $stmt = $pdo->prepare("INSERT INTO property_bank_details (property_id, bank_name, account_number, account_holder_name) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$property_id, $bank_name ?: null, $bank_account_number ?: null, $bank_account_name ?: null]);
             }
 
             // 6. Insert Cover Image as featured media (first slot)
@@ -305,6 +385,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
 
             $pdo->commit();
+
+            // Send Property Registration Received Email
+            $owner_stmt = $pdo->prepare("SELECT first_name, email FROM users WHERE id = ?");
+            $owner_stmt->execute([$owner_id]);
+            $owner = $owner_stmt->fetch();
+            if ($owner) {
+                MailSender::sendPropertyRegisteredEmail(
+                    $owner['email'], 
+                    $owner['first_name'], 
+                    $data['property_name'], 
+                    $data['business_type'] ?? 'property'
+                );
+            }
+
             echo json_encode(['success' => true, 'redirect' => 'index.php']);
             exit;
         } catch (Exception $e) {

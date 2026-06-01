@@ -81,7 +81,7 @@ if ($edit_id) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -761,6 +761,206 @@ if ($edit_id) {
                             <i class="fas fa-plus-circle"></i> ADD ANOTHER SPECIAL AMENITY
                         </button>
                     </div>
+
+                    <!-- Food & Dining Details (All Optional) -->
+                    <div class="bg-gray-50/50 p-8 rounded-[2.5rem] border border-gray-200 mt-12">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Food & Dining Details</h3>
+                        <p class="text-xs text-gray-500 mb-6 uppercase tracking-wider">Select the food and dining services available at your property (All optional).</p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <!-- Breakfast Included -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_breakfast_included" value="1" class="hidden peer" onchange="toggleBreakfastType(this)">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-utensils text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Breakfast Included</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Restaurant Available -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_restaurant_available" value="1" class="hidden peer" onchange="toggleRestaurantCount(this)">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-store text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Restaurant</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Room Service -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_room_service" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-concierge-bell text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Room Service</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- 24/7 Room Service -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_room_service_247" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-clock text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">24/7 Room Service</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Vegetarian Options -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_vegetarian" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-leaf text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Vegetarian</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Vegan Options -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_vegan" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-seedling text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Vegan</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Halal Food -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_halal" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-mosque text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Halal Food</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Buffet Available -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_buffet" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-drumstick-bite text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Buffet</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Food Delivery -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_delivery_allowed" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-shipping-fast text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Delivery Allowed</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Special Dietary Options -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_dietary_options" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-carrot text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Dietary Options</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Kitchen in Room -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_kitchen_in_room" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-blender text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Kitchen in Rooms</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Mini Bar -->
+                            <label class="food-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="food_minibar" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-glass-martini-alt text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Mini Bar</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Conditional Input Fields for Food -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div id="breakfast-type-container" class="hidden bg-white p-5 rounded-2xl border">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Free Breakfast Type</label>
+                                <select name="food_breakfast_type" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                    <option value="">Select Breakfast Type</option>
+                                    <option value="Continental">Continental</option>
+                                    <option value="Buffet">Buffet</option>
+                                    <option value="A la carte">A la carte</option>
+                                </select>
+                            </div>
+                            <div id="restaurant-count-container" class="hidden bg-white p-5 rounded-2xl border">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">On-site Restaurant Count</label>
+                                <input type="number" name="food_restaurant_count" min="0" placeholder="e.g. 2" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Custom Food Details Row -->
+                        <div class="mt-6 border-t pt-6 border-gray-200">
+                            <h4 class="text-sm font-bold text-gray-800 mb-2">Custom Dining Features</h4>
+                            <p class="text-xs text-gray-500 mb-4">Add other dining features not listed above.</p>
+                            <div id="custom-food-container" class="space-y-3">
+                                <!-- Dynamic custom food rows -->
+                            </div>
+                            <button type="button" onclick="addCustomFoodRow()" class="mt-3 text-xs font-bold text-[#006ce4] hover:text-[#003580] flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+                                <i class="fas fa-plus"></i> Add Custom Dining Feature
+                            </button>
+                        </div>
+
+                        <!-- Food Notes -->
+                        <div class="mt-6">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Dining Notes & Schedules</label>
+                            <textarea name="food_notes" rows="3" placeholder="e.g. Breakfast served from 7:00 AM to 10:00 AM. Seafood specialty on weekends..." class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+                        </div>
+                    </div>
+
                     <!-- Popular Appetites Selection -->
                     <div
                         class="bg-gradient-to-br from-blue-900 to-[#006ce4] p-10 rounded-[3rem] text-white shadow-xl mt-12">
@@ -899,6 +1099,129 @@ if ($edit_id) {
                 </div>
 
                 <div class="space-y-6">
+                    <!-- Supported Payment Methods (All Optional) -->
+                    <div class="bg-blue-50/30 p-8 rounded-[2.5rem] border border-blue-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Supported Payment Methods</h3>
+                        <p class="text-xs text-gray-500 mb-6 uppercase tracking-wider">Select all payment methods you accept at your property (All optional).</p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <!-- Cash Accepted -->
+                            <label class="payment-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="pay_cash" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-money-bill-wave text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Cash Accepted</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Credit Card Accepted -->
+                            <label class="payment-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="pay_cc" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-credit-card text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Credit Card</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Debit Card Accepted -->
+                            <label class="payment-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="pay_debit" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-id-card text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Debit Card</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Online Payment -->
+                            <label class="payment-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="pay_online" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-mobile-alt text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Online Payment</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Bank Transfer -->
+                            <label class="payment-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="pay_bank" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-university text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Bank Transfer</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Installments -->
+                            <label class="payment-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="pay_installments" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-calendar-alt text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Installments</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Custom Payment Methods Row -->
+                        <div class="mt-6 border-t pt-6 border-blue-100">
+                            <h4 class="text-sm font-bold text-gray-800 mb-2">Custom Payment Options</h4>
+                            <p class="text-xs text-gray-500 mb-4">Add other custom payment options accepted by your property.</p>
+                            <div id="custom-payments-container" class="space-y-3">
+                                <!-- Dynamic custom payments rows -->
+                            </div>
+                            <button type="button" onclick="addCustomPaymentRow()" class="mt-3 text-xs font-bold text-[#006ce4] hover:text-[#003580] flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+                                <i class="fas fa-plus"></i> Add Custom Payment Option
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payment Toggles and Notes -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-3 uppercase tracking-widest">Refund Supported (Yes/No)</label>
+                            <select name="refund_supported" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                <option value="">Select Option</option>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                        <div class="bg-gray-50/50 p-6 rounded-2xl border">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-3 uppercase tracking-widest">Advance Payment Required (Yes/No)</label>
+                            <select name="advance_payment_required" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                <option value="">Select Option</option>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50/50 p-6 rounded-2xl border mb-6">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Payment Notes & Instructions</label>
+                        <textarea name="payment_notes" rows="3" placeholder="e.g. Deposit must be paid within 2 days of booking confirmation..." class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-gray-50/50 p-6 rounded-2xl border">
                             <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Bank
@@ -1149,6 +1472,257 @@ if ($edit_id) {
                         </div>
                         <div id="custom-rules-container" class="space-y-3">
                             <!-- Dynamic rows here -->
+                        </div>
+                    </div>
+
+                    <!-- Security Features (All Optional) -->
+                    <div class="bg-gray-50/50 p-8 rounded-[2.5rem] border border-gray-150 mt-12">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Security Features</h3>
+                        <p class="text-xs text-gray-500 mb-6 uppercase tracking-wider">Select the security and safety features available at your property (All optional).</p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <!-- 24/7 Security Staff -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_staff_247" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-user-shield text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">24/7 Security Staff</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- CCTV Surveillance -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_cctv" value="1" class="hidden peer" onchange="toggleCctvCoverage(this)">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-video text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">CCTV Surveillance</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Smoke Detectors -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_smoke_detectors" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-wind text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Smoke Detectors</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Fire Extinguishers -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_fire_extinguishers" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-fire-extinguisher text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Fire Extinguishers</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Fire Alarm System -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_fire_alarm" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-bell text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Fire Alarm System</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Emergency Exit Plan -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_emergency_exit_plan" value="1" class="hidden peer" onchange="toggleEvacInstructions(this)">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-door-open text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Emergency Exit Plan</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Key Card Access -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_key_card_access" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-key text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Key Card Access</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Digital Door Lock -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_digital_lock" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-fingerprint text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Digital Door Lock</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Biometric Access -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_biometric_access" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-id-badge text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Biometric Access</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Safe Deposit Box -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_safe_box" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-vault text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Room Safe Box</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Luggage Security Storage -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_luggage_storage" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-suitcase text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Luggage Storage</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Female-only floor -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_female_floor" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-venus text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Female Floor</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Panic Button -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_panic_button" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-exclamation-triangle text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Panic Button</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- First Aid Kit -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_first_aid" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-first-aid text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">First Aid Kit</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Medical Emergency Support -->
+                            <label class="security-card group relative cursor-pointer h-full">
+                                <input type="checkbox" name="sec_medical_support" value="1" class="hidden peer">
+                                <div class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-white peer-checked:border-[#006ce4] peer-checked:bg-[#006ce4]/5 transition-all shadow-sm group-hover:shadow-md relative overflow-hidden h-full min-h-[100px]">
+                                    <div class="absolute inset-0 bg-[#006ce4]/10 opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    <i class="fas fa-ambulance text-gray-400 group-hover:text-[#006ce4] peer-checked:text-[#006ce4] text-2xl mb-2 transition-all"></i>
+                                    <span class="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 peer-checked:text-[#003580] text-center uppercase tracking-tight">Medical Support</span>
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                        <i class="fas fa-check-circle text-[#006ce4] text-[10px]"></i>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Conditional Input Fields for Security -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div id="cctv-coverage-container" class="hidden bg-white p-5 rounded-2xl border col-span-2">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">CCTV Coverage Areas</label>
+                                <input type="text" name="sec_cctv_coverage" placeholder="e.g. Lobby, corridors, parking, entrances" class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                            <div id="evac-instructions-container" class="hidden bg-white p-5 rounded-2xl border col-span-2">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Emergency Evacuation Instructions</label>
+                                <textarea name="sec_emergency_evac_instructions" rows="2" placeholder="e.g. Gather at assembly point A in the main parking lot..." class="w-full px-5 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Security Guard Patrol Frequency</label>
+                                <input type="text" name="sec_patrol_frequency" placeholder="e.g. Every 2 hours, continuous" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Parking Security</label>
+                                <select name="sec_parking_security" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all font-bold">
+                                    <option value="">Select Option</option>
+                                    <option value="CCTV">CCTV Surveillance</option>
+                                    <option value="Guarded">Guarded by Security Personnel</option>
+                                    <option value="CCTV & Guarded">CCTV & Guarded</option>
+                                    <option value="None">None</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Nearby Hospital Distance</label>
+                                <input type="text" name="sec_hospital_distance" placeholder="e.g. 5 km, 10 mins drive" class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Custom Security Features Row -->
+                        <div class="mt-6 border-t pt-6 border-gray-200">
+                            <h4 class="text-sm font-bold text-gray-800 mb-2">Custom Security Features</h4>
+                            <p class="text-xs text-gray-500 mb-4">Add other security or safety features not listed above.</p>
+                            <div id="custom-security-container" class="space-y-3">
+                                <!-- Dynamic custom security rows -->
+                            </div>
+                            <button type="button" onclick="addCustomSecurityRow()" class="mt-3 text-xs font-bold text-[#006ce4] hover:text-[#003580] flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+                                <i class="fas fa-plus"></i> Add Custom Security Feature
+                            </button>
+                        </div>
+
+                        <!-- Security Notes -->
+                        <div class="mt-6">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Security & Safety Notes</label>
+                            <textarea name="sec_notes" rows="3" placeholder="e.g. Local police patrol route includes our street. Doctor on call 24/7..." class="w-full px-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all"></textarea>
                         </div>
                     </div>
                 </div>
@@ -2028,6 +2602,38 @@ if ($edit_id) {
             };
         });
 
+        // Tourist Attractions dynamic rows
+        const attractionsList = document.getElementById('attractions-list');
+
+        function addAttraction(value = '') {
+            if (!attractionsList) return;
+
+            const row = document.createElement('div');
+            row.className = 'flex gap-3 items-center';
+            row.innerHTML = `
+                <div class="relative flex-1">
+                    <input type="text" name="tourist_attractions[]" placeholder="e.g. Temple of the Tooth"
+                        class="w-full px-4 py-3 rounded-xl border bg-gray-50 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#006ce4] transition-all">
+                    <i class="fas fa-map-signs absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                </div>
+                <button type="button" class="remove-attraction w-11 h-11 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            `;
+
+            const input = row.querySelector('input');
+            input.value = value || '';
+            input.addEventListener('input', saveFormData);
+
+            row.querySelector('.remove-attraction').onclick = () => {
+                row.remove();
+                saveFormData();
+            };
+
+            attractionsList.appendChild(row);
+            saveFormData();
+        }
+
         // Custom Rules Logic
         const ruleContainer = document.getElementById('custom-rules-container');
         const addRuleBtn = document.getElementById('add-custom-rule');
@@ -2105,7 +2711,22 @@ if ($edit_id) {
                     'driver_experience','driver_languages','has_ac','has_gps','has_bluetooth',
                     'has_wifi','has_music_system','has_charging_ports','has_baby_seat','has_sunroof',
                     'has_reverse_camera','has_airbags','delivery_available','pickup_available',
-                    'delivery_fee','delivery_towns','airport_delivery','hotel_delivery','exact_pickup_location'
+                    'delivery_fee','delivery_towns','airport_delivery','hotel_delivery','exact_pickup_location',
+                    // New Payment Options
+                    'pay_cash','pay_cc','pay_debit','pay_online','pay_bank','pay_installments',
+                    'refund_supported','advance_payment_required','payment_notes',
+                    // New Food & Dining
+                    'food_breakfast_included','food_breakfast_type','food_restaurant_available',
+                    'food_restaurant_count','food_room_service','food_room_service_247',
+                    'food_vegetarian','food_vegan','food_halal','food_buffet','food_delivery_allowed',
+                    'food_dietary_options','food_kitchen_in_room','food_minibar','food_notes',
+                    // New Security Features
+                    'sec_staff_247','sec_cctv','sec_cctv_coverage','sec_smoke_detectors',
+                    'sec_fire_extinguishers','sec_fire_alarm','sec_emergency_exit_plan',
+                    'sec_emergency_evac_instructions','sec_patrol_frequency','sec_key_card_access',
+                    'sec_digital_lock','sec_biometric_access','sec_safe_box','sec_luggage_storage',
+                    'sec_parking_security','sec_female_floor','sec_panic_button','sec_first_aid',
+                    'sec_medical_support','sec_hospital_distance','sec_notes'
                 ];
                 fields.forEach(f => setField(f, editData[f]));
 
@@ -2267,6 +2888,59 @@ if ($edit_id) {
                     const inp = document.getElementById('manager-photo-upload').querySelector('input[type="hidden"]');
                     if (inp) inp.value = editData.manager_photo;
                 }
+
+                // --- STEP 13: Custom JSON features ---
+                try {
+                    if (editData.custom_payments_json) {
+                        const customPayments = JSON.parse(editData.custom_payments_json);
+                        if (Array.isArray(customPayments)) {
+                            const cont = document.getElementById('custom-payments-container');
+                            if (cont) {
+                                cont.innerHTML = '';
+                                customPayments.forEach(val => addCustomPaymentRow(val));
+                            }
+                        }
+                    }
+                } catch(e) { console.warn('custom_payments_json parse error', e); }
+
+                try {
+                    if (editData.custom_food_json) {
+                        const customFood = JSON.parse(editData.custom_food_json);
+                        if (Array.isArray(customFood)) {
+                            const cont = document.getElementById('custom-food-container');
+                            if (cont) {
+                                cont.innerHTML = '';
+                                customFood.forEach(val => addCustomFoodRow(val));
+                            }
+                        }
+                    }
+                } catch(e) { console.warn('custom_food_json parse error', e); }
+
+                try {
+                    if (editData.custom_security_json) {
+                        const customSecurity = JSON.parse(editData.custom_security_json);
+                        if (Array.isArray(customSecurity)) {
+                            const cont = document.getElementById('custom-security-container');
+                            if (cont) {
+                                cont.innerHTML = '';
+                                customSecurity.forEach(val => addCustomSecurityRow(val));
+                            }
+                        }
+                    }
+                } catch(e) { console.warn('custom_security_json parse error', e); }
+
+                // --- STEP 14: Trigger conditional toggle UI panels ---
+                const breakfastCb = form.querySelector('[name="food_breakfast_included"]');
+                if (breakfastCb) toggleBreakfastType(breakfastCb);
+
+                const restaurantCb = form.querySelector('[name="food_restaurant_available"]');
+                if (restaurantCb) toggleRestaurantCount(restaurantCb);
+
+                const cctvCb = form.querySelector('[name="sec_cctv"]');
+                if (cctvCb) toggleCctvCoverage(cctvCb);
+
+                const evacCb = form.querySelector('[name="sec_emergency_exit_plan"]');
+                if (evacCb) toggleEvacInstructions(evacCb);
 
                 saveFormData();
                 updatePreview();
@@ -2591,6 +3265,96 @@ if ($edit_id) {
             const container = document.getElementById(containerId);
             const preview = container.querySelector('.preview-container');
             preview.classList.add('hidden');
+        }
+
+        // Toggle helpers for conditional fields
+        function toggleBreakfastType(cb) {
+            const container = document.getElementById('breakfast-type-container');
+            if (cb && cb.checked) {
+                container.classList.remove('hidden');
+            } else if (container) {
+                container.classList.add('hidden');
+                container.querySelector('select').value = '';
+            }
+        }
+        function toggleRestaurantCount(cb) {
+            const container = document.getElementById('restaurant-count-container');
+            if (cb && cb.checked) {
+                container.classList.remove('hidden');
+            } else if (container) {
+                container.classList.add('hidden');
+                container.querySelector('input').value = '';
+            }
+        }
+        function toggleCctvCoverage(cb) {
+            const container = document.getElementById('cctv-coverage-container');
+            if (cb && cb.checked) {
+                container.classList.remove('hidden');
+            } else if (container) {
+                container.classList.add('hidden');
+                container.querySelector('input').value = '';
+            }
+        }
+        function toggleEvacInstructions(cb) {
+            const container = document.getElementById('evac-instructions-container');
+            if (cb && cb.checked) {
+                container.classList.remove('hidden');
+            } else if (container) {
+                container.classList.add('hidden');
+                container.querySelector('textarea').value = '';
+            }
+        }
+
+        // Custom Dynamic Rows for Payment, Food, and Security options
+        function addCustomPaymentRow(value = '') {
+            const container = document.getElementById('custom-payments-container');
+            const row = document.createElement('div');
+            row.className = 'custom-payment-row flex gap-3 mt-2';
+            row.innerHTML = `
+                <div class="relative flex-1">
+                    <i class="fas fa-credit-card absolute left-4 top-1/2 -translate-y-1/2 text-blue-350"></i>
+                    <input type="text" name="custom_payments[]" value="${value}" placeholder="e.g. PayPal, Apple Pay" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                </div>
+                <button type="button" onclick="this.closest('.custom-payment-row').remove(); saveFormData();" class="w-12 h-12 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            saveFormData();
+        }
+
+        function addCustomFoodRow(value = '') {
+            const container = document.getElementById('custom-food-container');
+            const row = document.createElement('div');
+            row.className = 'custom-food-row flex gap-3 mt-2';
+            row.innerHTML = `
+                <div class="relative flex-1">
+                    <i class="fas fa-utensils absolute left-4 top-1/2 -translate-y-1/2 text-green-300"></i>
+                    <input type="text" name="custom_food[]" value="${value}" placeholder="e.g. Gluten-free Options, Seafood Specialty" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                </div>
+                <button type="button" onclick="this.closest('.custom-food-row').remove(); saveFormData();" class="w-12 h-12 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            saveFormData();
+        }
+
+        function addCustomSecurityRow(value = '') {
+            const container = document.getElementById('custom-security-container');
+            const row = document.createElement('div');
+            row.className = 'custom-security-row flex gap-3 mt-2';
+            row.innerHTML = `
+                <div class="relative flex-1">
+                    <i class="fas fa-shield-alt absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                    <input type="text" name="custom_security[]" value="${value}" placeholder="e.g. Guard Dogs, Laser Security" class="w-full pl-12 pr-5 py-3 rounded-xl border bg-white text-sm outline-none focus:ring-2 focus:ring-[#006ce4] transition-all">
+                </div>
+                <button type="button" onclick="this.closest('.custom-security-row').remove(); saveFormData();" class="w-12 h-12 rounded-xl border-2 border-dashed border-red-200 text-red-300 hover:border-red-500 hover:text-red-500 transition-all flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(row);
+            saveFormData();
         }
 
         // Special Amenities dynamic rows

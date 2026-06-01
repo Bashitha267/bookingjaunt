@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'mail_helper.php';
 session_start();
 
 // Get data from URL or Form
@@ -66,6 +67,14 @@ $room = $stmt->fetch();
 
 if (!$property || !$room) {
     die("Property or Room not found.");
+}
+
+// Deal of the Day override: Check if there is an active deal for this room and property
+$deal_stmt = $pdo->prepare("SELECT deal_price FROM deals_of_the_day WHERE room_id = ? AND property_id = ? AND is_active = 1 AND valid_from <= CURDATE() AND valid_until >= CURDATE() LIMIT 1");
+$deal_stmt->execute([$room_id, $property_id]);
+$deal = $deal_stmt->fetch();
+if ($deal) {
+    $room['price_lkr'] = $deal['deal_price'];
 }
 
 // Fetch User Details if logged in for auto-fill
@@ -148,7 +157,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['confirm_booking'])) {
                 $check_in, $check_out, $adults, $children, $country,
                 $price_per_room, $total_price, $amount_paid, $payment_desc, $payment_status
             ]);
-            $success = "Booking confirmed successfully! Your booking ID is #" . $pdo->lastInsertId();
+            $booking_id = $pdo->lastInsertId();
+            $success = "Booking confirmed successfully! Your booking ID is #" . $booking_id;
+
+            // Send booking confirmation email (try-caught internally)
+            MailSender::sendBookingConfirmationEmail(
+                $guest_email,
+                $guest_name,
+                $booking_id,
+                $property['property_name'] ?? 'Property',
+                $room['room_name'] ?? 'Room',
+                $check_in,
+                $check_out,
+                $total_price,
+                'pending',
+                $payment_status
+            );
         } catch (PDOException $e) {
             $error = "Error: " . $e->getMessage();
         }

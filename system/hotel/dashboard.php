@@ -97,8 +97,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// --- Deal of the Day Handlers ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_deal') {
+    $deal_room_id   = (int)($_POST['deal_room_id'] ?? 0);
+    $original_price = (float)($_POST['original_price'] ?? 0);
+    $deal_price     = (float)($_POST['deal_price'] ?? 0);
+    $deal_label     = trim($_POST['deal_label'] ?? '');
+    $valid_from     = $_POST['valid_from'] ?? date('Y-m-d');
+    $valid_until    = $_POST['valid_until'] ?? date('Y-m-d', strtotime('+7 days'));
+
+    // Fetch room name for snapshot
+    $rn_stmt = $pdo->prepare("SELECT room_name FROM property_rooms WHERE id = ? AND property_id = ?");
+    $rn_stmt->execute([$deal_room_id, $property_id]);
+    $rn_row = $rn_stmt->fetch();
+    $deal_room_name = $rn_row['room_name'] ?? '';
+
+    if ($deal_room_id && $original_price > 0 && $deal_price > 0 && $deal_price < $original_price && $deal_room_name) {
+        $ins = $pdo->prepare("INSERT INTO deals_of_the_day (property_id, room_id, room_name, original_price, deal_price, deal_label, valid_from, valid_until, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)");
+        $ins->execute([$property_id, $deal_room_id, $deal_room_name, $original_price, $deal_price, $deal_label ?: null, $valid_from, $valid_until]);
+        header("Location: dashboard.php?view=deals&msg=deal_saved&property_id=$property_id");
+        exit();
+    } else {
+        header("Location: dashboard.php?view=deals&msg=deal_error&property_id=$property_id");
+        exit();
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_deal') {
+    $deal_id = (int)($_POST['deal_id'] ?? 0);
+    $del = $pdo->prepare("DELETE FROM deals_of_the_day WHERE id = ? AND property_id = ?");
+    $del->execute([$deal_id, $property_id]);
+    header("Location: dashboard.php?view=deals&msg=deal_deleted&property_id=$property_id");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_deal') {
+    $deal_id     = (int)($_POST['deal_id'] ?? 0);
+    $new_status  = (int)($_POST['new_status'] ?? 0);
+    $upd = $pdo->prepare("UPDATE deals_of_the_day SET is_active = ? WHERE id = ? AND property_id = ?");
+    $upd->execute([$new_status, $deal_id, $property_id]);
+    header("Location: dashboard.php?view=deals&property_id=$property_id");
+    exit();
+}
+
 // Fetch all room types for this property
-$rooms_stmt = $pdo->prepare("SELECT id, room_name FROM property_rooms WHERE property_id = ?");
+$rooms_stmt = $pdo->prepare("SELECT id, room_name, price_lkr FROM property_rooms WHERE property_id = ?");
 $rooms_stmt->execute([$property_id]);
 $property_rooms = $rooms_stmt->fetchAll();
 
@@ -207,6 +250,18 @@ foreach ($vehicle_bookings_raw as $vb) {
         'color' => '#f59e0b'
     ];
 }
+
+// --- Deals of the Day ---
+$property_deals_stmt = $pdo->prepare("
+    SELECT d.*,
+           CASE WHEN d.is_active = 1 AND d.valid_from <= CURDATE() AND d.valid_until >= CURDATE() THEN 'active' ELSE 'ended' END as deal_status
+    FROM deals_of_the_day d
+    WHERE d.property_id = ?
+    ORDER BY d.created_at DESC
+");
+$property_deals_stmt->execute([$property_id]);
+$property_deals = $property_deals_stmt->fetchAll();
+$active_deals_count = count(array_filter($property_deals, fn($d) => $d['deal_status'] === 'active'));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -466,6 +521,112 @@ foreach ($vehicle_bookings_raw as $vb) {
                     </div>
                 </div>
 
+            <?php elseif ($view === 'deals'): ?>
+                <!-- ===== DEALS OF THE DAY VIEW ===== -->
+                <div class="mb-6 flex justify-between items-end anim-up">
+                    <div>
+                        <h2 class="text-2xl font-black" style="color:white;"><i class="fas fa-tags mr-3" style="color:#febb02;"></i>Deals of the Day</h2>
+                        <p class="text-sm font-medium mt-1" style="color:var(--text-secondary);">Publish limited-time discounts to appear on the homepage slider</p>
+                    </div>
+                    <button onclick="document.getElementById('dealModal').classList.remove('hidden')" class="btn-primary">
+                        <i class="fas fa-plus"></i> Add New Deal
+                    </button>
+                </div>
+
+                <?php if (isset($_GET['msg'])): ?>
+                    <?php $msg_deal = $_GET['msg']; ?>
+                    <div class="glass-card mb-6 p-4 flex items-center gap-3 anim-up" style="border-color:rgba(<?php echo $msg_deal==='deal_saved'?'74,222,128':($msg_deal==='deal_deleted'?'248,113,113':'251,191,36'); ?>,0.3);background:rgba(<?php echo $msg_deal==='deal_saved'?'74,222,128':($msg_deal==='deal_deleted'?'248,113,113':'251,191,36'); ?>,0.10);">
+                        <i class="fas fa-<?php echo $msg_deal==='deal_saved'?'check-circle':($msg_deal==='deal_deleted'?'trash-alt':'exclamation-circle'); ?>" style="color:<?php echo $msg_deal==='deal_saved'?'#4ade80':($msg_deal==='deal_deleted'?'#f87171':'#fbbf24'); ?>;"></i>
+                        <span style="color:white;font-weight:700;font-size:0.875rem;">
+                            <?php echo $msg_deal==='deal_saved'?'Deal published successfully!':($msg_deal==='deal_deleted'?'Deal removed.':'Error: Ensure deal price is less than original price.'); ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
+
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="glass-card p-5 flex flex-col anim-up">
+                        <div class="stat-icon mb-4" style="background:rgba(251,190,36,0.15);"><i class="fas fa-tags" style="color:#febb02;"></i></div>
+                        <p class="stat-label">Total Deals</p>
+                        <h3 class="stat-value"><?php echo count($property_deals); ?></h3>
+                    </div>
+                    <div class="glass-card p-5 flex flex-col anim-up-2">
+                        <div class="stat-icon mb-4" style="background:rgba(74,222,128,0.15);"><i class="fas fa-bolt" style="color:#4ade80;"></i></div>
+                        <p class="stat-label">Active Now</p>
+                        <h3 class="stat-value"><?php echo $active_deals_count; ?></h3>
+                    </div>
+                    <div class="glass-card p-5 flex flex-col anim-up">
+                        <div class="stat-icon mb-4" style="background:rgba(148,163,184,0.15);"><i class="fas fa-clock" style="color:#94a3b8;"></i></div>
+                        <p class="stat-label">Ended</p>
+                        <h3 class="stat-value"><?php echo count($property_deals) - $active_deals_count; ?></h3>
+                    </div>
+                </div>
+
+                <?php if (empty($property_deals)): ?>
+                    <div class="glass-card p-12 text-center anim-up">
+                        <div class="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center" style="background:rgba(251,190,36,0.15);">
+                            <i class="fas fa-tags text-3xl" style="color:#febb02;"></i>
+                        </div>
+                        <h3 class="text-xl font-black mb-2" style="color:white;">No Deals Yet</h3>
+                        <p style="color:var(--text-secondary);font-size:0.875rem;" class="mb-6">Create a deal to feature on the homepage slider and attract more guests!</p>
+                        <button onclick="document.getElementById('dealModal').classList.remove('hidden')" class="btn-primary">
+                            <i class="fas fa-plus"></i> Create First Deal
+                        </button>
+                    </div>
+                <?php else: ?>
+                    <div class="glass-table anim-up" style="overflow-x:auto;">
+                        <div class="px-6 py-5" style="border-bottom:1px solid var(--glass-border);">
+                            <h3 class="text-lg font-black" style="color:white;">Your Deal Offers</h3>
+                        </div>
+                        <table class="w-full text-left" style="min-width:700px;">
+                            <thead><tr>
+                                <th class="glass-th">Room</th>
+                                <th class="glass-th">Original Price</th>
+                                <th class="glass-th">Deal Price</th>
+                                <th class="glass-th">Discount</th>
+                                <th class="glass-th">Label</th>
+                                <th class="glass-th">Valid From</th>
+                                <th class="glass-th">Valid Until</th>
+                                <th class="glass-th">Status</th>
+                                <th class="glass-th">Actions</th>
+                            </tr></thead>
+                            <tbody>
+                                <?php foreach ($property_deals as $deal):
+                                    $disc = round((($deal['original_price'] - $deal['deal_price']) / $deal['original_price']) * 100);
+                                    $is_act = ($deal['deal_status'] === 'active');
+                                ?>
+                                <tr class="glass-tr">
+                                    <td class="glass-td font-bold" style="color:white;"><?php echo htmlspecialchars($deal['room_name']); ?></td>
+                                    <td class="glass-td" style="color:#94a3b8;text-decoration:line-through;">LKR <?php echo number_format($deal['original_price']); ?></td>
+                                    <td class="glass-td"><span style="color:#4ade80;font-weight:800;">LKR <?php echo number_format($deal['deal_price']); ?></span></td>
+                                    <td class="glass-td"><span class="badge" style="background:rgba(251,190,36,0.25);color:#febb02;">-<?php echo $disc; ?>%</span></td>
+                                    <td class="glass-td" style="color:#94a3b8;"><?php echo htmlspecialchars($deal['deal_label'] ?: '—'); ?></td>
+                                    <td class="glass-td" style="color:#94a3b8;"><?php echo date('M d, Y', strtotime($deal['valid_from'])); ?></td>
+                                    <td class="glass-td" style="color:#94a3b8;"><?php echo date('M d, Y', strtotime($deal['valid_until'])); ?></td>
+                                    <td class="glass-td"><?php if ($is_act): ?><span class="badge badge-confirmed">Active</span><?php else: ?><span class="badge" style="background:rgba(148,163,184,0.2);color:#94a3b8;">Ended</span><?php endif; ?></td>
+                                    <td class="glass-td">
+                                        <div class="flex gap-2">
+                                            <form method="POST" style="display:inline;">
+                                                <input type="hidden" name="action" value="toggle_deal">
+                                                <input type="hidden" name="deal_id" value="<?php echo $deal['id']; ?>">
+                                                <input type="hidden" name="new_status" value="<?php echo $deal['is_active'] ? 0 : 1; ?>">
+                                                <button type="submit" class="btn-glass" style="padding:5px 10px;font-size:0.55rem;<?php echo $deal['is_active']?'color:#fbbf24;':'color:#4ade80;'; ?>">
+                                                    <i class="fas fa-<?php echo $deal['is_active']?'pause':'play'; ?>"></i> <?php echo $deal['is_active']?'Pause':'Enable'; ?>
+                                                </button>
+                                            </form>
+                                            <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this deal?')">
+                                                <input type="hidden" name="action" value="delete_deal">
+                                                <input type="hidden" name="deal_id" value="<?php echo $deal['id']; ?>">
+                                                <button type="submit" class="btn-glass" style="padding:5px 10px;font-size:0.55rem;color:#fca5a5;"><i class="fas fa-trash-alt"></i></button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+
             <?php endif; ?>
         </div>
     </main>
@@ -680,6 +841,84 @@ foreach ($vehicle_bookings_raw as $vb) {
         </div>
     </div>
 
+    <!-- Deal of the Day Modal -->
+    <div id="dealModal" class="fixed inset-0 z-[60] hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-md" onclick="closeDealModal()"></div>
+            <div class="relative w-full max-w-lg my-8 rounded-[2rem] overflow-hidden" style="background:rgba(5,18,60,0.95);backdrop-filter:blur(24px);border:1px solid var(--glass-border);">
+                <div class="p-8 flex justify-between items-center" style="border-bottom:1px solid var(--glass-border);">
+                    <div>
+                        <h3 class="text-xl font-black" style="color:white;"><i class="fas fa-tags mr-2" style="color:#febb02;"></i>Add New Deal</h3>
+                        <p class="text-xs font-bold uppercase tracking-widest mt-1" style="color:var(--text-muted);">Create a limited-time discount offer</p>
+                    </div>
+                    <button onclick="closeDealModal()" class="w-10 h-10 rounded-full btn-glass flex items-center justify-center"><i class="fas fa-times"></i></button>
+                </div>
+                <form action="dashboard.php?view=deals" method="POST" class="p-8 space-y-5">
+                    <input type="hidden" name="action" value="save_deal">
+                    <?php if ($property_id): ?>
+                    <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
+                    <?php endif; ?>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest mb-2" style="color:var(--text-secondary);">Room Type</label>
+                        <select name="deal_room_id" id="dealRoomSelect" required onchange="fillOriginalPrice(this)" class="glass-input w-full px-4 py-3 rounded-xl text-xs appearance-none">
+                            <option value="">— Select Room —</option>
+                            <?php foreach ($property_rooms as $pr): ?>
+                                <option value="<?php echo $pr['id']; ?>" data-price="<?php echo $pr['price_lkr']; ?>">
+                                    <?php echo htmlspecialchars($pr['room_name']); ?> (LKR <?php echo number_format($pr['price_lkr']); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest mb-2" style="color:var(--text-secondary);">Original Price (LKR/night)</label>
+                            <input type="number" name="original_price" id="dealOriginalPrice" required min="1" step="0.01"
+                                   class="glass-input w-full px-4 py-3 rounded-xl text-xs" placeholder="Auto-filled">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest mb-2" style="color:var(--text-secondary);">Deal Price (LKR/night)</label>
+                            <input type="number" name="deal_price" required min="1" step="0.01"
+                                   class="glass-input w-full px-4 py-3 rounded-xl text-xs" placeholder="e.g. 8500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest mb-2" style="color:var(--text-secondary);">Deal Label <span style="color:var(--text-muted);">(optional)</span></label>
+                        <input type="text" name="deal_label" maxlength="100"
+                               class="glass-input w-full px-4 py-3 rounded-xl text-xs" placeholder="e.g. Flash Sale, Weekend Deal, Limited Offer">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest mb-2" style="color:var(--text-secondary);">Valid From</label>
+                            <input type="date" name="valid_from" required value="<?php echo date('Y-m-d'); ?>"
+                                   class="glass-input w-full px-4 py-3 rounded-xl text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest mb-2" style="color:var(--text-secondary);">Valid Until</label>
+                            <input type="date" name="valid_until" required value="<?php echo date('Y-m-d', strtotime('+7 days')); ?>"
+                                   class="glass-input w-full px-4 py-3 rounded-xl text-xs">
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl flex items-start gap-3" style="background:rgba(251,190,36,0.1);border:1px solid rgba(251,190,36,0.25);">
+                        <i class="fas fa-info-circle mt-0.5" style="color:#febb02;"></i>
+                        <p class="text-xs" style="color:rgba(251,190,36,0.85);">Deal price must be lower than the original price. The deal will appear on the homepage slider for all visitors.</p>
+                    </div>
+
+                    <div class="flex gap-4 pt-2">
+                        <button type="button" onclick="closeDealModal()" class="flex-1 btn-glass justify-center py-4">Cancel</button>
+                        <button type="submit" class="flex-[2] justify-center py-4 rounded-2xl font-bold text-xs uppercase tracking-widest text-white" style="background:linear-gradient(135deg,#febb02,#e0a800);color:#003580;box-shadow:0 4px 15px rgba(254,187,2,0.4);">
+                            <i class="fas fa-bolt mr-2"></i> Publish Deal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         const roomData = <?php echo json_encode($property_rooms); ?>;
 
@@ -747,6 +986,17 @@ foreach ($vehicle_bookings_raw as $vb) {
         function closeBoostModal() {
             document.getElementById('boostModal').classList.add('hidden');
             document.body.style.overflow = '';
+        }
+
+        function closeDealModal() {
+            document.getElementById('dealModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function fillOriginalPrice(select) {
+            const price = select.options[select.selectedIndex]?.dataset?.price || '';
+            const field = document.getElementById('dealOriginalPrice');
+            if (field && price) field.value = price;
         }
 
         function toggleRoomAvailability() {

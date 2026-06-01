@@ -4,6 +4,20 @@ session_start();
 
 $property_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
+// Deal of the Day override
+$deal_room_id = isset($_GET['deal_room']) ? (int)$_GET['deal_room'] : 0;
+$deal_price_override = isset($_GET['deal_price']) ? (float)$_GET['deal_price'] : 0;
+// Validate deal is still active
+if ($deal_room_id && $deal_price_override > 0) {
+    $deal_check = $pdo->prepare("SELECT id, deal_price, room_id FROM deals_of_the_day WHERE room_id = ? AND property_id = ? AND is_active = 1 AND valid_from <= CURDATE() AND valid_until >= CURDATE() LIMIT 1");
+    $deal_check->execute([$deal_room_id, $property_id]);
+    $valid_deal = $deal_check->fetch();
+    if (!$valid_deal) {
+        $deal_room_id = 0;
+        $deal_price_override = 0;
+    }
+}
+
 if ($property_id <= 0) {
     header("Location: index.php");
     exit();
@@ -56,6 +70,22 @@ $rooms_stmt = $pdo->prepare("
 ");
 $rooms_stmt->execute([$availability_check_out, $availability_check_in, $property_id]);
 $rooms = $rooms_stmt->fetchAll();
+
+// Deal of the Day override: check if there are active deals for the rooms
+foreach ($rooms as &$room) {
+    $deal_stmt = $pdo->prepare("SELECT deal_price, original_price, deal_label FROM deals_of_the_day WHERE room_id = ? AND property_id = ? AND is_active = 1 AND valid_from <= CURDATE() AND valid_until >= CURDATE() LIMIT 1");
+    $deal_stmt->execute([$room['id'], $property_id]);
+    $deal = $deal_stmt->fetch();
+    if ($deal) {
+        $room['original_price_lkr'] = $room['price_lkr'];
+        $room['price_lkr'] = $deal['deal_price'];
+        $room['deal_label'] = $deal['deal_label'];
+        $room['is_deal'] = true;
+    } else {
+        $room['is_deal'] = false;
+    }
+}
+unset($room);
 
 // Fetch Media
 $media_stmt = $pdo->prepare("SELECT media_path, is_featured FROM property_media WHERE property_id = ? AND media_type = 'image' ORDER BY is_featured DESC, sort_order ASC");
@@ -199,9 +229,17 @@ if (!empty($property['district']) || !empty($property['city'])) {
                     </div>
                 </div>
                 <h1 class="text-2xl md:text-3xl font-extrabold font-display"><?php echo htmlspecialchars($property['property_name']); ?></h1>
-                <div class="flex items-center gap-2 text-[13px] text-neutral-600 mt-2">
-                    <i class="fas fa-map-marker-alt text-brand-600"></i>
-                    <span><?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['district']); ?></span>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-neutral-600 mt-2">
+                    <div class="flex items-center gap-1.5">
+                        <i class="fas fa-map-marker-alt text-brand-600"></i>
+                        <span><?php echo htmlspecialchars($property['street_address'] . ', ' . $property['city'] . ', ' . $property['district']); ?></span>
+                    </div>
+                    <?php if (!empty($property['google_map_location'])): ?>
+                        <span class="text-neutral-300 hidden sm:inline">|</span>
+                        <a href="<?php echo htmlspecialchars($property['google_map_location']); ?>" target="_blank" class="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-bold hover:underline transition-all bg-brand-50 px-2 py-0.5 rounded-md text-xs border border-brand-100/50">
+                            <i class="fas fa-location-arrow text-[10px]"></i> View on Map
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="hidden md:flex items-center gap-3">
@@ -396,6 +434,307 @@ if (!empty($property['district']) || !empty($property['city'])) {
                 </div>
                 <?php endif; ?>
 
+                <?php
+                // Pre-process Payment, Food, and Security features
+                $accepted_methods = [];
+                if (!empty($property['pay_cash'])) $accepted_methods[] = ['label' => 'Cash Accepted', 'icon' => 'fa-money-bill-wave', 'color' => 'emerald'];
+                if (!empty($property['pay_cc'])) $accepted_methods[] = ['label' => 'Credit Card', 'icon' => 'fa-credit-card', 'color' => 'blue'];
+                if (!empty($property['pay_debit'])) $accepted_methods[] = ['label' => 'Debit Card', 'icon' => 'fa-wallet', 'color' => 'indigo'];
+                if (!empty($property['pay_online'])) $accepted_methods[] = ['label' => 'Online Payment (UPI/Wallets/Gateway)', 'icon' => 'fa-qrcode', 'color' => 'purple'];
+                if (!empty($property['pay_bank'])) $accepted_methods[] = ['label' => 'Bank Transfer', 'icon' => 'fa-university', 'color' => 'teal'];
+                if (!empty($property['pay_installments'])) $accepted_methods[] = ['label' => 'Installment Plans', 'icon' => 'fa-percentage', 'color' => 'amber'];
+
+                if (!empty($property['custom_payments_json'])) {
+                    $decoded = json_decode($property['custom_payments_json'], true);
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $opt) {
+                            if (!empty(trim($opt))) {
+                                $accepted_methods[] = ['label' => trim($opt), 'icon' => 'fa-check-circle', 'color' => 'brand'];
+                            }
+                        }
+                    }
+                }
+
+                $food_features = [];
+                if (!empty($property['food_breakfast_included'])) {
+                    $desc = !empty($property['food_breakfast_type']) ? 'Type: ' . htmlspecialchars($property['food_breakfast_type']) : 'Included';
+                    $food_features[] = ['label' => 'Breakfast Included', 'desc' => $desc, 'icon' => 'fa-mug-hot', 'color' => 'amber'];
+                }
+                if (!empty($property['food_restaurant_available'])) {
+                    $desc = !empty($property['food_restaurant_count']) ? htmlspecialchars($property['food_restaurant_count']) . ' on-site restaurant(s)' : 'Available';
+                    $food_features[] = ['label' => 'On-site Restaurant', 'desc' => $desc, 'icon' => 'fa-utensils', 'color' => 'rose'];
+                }
+                if (!empty($property['food_room_service'])) {
+                    $desc = !empty($property['food_room_service_247']) ? 'Available 24/7' : 'Available';
+                    $food_features[] = ['label' => 'Room Service', 'desc' => $desc, 'icon' => 'fa-concierge-bell', 'color' => 'emerald'];
+                }
+                if (!empty($property['food_vegetarian'])) {
+                    $food_features[] = ['label' => 'Vegetarian Options', 'desc' => 'Available', 'icon' => 'fa-leaf', 'color' => 'green'];
+                }
+                if (!empty($property['food_vegan'])) {
+                    $food_features[] = ['label' => 'Vegan Options', 'desc' => 'Available', 'icon' => 'fa-seedling', 'color' => 'green'];
+                }
+                if (!empty($property['food_halal'])) {
+                    $food_features[] = ['label' => 'Halal Food', 'desc' => 'Available', 'icon' => 'fa-certificate', 'color' => 'teal'];
+                }
+                if (!empty($property['food_buffet'])) {
+                    $food_features[] = ['label' => 'Buffet Available', 'desc' => 'Yes', 'icon' => 'fa-hamburger', 'color' => 'orange'];
+                }
+                if (!empty($property['food_delivery_allowed'])) {
+                    $food_features[] = ['label' => 'Food Delivery Allowed', 'desc' => 'From external apps', 'icon' => 'fa-truck', 'color' => 'blue'];
+                }
+                if (!empty($property['food_dietary_options'])) {
+                    $food_features[] = ['label' => 'Special Dietary Support', 'desc' => 'Available', 'icon' => 'fa-carrot', 'color' => 'indigo'];
+                }
+                if (!empty($property['food_kitchen_in_room'])) {
+                    $food_features[] = ['label' => 'In-room Kitchen', 'desc' => 'Yes', 'icon' => 'fa-sink', 'color' => 'cyan'];
+                }
+                if (!empty($property['food_minibar'])) {
+                    $food_features[] = ['label' => 'Mini Bar', 'desc' => 'In-room amenities', 'icon' => 'fa-wine-glass', 'color' => 'violet'];
+                }
+
+                if (!empty($property['custom_food_json'])) {
+                    $decoded = json_decode($property['custom_food_json'], true);
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $opt) {
+                            if (!empty(trim($opt))) {
+                                $food_features[] = ['label' => trim($opt), 'desc' => 'Available Option', 'icon' => 'fa-plus-circle', 'color' => 'brand'];
+                            }
+                        }
+                    }
+                }
+
+                $security_features = [];
+                if (!empty($property['sec_staff_247'])) {
+                    $security_features[] = ['label' => '24/7 Security Staff', 'desc' => 'On-site presence', 'icon' => 'fa-user-shield', 'color' => 'blue'];
+                }
+                if (!empty($property['sec_cctv'])) {
+                    $desc = !empty($property['sec_cctv_coverage']) ? 'Coverage: ' . htmlspecialchars($property['sec_cctv_coverage']) : 'Monitored area';
+                    $security_features[] = ['label' => 'CCTV Surveillance', 'desc' => $desc, 'icon' => 'fa-video', 'color' => 'indigo'];
+                }
+                if (!empty($property['sec_smoke_detectors'])) {
+                    $security_features[] = ['label' => 'Smoke Detectors', 'desc' => 'Installed', 'icon' => 'fa-wind', 'color' => 'cyan'];
+                }
+                if (!empty($property['sec_fire_extinguishers'])) {
+                    $security_features[] = ['label' => 'Fire Extinguishers', 'desc' => 'Equipped', 'icon' => 'fa-fire-extinguisher', 'color' => 'rose'];
+                }
+                if (!empty($property['sec_fire_alarm'])) {
+                    $security_features[] = ['label' => 'Fire Alarm System', 'desc' => 'Operational', 'icon' => 'fa-bell', 'color' => 'red'];
+                }
+                if (!empty($property['sec_emergency_exit_plan'])) {
+                    $security_features[] = ['label' => 'Emergency Exit Plan', 'desc' => 'Posted in rooms', 'icon' => 'fa-door-open', 'color' => 'emerald'];
+                }
+                if (!empty($property['sec_key_card_access'])) {
+                    $security_features[] = ['label' => 'Key Card Access', 'desc' => 'Secure entry', 'icon' => 'fa-id-card', 'color' => 'purple'];
+                }
+                if (!empty($property['sec_digital_lock'])) {
+                    $security_features[] = ['label' => 'Digital Smart Lock', 'desc' => 'Keyless entry', 'icon' => 'fa-key', 'color' => 'violet'];
+                }
+                if (!empty($property['sec_biometric_access'])) {
+                    $security_features[] = ['label' => 'Biometric Access', 'desc' => 'Scanner', 'icon' => 'fa-fingerprint', 'color' => 'fuchsia'];
+                }
+                if (!empty($property['sec_safe_box'])) {
+                    $security_features[] = ['label' => 'In-room Safe Box', 'desc' => 'Secure storage', 'icon' => 'fa-vault', 'color' => 'amber'];
+                }
+                if (!empty($property['sec_luggage_storage'])) {
+                    $security_features[] = ['label' => 'Secure Luggage Storage', 'desc' => 'Available', 'icon' => 'fa-suitcase', 'color' => 'teal'];
+                }
+                if (!empty($property['sec_female_floor'])) {
+                    $security_features[] = ['label' => 'Female-only Floor', 'desc' => 'Enhanced privacy', 'icon' => 'fa-venus', 'color' => 'pink'];
+                }
+                if (!empty($property['sec_panic_button'])) {
+                    $security_features[] = ['label' => 'Panic Buttons', 'desc' => 'Installed', 'icon' => 'fa-exclamation-triangle', 'color' => 'orange'];
+                }
+                if (!empty($property['sec_first_aid'])) {
+                    $security_features[] = ['label' => 'First Aid Kit', 'desc' => 'On-site availability', 'icon' => 'fa-first-aid', 'color' => 'red'];
+                }
+                if (!empty($property['sec_medical_support'])) {
+                    $security_features[] = ['label' => 'On-call Medical Support', 'desc' => 'Available', 'icon' => 'fa-user-md', 'color' => 'emerald'];
+                }
+                if (!empty($property['sec_patrol_frequency'])) {
+                    $security_features[] = ['label' => 'Security Patrols', 'desc' => htmlspecialchars($property['sec_patrol_frequency']), 'icon' => 'fa-walking', 'color' => 'slate'];
+                }
+                if (!empty($property['sec_parking_security'])) {
+                    $security_features[] = ['label' => 'Secure Parking', 'desc' => htmlspecialchars($property['sec_parking_security']), 'icon' => 'fa-car', 'color' => 'sky'];
+                }
+                if (!empty($property['sec_hospital_distance'])) {
+                    $security_features[] = ['label' => 'Nearest Hospital', 'desc' => htmlspecialchars($property['sec_hospital_distance']), 'icon' => 'fa-hospital-symbol', 'color' => 'rose'];
+                }
+                if (!empty($property['sec_emergency_evac_instructions'])) {
+                    $security_features[] = ['label' => 'Evacuation Instructions', 'desc' => htmlspecialchars($property['sec_emergency_evac_instructions']), 'icon' => 'fa-info-circle', 'color' => 'zinc'];
+                }
+
+                if (!empty($property['custom_security_json'])) {
+                    $decoded = json_decode($property['custom_security_json'], true);
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $opt) {
+                            if (!empty(trim($opt))) {
+                                $security_features[] = ['label' => trim($opt), 'desc' => 'Active Feature', 'icon' => 'fa-shield-halved', 'color' => 'brand'];
+                            }
+                        }
+                    }
+                }
+                ?>
+
+                <!-- Food & Dining -->
+                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
+                    <h3 class="text-xl font-bold font-display mb-6">Food & Dining</h3>
+                    <?php if (!empty($food_features)): ?>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <?php foreach ($food_features as $ff): ?>
+                                <div class="flex items-start gap-3 p-4 rounded-xl border border-brand-100/80 bg-brand-50/50 hover:scale-[1.02] transition-transform duration-300">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-brand-600">
+                                        <i class="fas <?php echo $ff['icon']; ?> text-base"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-[13px] text-neutral-800 leading-tight"><?php echo htmlspecialchars($ff['label']); ?></h4>
+                                        <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug"><?php echo $ff['desc']; ?></p>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-sm text-neutral-500 italic">No specific food & dining amenities declared by the property.</p>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($property['food_notes'])): ?>
+                        <div class="mt-4 bg-neutral-50 p-4 rounded-xl border border-neutral-200">
+                            <h4 class="text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                <i class="fas fa-info-circle text-neutral-500"></i> Food & Dining Notes
+                            </h4>
+                            <p class="text-[13px] text-neutral-600 leading-relaxed"><?php echo nl2br(htmlspecialchars($property['food_notes'])); ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Payment Options & Policies -->
+                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
+                    <h3 class="text-xl font-bold font-display mb-6">Payment Options & Policies</h3>
+                    
+                    <!-- Policy Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <!-- Refund Card -->
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-brand-100/80 bg-brand-50/50 hover:scale-[1.02] transition-transform duration-300">
+                            <?php if ($property['refund_supported'] === 1): ?>
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-emerald-600">
+                                    <i class="fas fa-check text-base"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-[13px] text-neutral-800 leading-tight">Refund Supported</h4>
+                                    <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug">Eligible for cancellation refund</p>
+                                </div>
+                            <?php elseif ($property['refund_supported'] === 0): ?>
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-rose-600">
+                                    <i class="fas fa-times text-base"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-[13px] text-neutral-800 leading-tight">Non-refundable</h4>
+                                    <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug">Payments are non-refundable</p>
+                                </div>
+                            <?php else: ?>
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-neutral-400">
+                                    <i class="fas fa-minus text-base"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-[13px] text-neutral-800 leading-tight">Refund Unspecified</h4>
+                                    <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug">Contact property for policies</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Advance Payment Card -->
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-brand-100/80 bg-brand-50/50 hover:scale-[1.02] transition-transform duration-300">
+                            <?php if ($property['advance_payment_required'] === 1): ?>
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-amber-600">
+                                    <i class="fas fa-exclamation text-base"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-[13px] text-neutral-800 leading-tight">Advance Payment Required</h4>
+                                    <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug">Deposit required to secure booking</p>
+                                </div>
+                            <?php elseif ($property['advance_payment_required'] === 0): ?>
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-emerald-600">
+                                    <i class="fas fa-check text-base"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-[13px] text-neutral-800 leading-tight">No Advance Payment Needed</h4>
+                                    <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug">No immediate deposit required</p>
+                                </div>
+                            <?php else: ?>
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-neutral-400">
+                                    <i class="fas fa-minus text-base"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-[13px] text-neutral-800 leading-tight">Advance Payment Unspecified</h4>
+                                    <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug">Contact property for booking deposit</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Accepted Methods -->
+                    <div class="mb-6">
+                        <h4 class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4">Accepted Payment Methods</h4>
+                        <?php if (!empty($accepted_methods)): ?>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                <?php foreach ($accepted_methods as $am): ?>
+                                    <div class="flex items-start gap-3 p-4 rounded-xl border border-brand-100/80 bg-brand-50/50 hover:scale-[1.02] transition-transform duration-300">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-brand-600">
+                                            <i class="fas <?php echo $am['icon']; ?> text-base"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-[13px] text-neutral-800 leading-tight"><?php echo htmlspecialchars($am['label']); ?></h4>
+                                            <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug">Accepted Method</p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-sm text-neutral-500 italic">Standard property payment conditions apply.</p>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (!empty($property['payment_notes'])): ?>
+                        <div class="mt-4 bg-neutral-50 p-4 rounded-xl border border-neutral-200">
+                            <h4 class="text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                <i class="fas fa-info-circle text-neutral-500"></i> Payment Instructions
+                            </h4>
+                            <p class="text-[13px] text-neutral-600 leading-relaxed"><?php echo nl2br(htmlspecialchars($property['payment_notes'])); ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Safety & Security -->
+                <div class="mb-10 border-t border-neutral-200 pt-8 mt-8">
+                    <h3 class="text-xl font-bold font-display mb-6">Safety & Security Features</h3>
+                    <?php if (!empty($security_features)): ?>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            <?php foreach ($security_features as $sf): ?>
+                                <div class="flex items-start gap-3 p-4 rounded-xl border border-brand-100/80 bg-brand-50/50 hover:scale-[1.02] transition-transform duration-300">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white shadow-sm text-brand-600">
+                                        <i class="fas <?php echo $sf['icon']; ?> text-base"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-[13px] text-neutral-800 leading-tight"><?php echo htmlspecialchars($sf['label']); ?></h4>
+                                        <p class="text-[11px] text-neutral-500 mt-0.5 leading-snug"><?php echo $sf['desc']; ?></p>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-sm text-neutral-500 italic">Standard hotel safety & security features apply.</p>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($property['sec_notes'])): ?>
+                        <div class="mt-4 bg-neutral-50 p-4 rounded-xl border border-neutral-200">
+                            <h4 class="text-xs font-bold text-neutral-700 uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                <i class="fas fa-info-circle text-neutral-500"></i> Safety Notes
+                            </h4>
+                            <p class="text-[13px] text-neutral-600 leading-relaxed"><?php echo nl2br(htmlspecialchars($property['sec_notes'])); ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
             </div>
             <div class="hidden lg:block">
                 <div class="bg-brand-50 p-6 rounded-xl border border-brand-100 sticky top-6">
@@ -455,7 +794,14 @@ if (!empty($property['district']) || !empty($property['city'])) {
                                             </div>
                                         <?php endif; ?>
                                         <div>
-                                            <div class="font-bold text-brand-600 text-[16px] mb-1 hover:underline cursor-pointer"><?php echo htmlspecialchars($room['room_name']); ?></div>
+                                            <div class="font-bold text-brand-600 text-[16px] mb-1 hover:underline cursor-pointer flex items-center gap-2 flex-wrap">
+                                                <span><?php echo htmlspecialchars($room['room_name']); ?></span>
+                                                <?php if (isset($room['is_deal']) && $room['is_deal']): ?>
+                                                    <span class="bg-amber-400 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm flex items-center gap-1">
+                                                        <i class="fas fa-bolt text-[9px]"></i> <?php echo htmlspecialchars($room['deal_label'] ?: 'Special Deal'); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
                                             <?php if ($property['business_type'] == 'dayouts'): ?>
                                                 <div class="text-neutral-500 text-[12px] mt-2 mb-1">
                                                     <?php echo nl2br(htmlspecialchars($room['description'] ?? '')); ?>
@@ -495,6 +841,15 @@ if (!empty($property['district']) || !empty($property['city'])) {
                                     $display_price = ($currency == 'USD') ? ($room['price_lkr'] / $exchange_rate) : $room['price_lkr'];
                                     $total_display_price = $display_price * $nights;
                                     ?>
+                                    <?php if (isset($room['is_deal']) && $room['is_deal']): 
+                                        $orig_display = ($currency == 'USD') ? ($room['original_price_lkr'] / $exchange_rate) : $room['original_price_lkr'];
+                                        $disc_pct = round((($room['original_price_lkr'] - $room['price_lkr']) / $room['original_price_lkr']) * 100);
+                                    ?>
+                                        <div class="flex items-center gap-1.5 mb-1.5">
+                                            <span class="text-xs text-red-500 line-through font-semibold"><?php echo $currency; ?> <?php echo number_format($orig_display * $nights, ($currency == 'USD' ? 2 : 0)); ?></span>
+                                            <span class="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">-<?php echo $disc_pct; ?>%</span>
+                                        </div>
+                                    <?php endif; ?>
                                     <div class="flex flex-wrap items-baseline gap-x-2">
                                         <span class="font-black text-xl text-neutral-900"><?php echo $currency; ?> <?php echo number_format($total_display_price, ($currency == 'USD' ? 2 : 0)); ?></span>
                                         <span class="text-[11px] text-neutral-500 font-bold">for <?php echo $nights; ?> night<?php echo $nights > 1 ? 's' : ''; ?></span>
@@ -550,7 +905,14 @@ if (!empty($property['district']) || !empty($property['city'])) {
                         <?php endif; ?>
                         <div class="p-5">
                             <div class="flex justify-between items-start mb-3">
-                                <h4 class="font-extrabold text-[18px] text-neutral-900 leading-tight font-display"><?php echo htmlspecialchars($room['room_name']); ?></h4>
+                                <h4 class="font-extrabold text-[18px] text-neutral-900 leading-tight font-display flex items-center gap-2 flex-wrap">
+                                    <span><?php echo htmlspecialchars($room['room_name']); ?></span>
+                                    <?php if (isset($room['is_deal']) && $room['is_deal']): ?>
+                                        <span class="bg-amber-400 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm flex items-center gap-1">
+                                            <i class="fas fa-bolt text-[9px]"></i> <?php echo htmlspecialchars($room['deal_label'] ?: 'Special Deal'); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </h4>
                                 <div class="flex gap-0.5 text-neutral-600">
                                     <?php for($i=0;$i<$room['adults'];$i++): ?><i class="fas fa-user text-[11px]"></i><?php endfor; ?>
                                 </div>
@@ -577,6 +939,15 @@ if (!empty($property['district']) || !empty($property['city'])) {
                                     $display_price = ($currency == 'USD') ? ($room['price_lkr'] / $exchange_rate) : $room['price_lkr'];
                                     $total_display_price = $display_price * $nights;
                                     ?>
+                                    <?php if (isset($room['is_deal']) && $room['is_deal']): 
+                                        $orig_display = ($currency == 'USD') ? ($room['original_price_lkr'] / $exchange_rate) : $room['original_price_lkr'];
+                                        $disc_pct = round((($room['original_price_lkr'] - $room['price_lkr']) / $room['original_price_lkr']) * 100);
+                                    ?>
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                            <span class="text-xs text-red-500 line-through font-semibold"><?php echo $currency; ?> <?php echo number_format($orig_display * $nights, ($currency == 'USD' ? 2 : 0)); ?></span>
+                                            <span class="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">-<?php echo $disc_pct; ?>%</span>
+                                        </div>
+                                    <?php endif; ?>
                                     <div class="flex items-baseline gap-1.5">
                                         <span class="font-black text-xl"><?php echo $currency; ?> <?php echo number_format($total_display_price, ($currency == 'USD' ? 2 : 0)); ?></span>
                                         <span class="text-[10px] text-neutral-500 font-bold uppercase">/ <?php echo $nights; ?> nights</span>

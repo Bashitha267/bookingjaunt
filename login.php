@@ -3,6 +3,7 @@ require_once 'config.php';
 session_start();
 
 $error = '';
+$success = $_GET['success'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
@@ -143,7 +144,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div
                 class="bg-red-500/20 backdrop-blur-md text-red-200 p-3 rounded-lg mb-6 text-xs font-bold flex items-center gap-2 border border-red-500/30">
                 <i class="fas fa-exclamation-circle"></i>
-                <?= $error ?>
+                <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($success): ?>
+            <div
+                class="bg-emerald-500/20 backdrop-blur-md text-emerald-200 p-3 rounded-lg mb-6 text-xs font-bold flex items-center gap-2 border border-emerald-500/30">
+                <i class="fas fa-check-circle"></i>
+                <?= htmlspecialchars($success) ?>
             </div>
         <?php endif; ?>
 
@@ -176,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         class="w-3 h-3 rounded border-gray-600 bg-transparent text-[#006ce4] focus:ring-[#006ce4]">
                     <span class="group-hover:text-white transition-colors uppercase tracking-wider">Remember me</span>
                 </label>
-                <a href="#" class="text-[#006ce4] hover:text-white transition-colors uppercase tracking-wider">Forgot
+                <a href="forgot_password.php" class="text-[#006ce4] hover:text-white transition-colors uppercase tracking-wider">Forgot
                     Password?</a>
             </div>
 

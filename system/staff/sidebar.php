@@ -55,6 +55,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-list-ul w-5 text-center text-sky-400 group-hover:text-[#0ea5e9]"></i>
             Amenities
         </a>
+        <a href="deals.php" class="sidebar-link <?php echo $current_page == 'deals.php' ? 'active' : ''; ?> flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all hover:bg-white/10 hover:text-white group" style="color:rgba(251,190,36,0.85);">
+            <i class="fas fa-tags w-5 text-center" style="color:#febb02;"></i>
+            Deals of the Day
+        </a>
 
         <div class="pt-10 pb-4">
             <p class="px-4 text-[10px] font-bold text-sky-300 uppercase tracking-widest opacity-60">System</p>

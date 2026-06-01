@@ -435,6 +435,9 @@ $bg_url = $bg_path ? '../../' . htmlspecialchars($bg_path) : null;
         <a href="vehicle_bookings.php" class="sidebar-link <?php echo ($current_page == 'vehicle_bookings.php') ? 'active' : ''; ?>">
             <i class="fas fa-car-side"></i> Vehicle Bookings
         </a>
+        <a href="dashboard.php?view=deals" class="sidebar-link <?php echo ($current_page == 'dashboard.php' && $view === 'deals') ? 'active' : ''; ?>" style="color:rgba(251,190,36,0.85);">
+            <i class="fas fa-tags" style="color:#febb02;"></i> <span>Deals of the Day</span>
+        </a>
 
         <!-- Account Section -->
         <div class="pt-8 pb-3">
